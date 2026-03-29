@@ -175,6 +175,7 @@ export interface StrategyOption {
   multiplier: number;
   competencyGates: CompetencyGate[];
   fallback?: string;
+  isDoNothing?: boolean;
 }
 
 export interface OutcomeTierDefinition {

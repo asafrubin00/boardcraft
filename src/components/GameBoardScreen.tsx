@@ -190,11 +190,20 @@ export default function GameBoardScreen({
     return boardDirectors.find((d) => d.id === selectedDirectorId) ?? null;
   }, [selectedDirectorId, boardDirectors]);
 
-  // Handle strategy selection
+  // Handle strategy selection — Do Nothing bypasses deployment modal
   const handleSelectStrategy = useCallback((strategyId: string) => {
+    if (!currentEvent) return;
+    const strategy = currentEvent.strategies.find(s => s.id === strategyId);
+    if (strategy?.isDoNothing) {
+      // Resolve immediately with no directors deployed
+      const output = onResolveEvent(strategyId, []);
+      setLastOutcome(output);
+      setLastEventName(currentEvent.name);
+      return;
+    }
     setSelectedStrategy(strategyId);
     setShowDeployment(true);
-  }, []);
+  }, [currentEvent, onResolveEvent]);
 
   // Handle do-nothing / skip
   const handleDoNothing = useCallback(() => {

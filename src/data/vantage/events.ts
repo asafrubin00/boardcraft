@@ -52,6 +52,7 @@ export const vantageEvents: GameEvent[] = [
         description:
           'Meridian publishes their recommendation. AGM rebellion risk increases by +40%.',
         multiplier: 0.40,
+        isDoNothing: true,
         competencyGates: [],
       },
     ],
@@ -138,6 +139,7 @@ export const vantageEvents: GameEvent[] = [
         description:
           'Apex will escalate. The \'Apex Escalation\' event fires in Q3 as Tier 2 guaranteed.',
         multiplier: 0.35,
+        isDoNothing: true,
         competencyGates: [],
       },
     ],
@@ -228,6 +230,7 @@ export const vantageEvents: GameEvent[] = [
         description:
           'Say-on-pay failure at AGM becomes near-certain. Governance health -10.',
         multiplier: 0.40,
+        isDoNothing: true,
         competencyGates: [],
       },
     ],
@@ -312,6 +315,7 @@ export const vantageEvents: GameEvent[] = [
         description:
           'Minimal response; wait and see. Risk: inquiry escalates to formal investigation in Q3.',
         multiplier: 0.35,
+        isDoNothing: true,
         competencyGates: [],
       },
     ],
@@ -705,6 +709,7 @@ export const vantageEvents: GameEvent[] = [
         description:
           'No preparation. AGM results depend entirely on governance health and prior event outcomes.',
         multiplier: 0.40,
+        isDoNothing: true,
         competencyGates: [],
       },
     ],
@@ -796,6 +801,7 @@ export const vantageEvents: GameEvent[] = [
         description:
           'Apex requisitions an EGM. Tier 3 Proxy Battle fires next turn. SV -8%.',
         multiplier: 0.25,
+        isDoNothing: true,
         competencyGates: [],
       },
     ],
@@ -894,6 +900,7 @@ export const vantageEvents: GameEvent[] = [
         description:
           '35% chance the story dies naturally. 65% chance it escalates to a media investigation.',
         multiplier: 0.40,
+        isDoNothing: true,
         competencyGates: [],
       },
     ],
@@ -978,6 +985,7 @@ export const vantageEvents: GameEvent[] = [
         description:
           'Very high risk. Only viable if Regulatory & Legal ≥ 85 in deployed team.',
         multiplier: 0.50,
+        isDoNothing: true,
         competencyGates: [{ domain: 'regulatoryLegal', minimumRating: 85 }],
       },
     ],
@@ -1244,6 +1252,7 @@ export const vantageEvents: GameEvent[] = [
         description:
           'Apex wins. Forced board reconstitution. SV -22%.',
         multiplier: 0.15,
+        isDoNothing: true,
         competencyGates: [],
       },
     ],
