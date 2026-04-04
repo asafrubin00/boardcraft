@@ -518,14 +518,20 @@ export function recalcGovernanceBreakdown(
   }
   const skillMatrixCoverage = Math.round((coveredDomains / 8) * 20);
 
-  const total = boardIndependence + committeeCompleteness + chairCeoSeparation + esgGovernance + skillMatrixCoverage;
+  const clampSub = (v: number) => Math.min(20, Math.max(0, v));
+  const cBI = clampSub(boardIndependence);
+  const cCC = clampSub(committeeCompleteness);
+  const cCS = clampSub(chairCeoSeparation);
+  const cESG = clampSub(esgGovernance);
+  const cSMC = clampSub(skillMatrixCoverage);
+  const total = Math.min(100, Math.max(0, cBI + cCC + cCS + cESG + cSMC));
 
   return {
-    boardIndependence,
-    committeeCompleteness,
-    chairCeoSeparation,
-    esgGovernance,
-    skillMatrixCoverage,
+    boardIndependence: cBI,
+    committeeCompleteness: cCC,
+    chairCeoSeparation: cCS,
+    esgGovernance: cESG,
+    skillMatrixCoverage: cSMC,
     total,
   };
 }
@@ -538,26 +544,28 @@ export function rescaleBreakdown(
 ): GovernanceHealthBreakdown {
   const oldTotal = breakdown.total;
   if (oldTotal === 0 || oldTotal === newTotal) return { ...breakdown, total: newTotal };
-  const ratio = newTotal / oldTotal;
+  const clampedTotal = Math.min(100, Math.max(0, newTotal));
+  const ratio = clampedTotal / oldTotal;
+  const clampSub = (v: number) => Math.min(20, Math.max(0, v));
   const scaled = {
-    boardIndependence: Math.round(breakdown.boardIndependence * ratio),
-    committeeCompleteness: Math.round(breakdown.committeeCompleteness * ratio),
-    chairCeoSeparation: Math.round(breakdown.chairCeoSeparation * ratio),
-    esgGovernance: Math.round(breakdown.esgGovernance * ratio),
-    skillMatrixCoverage: Math.round(breakdown.skillMatrixCoverage * ratio),
-    total: newTotal,
+    boardIndependence: clampSub(Math.round(breakdown.boardIndependence * ratio)),
+    committeeCompleteness: clampSub(Math.round(breakdown.committeeCompleteness * ratio)),
+    chairCeoSeparation: clampSub(Math.round(breakdown.chairCeoSeparation * ratio)),
+    esgGovernance: clampSub(Math.round(breakdown.esgGovernance * ratio)),
+    skillMatrixCoverage: clampSub(Math.round(breakdown.skillMatrixCoverage * ratio)),
+    total: clampedTotal,
   };
-  // Fix rounding drift: adjust the largest component
+  // Fix rounding drift: adjust the largest component (respecting cap)
   const sum = scaled.boardIndependence + scaled.committeeCompleteness +
     scaled.chairCeoSeparation + scaled.esgGovernance + scaled.skillMatrixCoverage;
-  const diff = newTotal - sum;
+  const diff = clampedTotal - sum;
   if (diff !== 0) {
     const keys: (keyof Omit<GovernanceHealthBreakdown, 'total'>)[] = [
       'boardIndependence', 'committeeCompleteness', 'chairCeoSeparation',
       'esgGovernance', 'skillMatrixCoverage',
     ];
     const largest = keys.reduce((a, b) => scaled[a] >= scaled[b] ? a : b);
-    scaled[largest] += diff;
+    scaled[largest] = clampSub(scaled[largest] + diff);
   }
   return scaled;
 }

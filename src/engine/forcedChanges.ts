@@ -94,7 +94,7 @@ export function applyForcedRemoval(
 
 export function applyRetainDirector(state: GameState): GameState {
   // Governance health penalty: -8
-  const newGH = Math.max(0, state.governanceHealth - 8);
+  const newGH = Math.max(0, Math.min(100, state.governanceHealth - 8));
 
   // Activate the risk flag on the director
   const dirId = state.forcedChange?.directorId;
@@ -127,7 +127,7 @@ export function tickForcedChangeTimer(state: GameState): GameState {
     // Time expired — apply governance health penalty
     return {
       ...state,
-      governanceHealth: Math.max(0, state.governanceHealth - 10),
+      governanceHealth: Math.max(0, Math.min(100, state.governanceHealth - 10)),
       forcedChange: null,
     };
   }

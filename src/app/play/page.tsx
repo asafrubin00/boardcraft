@@ -604,7 +604,7 @@ function BoardConstructionWrapper({
   const dismissHint = useCallback(() => {
     setHintsShown(prev => {
       const next = prev + 1;
-      if (next > 2) {
+      if (next > 7) {
         if (typeof window !== 'undefined') localStorage.setItem('boardcraft_hints_seen', 'true');
         return -1;
       }
@@ -647,10 +647,37 @@ function BoardConstructionWrapper({
   const complianceErrors = useMemo(() => checkCompliance(seats, availableDirectors, committees, company.jurisdiction, isCombinedChairCeo), [seats, availableDirectors, committees, company.jurisdiction, isCombinedChairCeo]);
   const hasBlockingErrors = complianceErrors.some((e) => e.severity === 'error');
 
+  // Derived seat-role helpers for contextual hints (hints 3-7)
+  const hasChairFilled = useMemo(() => seats.some(s => s.role === 'chair'), [seats]);
+  const hasAuditChairFilled = useMemo(() => seats.some(s => s.role === 'auditChair'), [seats]);
+  const hasRemChairFilled = useMemo(() => seats.some(s => s.role === 'remChair'), [seats]);
+  const hasIndependenceError = useMemo(() => complianceErrors.some(e => e.message.toLowerCase().includes('independen')), [complianceErrors]);
+  const budgetLow = remaining < budget * 0.2 && budget > 0;
+
+  // Hint 3 condition: chair filled but audit chair empty
+  const hint3Ready = hasChairFilled && !hasAuditChairFilled;
+  // Hint 4 condition: chair + audit filled but rem empty
+  const hint4Ready = hasChairFilled && hasAuditChairFilled && !hasRemChairFilled;
+  // Hint 5 condition: triggered when Board Strength popover opens (handled in onClick)
+  // Hint 6 condition: independence compliance error present
+  const hint6Ready = hasIndependenceError;
+  // Hint 7 condition: budget below 20%
+  const hint7Ready = budgetLow;
+
   useEffect(() => {
+    // Hints 0-2: original sequential flow
     if (hintsShown === 0 && seats.length > 0) setHintsShown(1);
     if (hintsShown === 1 && !hasBlockingErrors) setHintsShown(2);
-  }, [seats.length, hasBlockingErrors, hintsShown]);
+    // Hint 3: skip if audit chair already filled
+    if (hintsShown === 3 && hasAuditChairFilled) setHintsShown(4);
+    // Hint 4: skip if rem chair already filled
+    if (hintsShown === 4 && hasRemChairFilled) setHintsShown(5);
+    // Hint 5: Board Strength popover — skip if popover was already opened (wait handled below)
+    // Hint 6: skip if no independence error and board has 6+ seats
+    if (hintsShown === 6 && !hasIndependenceError && seats.length >= 6) setHintsShown(7);
+    // Hint 7: skip if budget is not low and board is nearly full
+    if (hintsShown === 7 && !budgetLow && seats.length >= 7) setHintsShown(8);
+  }, [seats.length, hasBlockingErrors, hintsShown, hasChairFilled, hasAuditChairFilled, hasRemChairFilled, hasIndependenceError, budgetLow]);
 
   // ── Core handlers (preserved) ──
   const handleRemoveDirector = useCallback((id: string) => {
@@ -1188,6 +1215,41 @@ function BoardConstructionWrapper({
         {hintsShown === 2 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
             <p className="text-xs text-foreground/80 mb-2">Happy with your board? Lock it in &mdash; your picks are permanent until the AGM</p>
+            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
+          </motion.div>
+        )}
+        {hintsShown === 3 && hint3Ready && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
+            <p className="text-[11px] text-gold font-semibold mb-1">Now appoint your Audit Chair</p>
+            <p className="text-xs text-foreground/80 mb-2">Your Audit Chair needs strong Financial Oversight &mdash; look for a score of 75 or above. Click &lsquo;Financial&rsquo; in the filter bar to find the best candidates. Drag them into the Audit Chair seat.</p>
+            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
+          </motion.div>
+        )}
+        {hintsShown === 4 && hint4Ready && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
+            <p className="text-[11px] text-gold font-semibold mb-1">Remuneration Committee Chair</p>
+            <p className="text-xs text-foreground/80 mb-2">Your Rem Chair oversees executive pay. They need strong People &amp; Culture credentials. A vacant Rem Chair will hurt your governance health score.</p>
+            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
+          </motion.div>
+        )}
+        {hintsShown === 5 && showStrength && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
+            <p className="text-[11px] text-gold font-semibold mb-1">Your board&rsquo;s combined strength</p>
+            <p className="text-xs text-foreground/80 mb-2">This shows your team&rsquo;s average score across all eight domains. Events will test specific domains &mdash; a balanced board handles more situations effectively.</p>
+            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
+          </motion.div>
+        )}
+        {hintsShown === 6 && hint6Ready && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
+            <p className="text-[11px] text-gold font-semibold mb-1">Independence matters</p>
+            <p className="text-xs text-foreground/80 mb-2">Most committee chairs must be independent directors. Directors with the &lsquo;Questionable&rsquo; badge may not qualify &mdash; check before assigning them to key roles.</p>
+            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
+          </motion.div>
+        )}
+        {hintsShown === 7 && hint7Ready && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
+            <p className="text-[11px] text-gold font-semibold mb-1">Watch your budget</p>
+            <p className="text-xs text-foreground/80 mb-2">You&rsquo;re running low on board budget. Remember you can remove directors and replace them with lower-cost alternatives &mdash; or leave seats empty and accept the governance health penalty.</p>
             <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
           </motion.div>
         )}
