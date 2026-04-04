@@ -73,17 +73,56 @@ function getProxyColor(rating: string): string {
   return 'text-error';
 }
 
-function getNarrative(sv: number): string {
-  if (sv > 110) {
-    return 'Outstanding governance. The board has delivered exceptional value under pressure, demonstrating the kind of stewardship that earns lasting institutional trust. Meridian Governance has rated the board among the top-tier in the sector.';
+function generateVerdict(gameState: GameState, careerTitle: string, eventNameMap: Record<string, string>): string {
+  const sv = gameState.svIndex;
+  const gh = gameState.governanceHealth;
+  const startGh = gameState.company.startingGovernanceHealth;
+  const resolved = gameState.resolvedEvents;
+
+  let opening: string;
+  if (sv > 115) opening = 'A masterclass in governance under pressure.';
+  else if (sv > 105) opening = 'A solid year — the board held its nerve when it mattered.';
+  else if (sv > 95) opening = 'A mixed year. Some good decisions, some costly ones.';
+  else if (sv > 85) opening = 'A difficult year that exposed real weaknesses in the board.';
+  else opening = 'A governance failure. The board was not equal to the challenges it faced.';
+
+  let bestLine = '';
+  if (resolved.length > 0) {
+    const best = [...resolved].sort((a, b) => b.svDelta - a.svDelta)[0];
+    if (best.svDelta > 0) {
+      const tier = best.outcomeTier.replace('_', ' ').toLowerCase();
+      bestLine = ` Your strongest moment was ${eventNameMap[best.eventId] ?? best.eventId} — a ${tier} that added ${best.svDelta.toFixed(1)}% to shareholder value.`;
+    }
   }
-  if (sv >= 100) {
-    return 'Solid governance. The board has maintained and grown shareholder value through a turbulent year. While not without missteps, the overall trajectory reflects competent oversight and strategic awareness.';
+
+  let worstLine = '';
+  if (resolved.length > 0) {
+    const worst = [...resolved].sort((a, b) => a.svDelta - b.svDelta)[0];
+    if (worst.svDelta < 0) {
+      const tier = worst.outcomeTier.replace('_', ' ').toLowerCase();
+      worstLine = ` The low point was ${eventNameMap[worst.eventId] ?? worst.eventId}, where a ${tier} cost ${Math.abs(worst.svDelta).toFixed(1)}% in shareholder value.`;
+    }
   }
-  if (sv >= 80) {
-    return 'Mixed governance. The board faced significant challenges and held some ground, but key decisions fell short of expectations. Institutional confidence has been tested, and the proxy adviser outlook remains cautious.';
+
+  let ghLine: string;
+  if (gh > startGh) {
+    ghLine = ` Governance health improved across the year, ending at ${gh}/100.`;
+  } else if (gh < startGh) {
+    ghLine = ` Governance health deteriorated, ending at ${gh}/100 — a warning sign for the year ahead.`;
+  } else {
+    ghLine = ` Governance health held steady at ${gh}/100.`;
   }
-  return 'Governance has failed. The board\'s inability to navigate crises has eroded shareholder value and institutional trust. A full board review is inevitable, and activist pressure will intensify in the coming year.';
+
+  const closings: Record<string, string> = {
+    'Legend of the Boardroom': 'Few have governed better.',
+    'Governance Authority': 'A reputation that opens boardroom doors across the City.',
+    'Seasoned Governance Professional': 'A solid track record that will serve you well.',
+    'Non-Executive Director': 'The foundations are laid. The next board will be sharper.',
+    'Board Apprentice': 'Every career starts somewhere. The lessons here will be invaluable.',
+  };
+  const closing = ` You leave this board as a ${careerTitle}. ${closings[careerTitle] || ''}`;
+
+  return opening + bestLine + worstLine + ghLine + closing;
 }
 
 function SvSparkline({ data }: { data: { turn: string; sv: number }[] }) {
@@ -473,7 +512,7 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
           transition={{ delay: 0.8, duration: 0.6 }}
         >
           <p className="font-narrative italic text-foreground/80 text-lg leading-relaxed max-w-3xl mx-auto">
-            {getNarrative(gameState.svIndex)}
+            {generateVerdict(gameState, careerStats ? getCareerTitle(careerStats.totalGc) : 'Board Apprentice', eventNameMap)}
           </p>
         </motion.div>
 

@@ -454,7 +454,6 @@ function PlayPageInner() {
 import { directors as allDirectors } from '@/data/directors';
 import { computeFeeWithPremium, checkCompliance } from '@/engine/compliance';
 import CompliancePanel from '@/components/CompliancePanel';
-import BudgetDonut from '@/components/BudgetDonut';
 import BoardroomTable, {
   TABLE_POSITIONS,
   deriveTablePositions,
@@ -535,6 +534,11 @@ function BoardConstructionWrapper({
   const [sortBy, setSortBy] = useState<'fee' | 'score'>('fee');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [showLockConfirm, setShowLockConfirm] = useState(false);
+  const [showStrength, setShowStrength] = useState(false);
+  const [hintsShown, setHintsShown] = useState<number>(() => {
+    if (typeof window === 'undefined') return -1;
+    return localStorage.getItem('boardcraft_hints_seen') ? -1 : 0;
+  });
   const [showRestartBanner, setShowRestartBanner] = useState(isRestart);
 
   // ── Interaction state ──
@@ -597,6 +601,17 @@ function BoardConstructionWrapper({
 
   useEffect(() => { ensureAudioContext(); }, []);
 
+  const dismissHint = useCallback(() => {
+    setHintsShown(prev => {
+      const next = prev + 1;
+      if (next > 2) {
+        if (typeof window !== 'undefined') localStorage.setItem('boardcraft_hints_seen', 'true');
+        return -1;
+      }
+      return next;
+    });
+  }, []);
+
   // ── Derived ──
   const budget = company.boardBudget;
   const etFormationCost = company.committees.find((c) => c.id === 'energyTransition')?.formationCost ?? 180_000;
@@ -631,6 +646,11 @@ function BoardConstructionWrapper({
   const isCombinedChairCeo = company.id === 'company_vantage';
   const complianceErrors = useMemo(() => checkCompliance(seats, availableDirectors, committees, company.jurisdiction, isCombinedChairCeo), [seats, availableDirectors, committees, company.jurisdiction, isCombinedChairCeo]);
   const hasBlockingErrors = complianceErrors.some((e) => e.severity === 'error');
+
+  useEffect(() => {
+    if (hintsShown === 0 && seats.length > 0) setHintsShown(1);
+    if (hintsShown === 1 && !hasBlockingErrors) setHintsShown(2);
+  }, [seats.length, hasBlockingErrors, hintsShown]);
 
   // ── Core handlers (preserved) ──
   const handleRemoveDirector = useCallback((id: string) => {
@@ -708,7 +728,7 @@ function BoardConstructionWrapper({
         return [...filtered, { directorId, role: pos.defaultRole, feeWithPremium: fee }];
       });
     }
-    setActiveSeatIdx(posIdx); setSelectedDirId(null);
+    setActiveSeatIdx(null); setSelectedDirId(null);
     playBoardSeatDrop();
   }, [boardIdSet, committed, budget, handleRoleChange, pushAndSetSeats, directorMap]);
 
@@ -908,7 +928,14 @@ function BoardConstructionWrapper({
                   <h2 className="text-3xl font-bold text-gold tracking-widest font-narrative">BOARDCRAFT</h2>
                   <p className="text-xs text-foreground/50 mt-2 font-narrative italic">Build your board. Navigate the crises. Maximise shareholder value.</p>
                 </div>
-                <BudgetDonut total={budget} seatsFee={seatsFee} etCost={etCost} />
+                <div>
+                  <div className="w-full h-3 bg-navy-dark rounded-full overflow-hidden">
+                    <div className="h-full bg-gold rounded-full transition-all" style={{ width: `${Math.min((committed / budget) * 100, 100)}%` }} />
+                  </div>
+                  <p className="text-[10px] text-foreground/40 text-center mt-1.5">
+                    {fmt(committed)} committed · {fmt(Math.max(0, remaining))} remaining · {fmt(budget)} total
+                  </p>
+                </div>
                 <CompliancePanel errors={complianceErrors} />
                 {/* ET Toggle — only show if company has ET committee definition */}
                 {hasETCommittee && (
@@ -1106,45 +1133,65 @@ function BoardConstructionWrapper({
           </div>
           <p className="text-[10px] text-foreground/30 mt-2 text-center flex-shrink-0">Click a seat to assign · Click a filled seat to view profile</p>
 
-          {/* Board Strength Profile (Harvey balls) */}
+          {/* Board Strength — hover popover */}
           {seats.length > 0 && (
-            <div className="mt-3 flex-shrink-0 rounded-lg border border-card-border bg-card-bg p-3">
-              <h4 className="text-[9px] text-gold uppercase tracking-wider font-semibold mb-2 text-center">Board Strength Profile</h4>
-              <div className="grid grid-cols-4 gap-2">
-                {ALL_DOMAINS.map((domain, i) => {
-                  const avg = boardAvgDomains[i];
-                  // Harvey ball: filled proportionally
-                  const pct = avg / 100;
-                  return (
-                    <div key={domain} className="flex flex-col items-center">
-                      <svg width="28" height="28" viewBox="0 0 28 28">
-                        {/* Empty circle */}
-                        <circle cx="14" cy="14" r="12" fill="none" stroke="#1A3A5C" strokeWidth="2" />
-                        {/* Filled arc — clockwise from top */}
-                        {pct > 0 && (
-                          <circle
-                            cx="14" cy="14" r="12"
-                            fill="none"
-                            stroke="#C8960C"
-                            strokeWidth="2"
-                            strokeDasharray={`${pct * 75.4} ${75.4}`}
-                            strokeDashoffset="0"
-                            transform="rotate(-90 14 14)"
-                            strokeLinecap="round"
-                          />
-                        )}
-                        {/* Score text */}
-                        <text x="14" y="15.5" textAnchor="middle" fill="#C8960C" fontSize="8" fontWeight="bold">{avg}</text>
-                      </svg>
-                      <span className="text-[7px] text-foreground/40 mt-0.5 text-center leading-tight">{DOMAIN_SHORT[domain]}</span>
-                    </div>
-                  );
-                })}
-              </div>
+            <div className="mt-3 flex-shrink-0 relative" onMouseLeave={() => setShowStrength(false)}>
+              <button
+                onClick={() => setShowStrength(p => !p)}
+                onMouseEnter={() => setShowStrength(true)}
+                className="w-full py-1.5 px-3 rounded-full border border-gold/40 text-gold text-[11px] font-semibold hover:bg-gold/10 transition-colors cursor-pointer text-center"
+              >
+                Board Strength &#8599;
+              </button>
+              {showStrength && (
+                <div className="absolute bottom-full right-0 mb-2 z-50 rounded-lg border border-gold/30 bg-navy-light shadow-xl p-4" style={{ minWidth: 320 }}>
+                  <h4 className="text-[10px] text-gold uppercase tracking-wider font-semibold mb-3 text-center">Board Strength Profile</h4>
+                  <div className="grid grid-cols-4 gap-3">
+                    {ALL_DOMAINS.map((domain, i) => {
+                      const avg = boardAvgDomains[i];
+                      const pct = avg / 100;
+                      return (
+                        <div key={domain} className="flex flex-col items-center">
+                          <svg width="32" height="32" viewBox="0 0 28 28">
+                            <circle cx="14" cy="14" r="12" fill="none" stroke="#1A3A5C" strokeWidth="2" />
+                            {pct > 0 && (
+                              <circle cx="14" cy="14" r="12" fill="none" stroke="#C8960C" strokeWidth="2" strokeDasharray={`${pct * 75.4} ${75.4}`} strokeDashoffset="0" transform="rotate(-90 14 14)" strokeLinecap="round" />
+                            )}
+                            <text x="14" y="15.5" textAnchor="middle" fill="#C8960C" fontSize="8" fontWeight="bold">{avg}</text>
+                          </svg>
+                          <span className="text-[8px] text-foreground/50 mt-0.5 text-center leading-tight">{DOMAIN_SHORT[domain]}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      {/* First-time hints */}
+      <AnimatePresence>
+        {hintsShown === 0 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-8 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
+            <p className="text-xs text-foreground/80 mb-2">Browse directors and drag them onto the board seats &rarr;</p>
+            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
+          </motion.div>
+        )}
+        {hintsShown === 1 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
+            <p className="text-xs text-foreground/80 mb-2">Resolve all errors before starting &mdash; red means blocked, amber means warning</p>
+            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
+          </motion.div>
+        )}
+        {hintsShown === 2 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
+            <p className="text-xs text-foreground/80 mb-2">Happy with your board? Lock it in &mdash; your picks are permanent until the AGM</p>
+            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Lock modal */}
       <AnimatePresence>

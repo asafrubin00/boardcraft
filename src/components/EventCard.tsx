@@ -10,6 +10,17 @@ import type {
 import { DOMAIN_LABELS } from '@/engine/boardConstants';
 import EventIllustration from './EventIllustration';
 
+const DOMAIN_COLORS: Record<string, string> = {
+  peopleCulture: '#E8A838',
+  financialOversight: '#2ECC71',
+  regulatoryLegal: '#5B9BD5',
+  strategyMarkets: '#9B59B6',
+  esgSustainability: '#27AE60',
+  geopoliticalMacro: '#E67E22',
+  technologyDigital: '#17A589',
+  stakeholderComms: '#E74C3C',
+};
+
 interface EventCardProps {
   event: GameEvent;
   directors: Director[];
@@ -33,6 +44,13 @@ function formatFee(value: number): string {
     return `£${Math.round(value / 1_000)}k`;
   }
   return `£${value}`;
+}
+
+function getMultiplierBadge(multiplier: number): { label: string; className: string } | null {
+  if (multiplier >= 1.1) return { label: '\u2191 High impact', className: 'bg-gold/20 text-gold border-gold/40' };
+  if (multiplier >= 0.85) return null;
+  if (multiplier >= 0.6) return { label: '\u2193 Conservative', className: 'bg-foreground/10 text-foreground/50 border-foreground/20' };
+  return { label: '\u2014 Passive', className: 'bg-foreground/5 text-foreground/35 border-foreground/15' };
 }
 
 export default function EventCard({
@@ -95,13 +113,21 @@ export default function EventCard({
 
       {/* Domain tags */}
       <div className="flex flex-wrap gap-2 mb-4">
-        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-gold/20 text-gold border border-gold/40">
+        <span
+          className="text-[13px] font-bold px-3 py-1 rounded-full text-white"
+          style={{ backgroundColor: DOMAIN_COLORS[event.primaryDomain] || '#C8960C' }}
+        >
           {DOMAIN_LABELS[event.primaryDomain]} ({Math.round(event.primaryWeight * 100)}%)
         </span>
         {event.secondaryDomains.map(({ domain, weight }) => (
           <span
             key={domain}
-            className="text-[11px] px-2 py-0.5 rounded-full bg-navy-light text-foreground/70 border border-card-border"
+            className="text-[11px] px-2 py-0.5 rounded-full bg-transparent font-medium"
+            style={{
+              color: DOMAIN_COLORS[domain] || '#C8960C',
+              borderWidth: 1,
+              borderColor: DOMAIN_COLORS[domain] || '#C8960C',
+            }}
           >
             {DOMAIN_LABELS[domain]} ({Math.round(weight * 100)}%)
           </span>
@@ -147,10 +173,18 @@ export default function EventCard({
                       : 'border-card-border bg-navy-light hover:shadow-[0_0_12px_rgba(200,150,12,0.15)] cursor-pointer'
                   }`}
                 >
-                  <div className="mb-1">
+                  <div className="mb-1 flex items-center justify-between">
                     <span className="font-bold text-sm text-foreground">
                       {strategy.label}
                     </span>
+                    {(() => {
+                      const badge = getMultiplierBadge(strategy.multiplier);
+                      return badge ? (
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full border ${badge.className}`}>
+                          {badge.label}
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
                   <p className="text-xs text-foreground/60 leading-relaxed">
                     {strategy.description}
