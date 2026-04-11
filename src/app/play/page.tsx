@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import AboutModal from '@/components/AboutModal';
 import type { BoardSeat, GameState, ResolutionOutput, Company, ForcedDirectorChange } from '@/types/game';
 import {
   initializeGameState,
@@ -69,12 +70,29 @@ function buildDevBoard(board: { id: string; role: _DevBoardRole }[]): BoardSeat[
 
 type PlayPhase = 'company_select' | 'board_construction' | 'gameplay' | 'agm' | 'year_end';
 
+function AboutButton() {
+  const [showAbout, setShowAbout] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setShowAbout(true)}
+        className="fixed bottom-4 left-4 z-40 w-8 h-8 rounded-full bg-navy/80 border border-gold/40 text-gold text-sm font-bold flex items-center justify-center hover:bg-navy hover:border-gold/70 transition-colors cursor-pointer"
+        title="About BoardCraft"
+      >
+        ?
+      </button>
+      <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />
+    </>
+  );
+}
+
 export default function PlayPage() {
   return (
     <ErrorBoundary>
       <Suspense fallback={<div className="min-h-screen bg-navy" />}>
         <PlayPageInner />
       </Suspense>
+      <AboutButton />
     </ErrorBoundary>
   );
 }

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { getCareerStats, getCareerTitle, getLeaderboard, clearLeaderboard, type LeaderboardEntry } from '@/engine/governanceCapital';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import AboutModal from '@/components/AboutModal';
 
 function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
@@ -77,14 +79,21 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 }
 
 function HomeInner() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
+  const [showAboutInfo, setShowAboutInfo] = useState(false);
   const [careerGc, setCareerGc] = useState(0);
 
   useEffect(() => {
     setMounted(true);
     const stats = getCareerStats();
     setCareerGc(stats.totalGc);
+    // Auto-show About modal on first visit
+    if (!localStorage.getItem('boardcraft_about_seen')) {
+      setShowAbout(true);
+    }
   }, []);
 
   return (
@@ -201,10 +210,33 @@ function HomeInner() {
         }
       `}</style>
 
+      {/* Persistent About "?" button */}
+      <button
+        onClick={() => setShowAboutInfo(true)}
+        className="fixed bottom-4 left-4 z-40 w-8 h-8 rounded-full bg-navy/80 border border-gold/40 text-gold text-sm font-bold flex items-center justify-center hover:bg-navy hover:border-gold/70 transition-colors cursor-pointer"
+        title="About BoardCraft"
+      >
+        ?
+      </button>
+
       {/* Leaderboard Modal */}
       {showLeaderboard && (
         <LeaderboardModal isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
       )}
+
+      {/* About Modal — first visit (with nav buttons) */}
+      <AboutModal
+        isOpen={showAbout}
+        onClose={() => { setShowAbout(false); localStorage.setItem('boardcraft_about_seen', 'true'); }}
+        showNavButtons
+        onStartPlaying={() => { localStorage.setItem('boardcraft_about_seen', 'true'); router.push('/play'); }}
+      />
+
+      {/* About Modal — info button (close only) */}
+      <AboutModal
+        isOpen={showAboutInfo}
+        onClose={() => setShowAboutInfo(false)}
+      />
     </div>
   );
 }

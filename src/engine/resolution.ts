@@ -140,6 +140,8 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
 
   let matchScore = 0;
   let strategyMultiplier = 0.5;
+  // Do Nothing score floor: Tier 1 events are more forgiving of inaction
+  const doNothingFloor = isDoNothing ? (event.tier === 1 ? 30 : 20) : 0;
 
   if (!isDoNothing && deployedDirectors.length > 0) {
     // Step 2: Compute Director Match Score
@@ -252,6 +254,8 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
 
   // Step 7: Raw score before randomness
   let rawScore = matchScore * strategyMultiplier + committeeBonus;
+  // Apply Do Nothing floor: ensures inaction isn't always Critical Failure
+  if (doNothingFloor > 0) rawScore = Math.max(doNothingFloor, rawScore);
   rawScore = clamp(rawScore, 0, 115);
 
   // Step 8: Randomness factor
