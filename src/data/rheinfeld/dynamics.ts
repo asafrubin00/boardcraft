@@ -6,14 +6,14 @@ export const rheinfeldDynamics: DirectorDynamic[] = [
     directorBId: 'rdir_08_vonkessler',
     type: 'positive',
     modifier: 13,
-    triggerDescription: 'Governance reform pairing — academic + legal expertise. Both deployed on governance reform or compliance events.',
+    triggerDescription: 'Governance reform pairing - academic + legal expertise. Both deployed on governance reform or compliance events.',
   },
   {
     directorAId: 'rdir_04_taniguchi',
     directorBId: 'rdir_06_brandt',
     type: 'positive',
     modifier: 12,
-    triggerDescription: 'Geopolitical + industry expertise — natural China pivot team. Both deployed on China pivot or supply chain events.',
+    triggerDescription: 'Geopolitical + industry expertise - natural China pivot team. Both deployed on China pivot or supply chain events.',
   },
   {
     directorAId: 'rdir_05_becker',
@@ -41,6 +41,6 @@ export const rheinfeldDynamics: DirectorDynamic[] = [
     directorBId: 'rdir_w_koch',
     type: 'positive',
     modifier: 10,
-    triggerDescription: 'Mutual respect built over years in German industry — can broker worker rep support. Both deployed on workforce or restructuring events.',
+    triggerDescription: 'Mutual respect built over years in German industry - can broker worker rep support. Both deployed on workforce or restructuring events.',
   },
 ];

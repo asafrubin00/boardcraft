@@ -29,6 +29,8 @@ export type BoardRole =
   | 'techChair'
   | 'safetyEnvChair'
   | 'energyTransitionChair'
+  | 'csrdChair'
+  | 'strategyChair'
   | 'ned';
 
 export type MarketCapTier = 'nano_small' | 'mid' | 'large' | 'mega';
@@ -84,7 +86,7 @@ export interface Director {
   riskFlag: RiskFlag | null;
   suitableRoles: string;
   inherited: boolean;
-  /** Years of service on this board — used for tenure independence warnings */
+  /** Years of service on this board - used for tenure independence warnings */
   tenureYears?: number;
 }
 

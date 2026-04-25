@@ -14,9 +14,9 @@ interface ForcedChangeModalProps {
   budget: number;
   committed: number;
   jurisdiction?: string;
-  onDismiss: (directorId: string) => void;
+  /** Called only when player has selected a replacement AND confirmed - atomic dismiss+replace */
+  onDismissAndReplace: (dismissedDirectorId: string, newDirectorId: string, role: BoardRole) => void;
   onRetain?: () => void;
-  onReplace: (newDirectorId: string, role: BoardRole) => void;
 }
 
 const ROLE_OPTIONS: { role: BoardRole; label: string }[] = [
@@ -35,9 +35,8 @@ export default function ForcedChangeModal({
   budget,
   committed,
   jurisdiction = 'UK',
-  onDismiss,
+  onDismissAndReplace,
   onRetain,
-  onReplace,
 }: ForcedChangeModalProps) {
   const [phase, setPhase] = useState<'decision' | 'replacement'>('decision');
   const [selectedDirId, setSelectedDirId] = useState<string | null>(null);
@@ -57,6 +56,12 @@ export default function ForcedChangeModal({
   const selectedDir = selectedDirId ? directors.find((d) => d.id === selectedDirId) : null;
   const replacementFee = selectedDir ? computeFeeWithPremium(selectedDir.annualFee, selectedRole) : 0;
   const canAfford = replacementFee <= remaining;
+
+  const handleConfirm = () => {
+    if (!selectedDirId || !canAfford) return;
+    // Single atomic call - dismiss the departing director AND appoint replacement
+    onDismissAndReplace(forcedChange.directorId, selectedDirId, selectedRole);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -96,12 +101,9 @@ export default function ForcedChangeModal({
               </div>
 
               <div className="flex flex-col gap-3">
-                {/* Dismiss & Replace */}
+                {/* Dismiss & Replace - moves to replacement picker, no game state change yet */}
                 <button
-                  onClick={() => {
-                    onDismiss(forcedChange.directorId);
-                    setPhase('replacement');
-                  }}
+                  onClick={() => setPhase('replacement')}
                   className="w-full py-3 px-4 rounded-lg bg-gold/10 border border-gold/40 text-gold font-semibold hover:bg-gold/20 transition-colors text-sm cursor-pointer"
                 >
                   Dismiss {forcedChange.directorName} &amp; Appoint Replacement
@@ -120,6 +122,14 @@ export default function ForcedChangeModal({
             </motion.div>
           ) : (
             <motion.div key="replacement" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              {/* Back button */}
+              <button
+                onClick={() => { setPhase('decision'); setSelectedDirId(null); }}
+                className="text-xs text-foreground/50 hover:text-foreground mb-3 flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                &#8592; Back
+              </button>
+
               <h3 className="text-sm font-semibold text-gold uppercase tracking-wide mb-3">Select Replacement Director</h3>
 
               {/* Role selector */}
@@ -161,7 +171,7 @@ export default function ForcedChangeModal({
                       <div className="min-w-0">
                         <div className="text-xs font-bold text-foreground truncate">{d.name}</div>
                         <div className="text-[11px] text-foreground/50">
-                          {jurisdiction === 'US' ? '$' : '\u00a3'}{Math.round(fee / 1000)}k
+                          {jurisdiction === 'US' ? '$' : '£'}{Math.round(fee / 1000)}k
                           {!affordable && ' (over budget)'}
                         </div>
                       </div>
@@ -174,17 +184,17 @@ export default function ForcedChangeModal({
                 <p className="text-foreground/50 text-sm italic text-center py-4">No available directors in the pool.</p>
               )}
 
-              {/* Confirm */}
+              {/* Confirm - fires the atomic dismiss+replace only when a director is selected */}
               <button
                 disabled={!selectedDirId || !canAfford}
-                onClick={() => selectedDirId && onReplace(selectedDirId, selectedRole)}
+                onClick={handleConfirm}
                 className={`w-full py-3 rounded-lg font-semibold text-sm transition-all ${
                   selectedDirId && canAfford
                     ? 'bg-gold text-navy-dark hover:bg-gold-light cursor-pointer'
                     : 'bg-navy-light text-foreground/40 cursor-not-allowed'
                 }`}
               >
-                {selectedDirId ? `Appoint ${selectedDir?.name}` : 'Select a Director'}
+                {selectedDirId ? `Confirm: Dismiss & Appoint ${selectedDir?.name}` : 'Select a Director to Continue'}
               </button>
             </motion.div>
           )}

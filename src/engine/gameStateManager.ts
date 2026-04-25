@@ -83,11 +83,11 @@ export function initializeGameState(
     // Rheinfeld-specific committees (activated via optional committees param)
     csrd: {
       active: co.committees.some((c) => c.id === 'csrd' && c.status === 'active') || (optionalCommittees?.includes('csrd') ?? false),
-      chairDirectorId: null,
+      chairDirectorId: findChair('csrdChair'),
     },
     strategy: {
       active: co.committees.some((c) => c.id === 'strategy' && c.status === 'active') || (optionalCommittees?.includes('strategy') ?? false),
-      chairDirectorId: null,
+      chairDirectorId: findChair('strategyChair'),
     },
   };
 
@@ -154,7 +154,7 @@ export function getCurrentEvent(state: GameState): GameEvent | null {
 
   // Check board-state precondition
   if (!checkEventPrecondition(event, state)) {
-    return null; // Precondition not met — skip this event
+    return null; // Precondition not met - skip this event
   }
 
   // Check conditional events (outcome-based triggers)
@@ -193,14 +193,14 @@ export function checkEventPrecondition(
     case 'energyTransitionNotEstablished': {
       return !state.committees.energyTransition.active;
     }
-    // AUDIT: Vantage — guard vevent_01 ("Patricia Nguyen: Conflict of Interest").
+    // AUDIT: Vantage - guard vevent_01 ("Patricia Nguyen: Conflict of Interest").
     // Patricia Nguyen (vdir_02_nguyen) is an inherited board member that the player can drop during
     // board construction. If she is not seated, the event narrative makes no sense and must not fire.
     case 'vantage_nguyen_on_board': {
       return state.board.seats.some((s) => s.directorId === 'vdir_02_nguyen');
     }
 
-    // AUDIT: Harwick — guard event_10 ("Greenvale Escalation").
+    // AUDIT: Harwick - guard event_10 ("Greenvale Escalation").
     // event_10 should only be reachable when event_04 was resolved at PARTIAL_SUCCESS or worse.
     // checkEventCondition() already enforces this via the legacy switch, but having the same check
     // here in checkEventPrecondition() means the guard fires even if isConditional is ever changed.
@@ -214,7 +214,7 @@ export function checkEventPrecondition(
       );
     }
 
-    // AUDIT: Harwick — guard event_15 ("Full Proxy Battle").
+    // AUDIT: Harwick - guard event_15 ("Full Proxy Battle").
     // event_15 requires governance health < 50 AND event_10 resolved as FAILURE or CRITICAL_FAILURE.
     // checkEventCondition() also enforces this via the legacy switch; the precondition adds a
     // belt-and-suspenders board-state gate here.
@@ -234,7 +234,7 @@ export function checkEventPrecondition(
       return true; // conditionConfig handles the outcome check
     }
     case 'vantage_hostile_bid': {
-      // V-13: probability-based — always allow through precondition,
+      // V-13: probability-based - always allow through precondition,
       // actual firing is handled by conditionConfig or SV thresholds
       return true;
     }
@@ -247,7 +247,7 @@ export function checkEventPrecondition(
 
     // ── Rheinfeld-specific preconditions ──
 
-    // R-04: Heinrich blocks appointment — fires if the player filled one of the two
+    // R-04: Heinrich blocks appointment - fires if the player filled one of the two
     // vacant shareholder seats during board construction (board has > 8 seats, meaning
     // at least one of the two slots beyond the 8 inherited members was filled).
     case 'heinrichBlocks': {
@@ -258,19 +258,19 @@ export function checkEventPrecondition(
       return state.board.seats.some((s) => !inheritedIds.has(s.directorId));
     }
 
-    // R-12: Meridian EGM threat — fires if Meridian is escalating AND GH < 55
+    // R-12: Meridian EGM threat - fires if Meridian is escalating AND GH < 55
     case 'meridianEGM': {
       if (!state.meridianActive) return false;
       if (state.meridianStatus !== 'escalating') return false;
       return state.governanceHealth < 55;
     }
 
-    // R-14: Heinrich conflict — fires only if the conflict has been revealed
+    // R-14: Heinrich conflict - fires only if the conflict has been revealed
     case 'ceoConfidence': {
       return state.heinrichConflictRevealed;
     }
 
-    // R-15: Full crisis — fires only if GH < 45 AND conflict revealed AND Meridian hostile
+    // R-15: Full crisis - fires only if GH < 45 AND conflict revealed AND Meridian hostile
     case 'fullCrisis': {
       if (!state.heinrichConflictRevealed) return false;
       if (state.meridianStatus !== 'hostile') return false;
@@ -308,7 +308,7 @@ function replaceEtcStrategies(event: GameEvent): GameEvent | null {
 }
 
 // ── Check whether a conditional event should fire ──
-// Note: conditions reference event IDs from the event data — these are
+// Note: conditions reference event IDs from the event data - these are
 // company-specific events defined in the company's event schedule.
 
 function checkEventCondition(event: GameEvent, state: GameState): boolean {

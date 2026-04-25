@@ -98,7 +98,7 @@ function HomeInner() {
 
   return (
     <div className="relative min-h-screen bg-navy flex flex-col items-center justify-center text-foreground overflow-hidden">
-      {/* Animated background — slow-moving diagonal lines */}
+      {/* Animated background - slow-moving diagonal lines */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
           className="absolute inset-0"
@@ -224,7 +224,7 @@ function HomeInner() {
         <LeaderboardModal isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
       )}
 
-      {/* About Modal — first visit (with nav buttons) */}
+      {/* About Modal - first visit (with nav buttons) */}
       <AboutModal
         isOpen={showAbout}
         onClose={() => { setShowAbout(false); localStorage.setItem('boardcraft_about_seen', 'true'); }}
@@ -232,7 +232,7 @@ function HomeInner() {
         onStartPlaying={() => { localStorage.setItem('boardcraft_about_seen', 'true'); router.push('/play'); }}
       />
 
-      {/* About Modal — info button (close only) */}
+      {/* About Modal - info button (close only) */}
       <AboutModal
         isOpen={showAboutInfo}
         onClose={() => setShowAboutInfo(false)}

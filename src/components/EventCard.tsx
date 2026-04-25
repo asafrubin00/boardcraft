@@ -81,7 +81,7 @@ export default function EventCard({
         );
         if (!anyMeets) {
           failedGates.push(
-            `Requires ${DOMAIN_LABELS[gate.domain]} ≥ ${gate.minimumRating} — no qualified director on board`
+            `Requires ${DOMAIN_LABELS[gate.domain]} ≥ ${gate.minimumRating} - no qualified director on board`
           );
         }
       }
@@ -151,7 +151,7 @@ export default function EventCard({
           onClick={onDoNothing}
           className="w-full py-3 px-4 rounded-lg bg-gold text-navy font-bold text-sm hover:bg-gold-light transition-colors cursor-pointer"
         >
-          Meridian Governance Report — Review and Continue
+          Meridian Governance Report - Review and Continue
         </button>
       ) : (
         <>

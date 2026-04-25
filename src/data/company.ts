@@ -5,7 +5,7 @@ export const harwickEnergy: Company = {
   name: 'Harwick Energy PLC',
   shortName: 'HARWICK',
   shortNameSuffix: 'ENERGY PLC',
-  stockExchange: 'London Stock Exchange — FTSE 250',
+  stockExchange: 'London Stock Exchange - FTSE 250',
   marketCap: '\u00a31.84 billion',
   marketCapTier: 'mid',
   industry: 'Oil & Gas Exploration and Production',

@@ -7,7 +7,7 @@ export const vantageDynamics: DirectorDynamic[] = [
     type: 'positive',
     modifier: 14,
     triggerDescription:
-      'Both deployed on activist or M&A events — former banker and former activist understand each other perfectly',
+      'Both deployed on activist or M&A events - former banker and former activist understand each other perfectly',
   },
   {
     directorAId: 'vdir_11_carter',
@@ -15,7 +15,7 @@ export const vantageDynamics: DirectorDynamic[] = [
     type: 'positive',
     modifier: 10,
     triggerDescription:
-      'Both deployed on People & Culture or ESG events — People and ESG specialists reinforce each other on culture events',
+      'Both deployed on People & Culture or ESG events - People and ESG specialists reinforce each other on culture events',
   },
   {
     directorAId: 'vdir_07_finch',
@@ -23,7 +23,7 @@ export const vantageDynamics: DirectorDynamic[] = [
     type: 'positive',
     modifier: 11,
     triggerDescription:
-      'Both deployed on regulatory events — legislative and legal perspectives complement each other',
+      'Both deployed on regulatory events - legislative and legal perspectives complement each other',
   },
   {
     directorAId: 'vdir_01_kellerman',
@@ -31,7 +31,7 @@ export const vantageDynamics: DirectorDynamic[] = [
     type: 'negative',
     modifier: -14,
     triggerDescription:
-      'Both deployed on any event (especially governance events) — Kellerman resents the implication that a new Chair is needed',
+      'Both deployed on any event (especially governance events) - Kellerman resents the implication that a new Chair is needed',
   },
   {
     directorAId: 'vdir_03_whitfield',
@@ -39,7 +39,7 @@ export const vantageDynamics: DirectorDynamic[] = [
     type: 'negative',
     modifier: -10,
     triggerDescription:
-      'Both deployed on Financial Oversight events — both want to chair the Audit Committee; clash when deployed together',
+      'Both deployed on Financial Oversight events - both want to chair the Audit Committee; clash when deployed together',
   },
   {
     directorAId: 'vdir_10_reinholt',
@@ -47,6 +47,6 @@ export const vantageDynamics: DirectorDynamic[] = [
     type: 'negative',
     modifier: -8,
     triggerDescription:
-      'Both deployed on governance or Nom/Gov events — pragmatist vs. theorist; Reinholt dismisses academic governance perspectives',
+      'Both deployed on governance or Nom/Gov events - pragmatist vs. theorist; Reinholt dismisses academic governance perspectives',
   },
 ];

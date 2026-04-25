@@ -73,7 +73,7 @@ export default function BoardPanel({
             className="rounded-lg border-2 border-dashed border-card-border p-4 flex items-center justify-center min-h-[72px]"
           >
             <span className="text-sm text-foreground/50 italic">
-              {ROLE_LABELS[role]} — vacant
+              {ROLE_LABELS[role]} - vacant
             </span>
           </div>
         ))}

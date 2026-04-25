@@ -17,6 +17,8 @@ const ROLE_PREMIUMS: Partial<Record<BoardRole, number>> = {
   sid: 0.18,         // +18% midpoint of 15-20%
   safetyEnvChair: 0.20,
   energyTransitionChair: 0.20,
+  csrdChair: 0.20,
+  strategyChair: 0.20,
 };
 
 export function computeFeeWithPremium(baseFee: number, role: BoardRole): number {
@@ -246,7 +248,7 @@ function checkComplianceEU(
   const errors: ComplianceError[] = [];
   const getDirector = (id: string) => directors.find((d) => d.id === id);
 
-  // Worker representative IDs are fixed seats — exclude from independence/size counts
+  // Worker representative IDs are fixed seats - exclude from independence/size counts
   const WORKER_REP_IDS = new Set([
     'rdir_w_koch', 'rdir_w_alrashid', 'rdir_w_hoffmann', 'rdir_w_mehta', 'rdir_w_gruber',
   ]);
@@ -289,7 +291,7 @@ function checkComplianceEU(
     if (auditDir && auditDir.independence === 'non-independent') {
       errors.push({
         code: 'AUDIT_CHAIR_NOT_INDEPENDENT',
-        message: `The Audit Committee Chair should be independent. ${auditDir.name} is non-independent — this will draw ISS and proxy adviser scrutiny.`,
+        message: `The Audit Committee Chair should be independent. ${auditDir.name} is non-independent - this will draw ISS and proxy adviser scrutiny.`,
         severity: 'warning',
       });
     }
@@ -315,12 +317,12 @@ function checkComplianceEU(
   }
 
   // Rule 3: Nomination Committee Chair should not be the Supervisory Board Chair on contested matters
-  // (Heinrich chairs nom — this is a governance concern)
+  // (Heinrich chairs nom - this is a governance concern)
   const nomChairSeat = seats.find((s) => s.role === 'nomChair');
   if (nomChairSeat && chairId && nomChairSeat.directorId === chairId) {
     errors.push({
       code: 'CHAIR_CHAIRS_NOM',
-      message: 'The Supervisory Board Chair chairs the Nomination Committee. This concentrates influence over appointments — a significant governance concern noted by Meridian Capital (GCGC Rec. D.3).',
+      message: 'The Supervisory Board Chair chairs the Nomination Committee. This concentrates influence over appointments - a significant governance concern noted by Meridian Capital (GCGC Rec. D.3).',
       severity: 'warning',
     });
   }
@@ -336,7 +338,7 @@ function checkComplianceEU(
     });
   }
 
-  // Rule 5: Shareholder-side independence — at least 50% of shareholder seats must be independent
+  // Rule 5: Shareholder-side independence - at least 50% of shareholder seats must be independent
   // (Worker reps are by definition not independent but this is expected under MitbestG)
   const independentShareholderCount = shareholderSeats.filter((s) => {
     const d = getDirector(s.directorId);
@@ -350,10 +352,10 @@ function checkComplianceEU(
     });
   }
 
-  // Rule 6: Co-determination informational — worker reps are as expected under MitbestG
+  // Rule 6: Co-determination informational - worker reps are as expected under MitbestG
   const workerRepCount = seats.filter((s) => WORKER_REP_IDS.has(s.directorId)).length;
   if (workerRepCount === 5) {
-    // Correct — this is merely informational, not an error
+    // Correct - this is merely informational, not an error
     errors.push({
       code: 'MITBESTG_CODETERMINATION',
       message: `${workerRepCount} worker representatives hold fixed Supervisory Board seats as required under MitbestG (co-determination). These seats are non-assignable.`,
@@ -361,7 +363,7 @@ function checkComplianceEU(
     });
   }
 
-  // Rule 7: Tenure warnings (GCGC Rec. C.7 — 12 years for German boards)
+  // Rule 7: Tenure warnings (GCGC Rec. C.7 - 12 years for German boards)
   checkTenureWarnings(seats, directors, errors, 'GCGC Recommendation C.7');
 
   // Rule 8: No duplicate directors
@@ -393,7 +395,7 @@ function checkComplianceUS(
       severity: 'error',
     });
   } else if (combinedChairCeo && !chairSeat) {
-    // Combined Chair/CEO — warn about governance concern
+    // Combined Chair/CEO - warn about governance concern
     errors.push({
       code: 'COMBINED_CHAIR_CEO',
       message: 'The Chair/CEO roles are combined. A Lead Independent Director is essential to offset governance risk.',

@@ -140,7 +140,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [gameState]);
 
   const skipEvent = useCallback(() => {
-    // For Event 08 (report card) — auto-resolve with no deployment
+    // For Event 08 (report card) - auto-resolve with no deployment
     if (!gameState || !currentEvent) return;
 
     if (currentEvent.strategies.length === 0) {

@@ -308,7 +308,7 @@ function playNoiseBurst(
 
 // ── Public sound functions ──
 
-/** BOARD_SEAT_DROP — short satisfying click: 600hz sine, 0.08s */
+/** BOARD_SEAT_DROP - short satisfying click: 600hz sine, 0.08s */
 export function playBoardSeatDrop(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -318,7 +318,7 @@ export function playBoardSeatDrop(): void {
   });
 }
 
-/** BOARD_SEAT_REMOVE — descending whoosh: 500hz→200hz, 0.15s */
+/** BOARD_SEAT_REMOVE - descending whoosh: 500hz→200hz, 0.15s */
 export function playBoardSeatRemove(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -328,7 +328,7 @@ export function playBoardSeatRemove(): void {
   }, 200);
 }
 
-/** BOARD_CONFIRM — warm three-note chord: 392+494+587hz, 0.6s */
+/** BOARD_CONFIRM - warm three-note chord: 392+494+587hz, 0.6s */
 export function playBoardConfirm(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -339,7 +339,7 @@ export function playBoardConfirm(): void {
   playToneADSR(587, 0.6, now, 'sine', 0.08, adsr);
 }
 
-/** DIRECTOR_SELECT — soft click: 523hz triangle, 0.1s */
+/** DIRECTOR_SELECT - soft click: 523hz triangle, 0.1s */
 export function playDirectorSelect(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -349,7 +349,7 @@ export function playDirectorSelect(): void {
   });
 }
 
-/** CARD_DEAL — white noise burst filtered 2000-4000hz, 0.06s */
+/** CARD_DEAL - white noise burst filtered 2000-4000hz, 0.06s */
 export function playCardDeal(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -359,7 +359,7 @@ export function playCardDeal(): void {
   });
 }
 
-/** PARTIAL_SUCCESS — neutral 369hz sine, 0.4s gentle fade */
+/** PARTIAL_SUCCESS - neutral 369hz sine, 0.4s gentle fade */
 export function playPartialSuccess(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -369,7 +369,7 @@ export function playPartialSuccess(): void {
   });
 }
 
-/** SUCCESS — ascending two-note: 440→554hz, each 0.25s, with delayed copy for reverb feel */
+/** SUCCESS - ascending two-note: 440→554hz, each 0.25s, with delayed copy for reverb feel */
 export function playSuccess(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -383,7 +383,7 @@ export function playSuccess(): void {
   playToneADSR(554, 0.25, now + 0.3, 'sine', 0.03, adsr);
 }
 
-/** CRITICAL_SUCCESS — ascending three-note fanfare: 440→554→659hz, sawtooth + lowpass 800hz, with reverb */
+/** CRITICAL_SUCCESS - ascending three-note fanfare: 440→554→659hz, sawtooth + lowpass 800hz, with reverb */
 export function playCriticalSuccess(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -394,7 +394,7 @@ export function playCriticalSuccess(): void {
   playWithReverb(659, 0.2, now + 0.4, 'sawtooth', 0.08, 800, 2, adsr);
 }
 
-/** FAILURE — descending two-note: 294→220hz, slight detuning */
+/** FAILURE - descending two-note: 294→220hz, slight detuning */
 export function playFailure(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -406,7 +406,7 @@ export function playFailure(): void {
   playToneADSR(217, 0.3, now + 0.3, 'sine', 0.04, adsr); // detuned -3hz
 }
 
-/** CRITICAL_FAILURE — dissonant low chord: 185+220hz, square softened at 400hz, 0.8s */
+/** CRITICAL_FAILURE - dissonant low chord: 185+220hz, square softened at 400hz, 0.8s */
 export function playCriticalFailure(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -416,7 +416,7 @@ export function playCriticalFailure(): void {
   playFilteredADSR(220, 0.8, now, 'square', 0.08, 400, adsr);
 }
 
-/** AGM_BELL — bell: 523+659hz triangle, sharp attack, 2s exponential decay, reverb */
+/** AGM_BELL - bell: 523+659hz triangle, sharp attack, 2s exponential decay, reverb */
 export function playAGMBell(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -426,7 +426,7 @@ export function playAGMBell(): void {
   playWithReverb(659, 2.0, now, 'triangle', 0.07, 4000, 3, adsr);
 }
 
-/** AGM_APPLAUSE — filtered noise: bandpass 800-3000hz, amp mod 7hz, 2.8s */
+/** AGM_APPLAUSE - filtered noise: bandpass 800-3000hz, amp mod 7hz, 2.8s */
 export function playAGMApplause(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -436,7 +436,7 @@ export function playAGMApplause(): void {
   }, ctx.destination, 7);
 }
 
-/** RESOLUTION_PASS — ascending major third: 392→523hz, each 0.15s */
+/** RESOLUTION_PASS - ascending major third: 392→523hz, each 0.15s */
 export function playResolutionPass(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -446,7 +446,7 @@ export function playResolutionPass(): void {
   playToneADSR(523, 0.15, now + 0.15, 'sine', 0.1, adsr);
 }
 
-/** RESOLUTION_FAIL — descending minor third: 311→220hz, with wave shaper distortion */
+/** RESOLUTION_FAIL - descending minor third: 311→220hz, with wave shaper distortion */
 export function playResolutionFail(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -468,7 +468,7 @@ export function playResolutionFail(): void {
   playToneADSR(220, 0.15, now + 0.15, 'sine', 0.1, adsr, undefined, shaper);
 }
 
-/** YEAR_END_TRIUMPH — layered chord build: bass, then triad, then shimmer. 2s total */
+/** YEAR_END_TRIUMPH - layered chord build: bass, then triad, then shimmer. 2s total */
 export function playYearEndTriumph(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -488,7 +488,7 @@ export function playYearEndTriumph(): void {
   });
 }
 
-/** YEAR_END_DEFEAT — slow descending minor: 392→311→261, each 0.5s, slow attack, reverb */
+/** YEAR_END_DEFEAT - slow descending minor: 392→311→261, each 0.5s, slow attack, reverb */
 export function playYearEndDefeat(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();
@@ -499,7 +499,7 @@ export function playYearEndDefeat(): void {
   playWithReverb(261, 0.5, now + 1.0, 'sine', 0.06, 1200, 3, adsr);
 }
 
-/** YEAR_END_NEUTRAL — single sustained 329hz sine, 1s gentle fade */
+/** YEAR_END_NEUTRAL - single sustained 329hz sine, 1s gentle fade */
 export function playYearEndNeutral(): void {
   if (!soundEnabled) return;
   const ctx = getCtx();

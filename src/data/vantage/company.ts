@@ -8,7 +8,7 @@ export const vantageConsumer: Company = {
   stockExchange: 'New York Stock Exchange (NYSE)',
   marketCap: '$4.2 billion',
   marketCapTier: 'large',
-  industry: 'FMCG — Food & Beverage',
+  industry: 'FMCG - Food & Beverage',
   jurisdiction: 'US',
   headquarters: 'Chicago, Illinois',
   operations:
@@ -35,7 +35,7 @@ export const vantageConsumer: Company = {
       name: 'Sandra Okafor',
       tenure: '3 years',
       notes:
-        'Strong operator; fierce defender of combined role; compensation $14.2m last year — ISS red-flagged',
+        'Strong operator; fierce defender of combined role; compensation $14.2m last year - ISS red-flagged',
     },
     {
       role: 'CFO',
@@ -75,7 +75,7 @@ export const vantageConsumer: Company = {
       membersRequired:
         'Min. 3 independent; 1 financial expert required (SEC Rule 10A-3)',
       notes:
-        'Currently chaired by director with related-party flag — player must replace',
+        'Currently chaired by director with related-party flag - player must replace',
     },
     {
       id: 'remuneration',

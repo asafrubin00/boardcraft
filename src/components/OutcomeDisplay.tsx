@@ -133,7 +133,7 @@ export default function OutcomeDisplay({
               } : {}),
             }}
           >
-            {/* Tier label — animates in first */}
+            {/* Tier label - animates in first */}
             <motion.h2
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -144,7 +144,7 @@ export default function OutcomeDisplay({
               {config.label}
             </motion.h2>
 
-            {/* SV delta — counts up/down */}
+            {/* SV delta - counts up/down */}
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -157,7 +157,7 @@ export default function OutcomeDisplay({
             {/* Event name */}
             <p className="text-center text-sm text-gold-dim mb-3">{eventName}</p>
 
-            {/* Narrative — fades in last */}
+            {/* Narrative - fades in last */}
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

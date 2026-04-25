@@ -13,7 +13,7 @@ import type {
 // Strategy: Option A (Commit to forming Energy Transition Committee), multiplier 1.10
 // Energy Transition Committee NOT yet formed (no committee bonus)
 // Both directors at 100% energy
-// UK jurisdiction scores: Larsson 77, Okafor 83 — both above 50, no penalty
+// UK jurisdiction scores: Larsson 77, Okafor 83 - both above 50, no penalty
 
 const larsson: Director = {
   id: 'dir_14_larsson',
@@ -142,7 +142,7 @@ const committees: Record<CommitteeId, CommitteeState> = {
 };
 
 describe('Resolution Engine', () => {
-  describe('Worked Example — Section 4.2', () => {
+  describe('Worked Example - Section 4.2', () => {
     it('computes correct director match scores', () => {
       // We test the intermediate values by using an RNG override that returns
       // a known value, then verify the final score matches the worked example.
@@ -295,7 +295,7 @@ describe('Resolution Engine', () => {
       // With randomFactor ≈ 1.0 → final ≈ 93.775 → CRITICAL_SUCCESS
       // But notably NO +10 bonus was added
       // To verify: if bonus were applied, raw would be 103.775
-      // We can check indirectly — the final score should be ~93.8
+      // We can check indirectly - the final score should be ~93.8
       expect(result.finalScore).toBeCloseTo(93.78, 0);
     });
   });

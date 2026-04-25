@@ -2,10 +2,10 @@ import type { GameEvent } from '@/types/game';
 
 export const vantageEvents: GameEvent[] = [
   // ══════════════════════════════════════════════════════════
-  // Q1 EVENTS (Tier 1 — immediate governance problems)
+  // Q1 EVENTS (Tier 1 - immediate governance problems)
   // ══════════════════════════════════════════════════════════
 
-  // V-01 — Patricia Nguyen: Conflict of Interest
+  // V-01 - Patricia Nguyen: Conflict of Interest
   {
     id: 'vevent_01',
     name: 'Patricia Nguyen: Conflict of Interest',
@@ -14,7 +14,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 1,
     illustrationType: 'vevent-nguyen-conflict',
     narrativeCard:
-      'Meridian Governance just hand-delivered a letter to your Lead Independent Director that reads like a litigation threat wrapped in polite stationery. Patricia Nguyen\'s $340K consulting contract with a Vantage supplier — somehow never disclosed to the full board — has been flagged as a material conflict. Meridian wants her out of the Audit Committee Chair before Q2, or they\'ll recommend against her election at the AGM. The letter was cc\'d to the SEC. That part wasn\'t polite at all.',
+      'Meridian Governance just hand-delivered a letter to your Lead Independent Director that reads like a litigation threat wrapped in polite stationery. Patricia Nguyen\'s $340K consulting contract with a Vantage supplier - somehow never disclosed to the full board - has been flagged as a material conflict. Meridian wants her out of the Audit Committee Chair before Q2, or they\'ll recommend against her election at the AGM. The letter was cc\'d to the SEC. That part wasn\'t polite at all.',
     primaryDomain: 'regulatoryLegal',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -34,7 +34,7 @@ export const vantageEvents: GameEvent[] = [
         id: 'vevent_01_b',
         label: 'Negotiate timeline with Meridian',
         description:
-          'Commit to change before AGM but buy one quarter. Requires Regulatory & Legal ≥ 65 in deployed team. Moderate risk — Meridian may not accept.',
+          'Commit to change before AGM but buy one quarter. Requires Regulatory & Legal ≥ 65 in deployed team. Moderate risk - Meridian may not accept.',
         multiplier: 0.85,
         competencyGates: [{ domain: 'regulatoryLegal', minimumRating: 65 }],
       },
@@ -63,12 +63,12 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.0, 3.0],
         narrative:
-          'Nguyen\'s replacement was announced before the close — Meridian issued a public statement calling it "a model of governance accountability," and two index funds quietly increased their positions overnight.',
+          'Nguyen\'s replacement was announced before the close - Meridian issued a public statement calling it "a model of governance accountability," and two index funds quietly increased their positions overnight.',
       },
       SUCCESS: {
         svRange: [1.0, 2.0],
         narrative:
-          'A credible replacement is named and Meridian stands down — not thrilled, but satisfied enough to pocket the letter.',
+          'A credible replacement is named and Meridian stands down - not thrilled, but satisfied enough to pocket the letter.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
@@ -78,7 +78,7 @@ export const vantageEvents: GameEvent[] = [
       FAILURE: {
         svRange: [-3.0, -2.0],
         narrative:
-          'Meridian publishes a "recommend against" on the Audit Committee and the governance health score drops by 8 — the kind of wound that festers.',
+          'Meridian publishes a "recommend against" on the Audit Committee and the governance health score drops by 8 - the kind of wound that festers.',
       },
       CRITICAL_FAILURE: {
         svRange: [-5.0, -4.0],
@@ -92,7 +92,7 @@ export const vantageEvents: GameEvent[] = [
     precondition: 'vantage_nguyen_on_board',
   },
 
-  // V-02 — Activist Disclosure: Apex Capital Takes 5.3%
+  // V-02 - Activist Disclosure: Apex Capital Takes 5.3%
   {
     id: 'vevent_02',
     name: 'Activist Disclosure: Apex Capital Takes 5.3%',
@@ -101,7 +101,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 2,
     illustrationType: 'vevent-activist-disclosure',
     narrativeCard:
-      'Apex Capital\'s 13D dropped at market open like a perfectly timed grenade — 5.3%, "governance-impaired," and a request for a meeting with the Lead Independent Director within 30 days that wasn\'t really a request. Their letter uses the phrase "destroying shareholder value" twice in three paragraphs and names the combined Chair/CEO structure specifically. Marcus Adler at Apex didn\'t get to $14 billion AUM by making idle threats.',
+      'Apex Capital\'s 13D dropped at market open like a perfectly timed grenade - 5.3%, "governance-impaired," and a request for a meeting with the Lead Independent Director within 30 days that wasn\'t really a request. Their letter uses the phrase "destroying shareholder value" twice in three paragraphs and names the combined Chair/CEO structure specifically. Marcus Adler at Apex didn\'t get to $14 billion AUM by making idle threats.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -156,7 +156,7 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [3.0, 4.0],
         narrative:
-          'Apex puts out a statement calling the engagement "refreshingly productive" — on Wall Street, that\'s practically a love letter — and the stock ticks up 3% on the détente.',
+          'Apex puts out a statement calling the engagement "refreshingly productive" - on Wall Street, that\'s practically a love letter - and the stock ticks up 3% on the détente.',
       },
       SUCCESS: {
         svRange: [1.5, 3.0],
@@ -166,24 +166,24 @@ export const vantageEvents: GameEvent[] = [
       PARTIAL_SUCCESS: {
         svRange: [0.5, 0.5],
         narrative:
-          'The response checked a box but moved no needles — Apex is still loading ammunition and everyone on the buy side knows it.',
+          'The response checked a box but moved no needles - Apex is still loading ammunition and everyone on the buy side knows it.',
       },
       FAILURE: {
         svRange: [-2.0, -2.0],
         narrative:
-          'Apex\'s head of campaigns just updated his LinkedIn title to "Vantage Project Lead" — so that\'s where things stand.',
+          'Apex\'s head of campaigns just updated his LinkedIn title to "Vantage Project Lead" - so that\'s where things stand.',
       },
       CRITICAL_FAILURE: {
         svRange: [-4.0, -4.0],
         narrative:
-          'Apex published a six-page open letter before the board even drafted a response — Bloomberg led with it at 6 AM, and by noon every institutional holder had a copy on their desk.',
+          'Apex published a six-page open letter before the board even drafted a response - Bloomberg led with it at 6 AM, and by noon every institutional holder had a copy on their desk.',
       },
     },
     isConditional: false,
     precondition: null,
   },
 
-  // V-03 — CEO Compensation: Say-on-Pay Pre-Warning
+  // V-03 - CEO Compensation: Say-on-Pay Pre-Warning
   {
     id: 'vevent_03',
     name: 'CEO Compensation: Say-on-Pay Pre-Warning',
@@ -192,7 +192,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 3,
     illustrationType: 'vevent-ceo-pay-revolt',
     narrativeCard:
-      'Someone leaked Sandra Okafor\'s comp package to the Wall Street Journal, and the headline writes itself: "$14.2 Million — 187x Median Employee Pay." The story runs above the fold in the business section with a photo of Vantage\'s headquarters that makes it look like a fortress. Sandra is furious — not about the scrutiny, but about the leak. Your Comp Committee Chair has six weeks before the AGM to turn this from a scandal into a story about pay-for-performance, and right now the math isn\'t cooperating.',
+      'Someone leaked Sandra Okafor\'s comp package to the Wall Street Journal, and the headline writes itself: "$14.2 Million - 187x Median Employee Pay." The story runs above the fold in the business section with a photo of Vantage\'s headquarters that makes it look like a fortress. Sandra is furious - not about the scrutiny, but about the leak. Your Comp Committee Chair has six weeks before the AGM to turn this from a scandal into a story about pay-for-performance, and right now the math isn\'t cooperating.',
     primaryDomain: 'peopleCulture',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -241,17 +241,17 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [1.5, 2.5],
         narrative:
-          'The Comp Chair\'s investor roadshow lands perfectly — BlackRock\'s governance team calls the pay structure "aligned and defensible," and ISS quietly removes the flag.',
+          'The Comp Chair\'s investor roadshow lands perfectly - BlackRock\'s governance team calls the pay structure "aligned and defensible," and ISS quietly removes the flag.',
       },
       SUCCESS: {
         svRange: [1.0, 1.5],
         narrative:
-          'The benchmarking data takes the edge off — say-on-pay isn\'t a layup anymore, but it\'s no longer a crisis either.',
+          'The benchmarking data takes the edge off - say-on-pay isn\'t a layup anymore, but it\'s no longer a crisis either.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'The fire\'s contained but still smoldering — ISS keeps its flag and the AGM vote is a coin flip.',
+          'The fire\'s contained but still smoldering - ISS keeps its flag and the AGM vote is a coin flip.',
       },
       FAILURE: {
         svRange: [-2.0, -2.0],
@@ -261,14 +261,14 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-3.5, -3.5],
         narrative:
-          'The story runs for a second week — this time with an employee quote about cafeteria prices — and three proxy advisers pile on before the weekend.',
+          'The story runs for a second week - this time with an employee quote about cafeteria prices - and three proxy advisers pile on before the weekend.',
       },
     },
     isConditional: false,
     precondition: null,
   },
 
-  // V-04 — FDA Inquiry: Ultra-Processed Food Labelling
+  // V-04 - FDA Inquiry: Ultra-Processed Food Labelling
   {
     id: 'vevent_04',
     name: 'FDA Inquiry: Ultra-Processed Food Labelling',
@@ -277,7 +277,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 4,
     illustrationType: 'vevent-fda-inquiry',
     narrativeCard:
-      'A thick envelope from the FDA arrived at General Counsel\'s office on Tuesday — the kind nobody wants to open. Inside: a formal inquiry letter requesting detailed nutritional labelling documentation for three Vantage product lines under the new proposed UPF disclosure rules. It\'s not an investigation yet. It\'s the FDA politely explaining what an investigation looks like, in case you\'d prefer to avoid one. The response deadline is 45 days, and the clock started when the envelope was signed for.',
+      'A thick envelope from the FDA arrived at General Counsel\'s office on Tuesday - the kind nobody wants to open. Inside: a formal inquiry letter requesting detailed nutritional labelling documentation for three Vantage product lines under the new proposed UPF disclosure rules. It\'s not an investigation yet. It\'s the FDA politely explaining what an investigation looks like, in case you\'d prefer to avoid one. The response deadline is 45 days, and the clock started when the envelope was signed for.',
     primaryDomain: 'regulatoryLegal',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -326,17 +326,17 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.0, 2.0],
         narrative:
-          'The FDA closes the inquiry with a note praising Vantage\'s "proactive and transparent" cooperation — two words that have never appeared in an FDA letter to a food company before, according to your outside counsel.',
+          'The FDA closes the inquiry with a note praising Vantage\'s "proactive and transparent" cooperation - two words that have never appeared in an FDA letter to a food company before, according to your outside counsel.',
       },
       SUCCESS: {
         svRange: [1.0, 1.0],
         narrative:
-          'A clean, compliant response keeps the inquiry in the "routine" pile — no escalation, no headlines, no follow-up calls.',
+          'A clean, compliant response keeps the inquiry in the "routine" pile - no escalation, no headlines, no follow-up calls.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'The FDA wants more documentation on two of the three product lines — not a disaster, but the inquiry now has a second chapter.',
+          'The FDA wants more documentation on two of the three product lines - not a disaster, but the inquiry now has a second chapter.',
       },
       FAILURE: {
         svRange: [-2.5, -2.5],
@@ -346,7 +346,7 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-4.0, -4.0],
         narrative:
-          'The FDA announces a formal investigation live on its website — the stock drops 4% before your IR team can draft a holding statement, and consumer confidence craters ahead of earnings.',
+          'The FDA announces a formal investigation live on its website - the stock drops 4% before your IR team can draft a holding statement, and consumer confidence craters ahead of earnings.',
       },
     },
     isConditional: false,
@@ -354,10 +354,10 @@ export const vantageEvents: GameEvent[] = [
   },
 
   // ══════════════════════════════════════════════════════════
-  // Q2 EVENTS (Tier 1–2 — pressure builds)
+  // Q2 EVENTS (Tier 1–2 - pressure builds)
   // ══════════════════════════════════════════════════════════
 
-  // V-05 — Chair/CEO Split: Institutional Shareholder Letter
+  // V-05 - Chair/CEO Split: Institutional Shareholder Letter
   {
     id: 'vevent_05',
     name: 'Chair/CEO Split: Institutional Shareholder Letter',
@@ -366,7 +366,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 1,
     illustrationType: 'vevent-chair-ceo-split',
     narrativeCard:
-      'Three of the biggest index funds on the planet — collectively holding 22% of Vantage — just sent your Lead Independent Director a letter that reads like an ultimatum in business-casual. They want a binding commitment to separate the Chair and CEO roles within 18 months. The letter is marked "confidential" but everyone knows that in proxy season, confidential means "hasn\'t been leaked yet." Sandra Okafor read the letter twice, said nothing, and closed her office door. That\'s never good.',
+      'Three of the biggest index funds on the planet - collectively holding 22% of Vantage - just sent your Lead Independent Director a letter that reads like an ultimatum in business-casual. They want a binding commitment to separate the Chair and CEO roles within 18 months. The letter is marked "confidential" but everyone knows that in proxy season, confidential means "hasn\'t been leaked yet." Sandra Okafor read the letter twice, said nothing, and closed her office door. That\'s never good.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -414,12 +414,12 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.0, 5.0],
         narrative:
-          'The separation announcement lands like a thunderclap of good governance — proxy advisers upgrade, the coalition sends a thank-you note, and the stock catches a bid it hasn\'t seen in two quarters.',
+          'The separation announcement lands like a thunderclap of good governance - proxy advisers upgrade, the coalition sends a thank-you note, and the stock catches a bid it hasn\'t seen in two quarters.',
       },
       SUCCESS: {
         svRange: [2.0, 3.5],
         narrative:
-          'A credible timeline with real milestones — the institutions aren\'t celebrating, but they\'re putting the pitchforks down.',
+          'A credible timeline with real milestones - the institutions aren\'t celebrating, but they\'re putting the pitchforks down.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0.5, 0.5],
@@ -434,14 +434,14 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-5.0, -5.0],
         narrative:
-          'The coalition goes nuclear — a joint public statement, a press conference, and Apex Capital tweets the letter with the caption "We told you so."',
+          'The coalition goes nuclear - a joint public statement, a press conference, and Apex Capital tweets the letter with the caption "We told you so."',
       },
     },
     isConditional: false,
     precondition: null,
   },
 
-  // V-06 — Supply Chain Scandal: Child Labour Allegations
+  // V-06 - Supply Chain Scandal: Child Labour Allegations
   {
     id: 'vevent_06',
     name: 'Supply Chain Scandal: Child Labour Allegations',
@@ -470,7 +470,7 @@ export const vantageEvents: GameEvent[] = [
         id: 'vevent_06_b',
         label: 'Issue statement; begin internal review',
         description:
-          'Standard response. Requires Stakeholder ≥ 60. Moderate risk — may be seen as insufficient.',
+          'Standard response. Requires Stakeholder ≥ 60. Moderate risk - may be seen as insufficient.',
         multiplier: 0.80,
         competencyGates: [{ domain: 'stakeholderComms', minimumRating: 60 }],
       },
@@ -501,7 +501,7 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.5, 2.5],
         narrative:
-          'FairHarvest Alliance calls Vantage\'s response "unprecedented in the industry" — the supplier is terminated, a new sourcing program is announced, and the boycott hashtag dies within 72 hours, replaced by grudging respect.',
+          'FairHarvest Alliance calls Vantage\'s response "unprecedented in the industry" - the supplier is terminated, a new sourcing program is announced, and the boycott hashtag dies within 72 hours, replaced by grudging respect.',
       },
       SUCCESS: {
         svRange: [1.0, 1.0],
@@ -516,19 +516,19 @@ export const vantageEvents: GameEvent[] = [
       FAILURE: {
         svRange: [-5.0, -5.0],
         narrative:
-          'The boycott goes mainstream — Target and Walmart temporarily pull select Vantage products, and your head of sales just described the retail calls as "apocalyptic."',
+          'The boycott goes mainstream - Target and Walmart temporarily pull select Vantage products, and your head of sales just described the retail calls as "apocalyptic."',
       },
       CRITICAL_FAILURE: {
         svRange: [-8.0, -8.0],
         narrative:
-          'A Congressional subcommittee announces hearings on supply chain labour practices with Vantage as the lead case study — class action lawyers are already circling, and your D&O insurer wants a call.',
+          'A Congressional subcommittee announces hearings on supply chain labour practices with Vantage as the lead case study - class action lawyers are already circling, and your D&O insurer wants a call.',
       },
     },
     isConditional: false,
     precondition: null,
   },
 
-  // V-07 — New UPF Tax Proposed in California
+  // V-07 - New UPF Tax Proposed in California
   {
     id: 'vevent_07',
     name: 'New UPF Tax Proposed in California',
@@ -537,7 +537,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 3,
     illustrationType: 'vevent-upf-tax',
     narrativeCard:
-      'Sacramento just dropped a bomb on the FMCG sector: Assembly Bill 1847, a 12% excise tax on ultra-processed foods. The bill\'s sponsor went on MSNBC and named Vantage specifically — twice. Your CFO ran the numbers by lunch: 34% of US revenue is exposed. By market close, three analysts had cut their target price by 6%, and the words "structural headwind" appeared in every note. Illinois, New York, and Colorado are reportedly drafting copycat legislation. Welcome to the new regulatory reality.',
+      'Sacramento just dropped a bomb on the FMCG sector: Assembly Bill 1847, a 12% excise tax on ultra-processed foods. The bill\'s sponsor went on MSNBC and named Vantage specifically - twice. Your CFO ran the numbers by lunch: 34% of US revenue is exposed. By market close, three analysts had cut their target price by 6%, and the words "structural headwind" appeared in every note. Illinois, New York, and Colorado are reportedly drafting copycat legislation. Welcome to the new regulatory reality.',
     primaryDomain: 'regulatoryLegal',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -585,17 +585,17 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.0, 6.0],
         narrative:
-          'The Street loves a pivot story, and you just delivered one — analysts upgrade the stock on the health portfolio thesis, and a Goldman note calls Vantage "the only FMCG name positioned for the regulatory shift."',
+          'The Street loves a pivot story, and you just delivered one - analysts upgrade the stock on the health portfolio thesis, and a Goldman note calls Vantage "the only FMCG name positioned for the regulatory shift."',
       },
       SUCCESS: {
         svRange: [1.5, 3.0],
         narrative:
-          'The strategy is credible enough to walk back the downgrades — sell-side moves from "sell" to "hold," which on Wall Street counts as optimism.',
+          'The strategy is credible enough to walk back the downgrades - sell-side moves from "sell" to "hold," which on Wall Street counts as optimism.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'The market shrugs and waits for the Sacramento vote — you\'re in purgatory, and the algos are pricing in uncertainty.',
+          'The market shrugs and waits for the Sacramento vote - you\'re in purgatory, and the algos are pricing in uncertainty.',
       },
       FAILURE: {
         svRange: [-3.0, -3.0],
@@ -605,14 +605,14 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-5.0, -5.0],
         narrative:
-          'Your Sacramento lobbying gets leaked to the LA Times under the headline "Big Food Fights Back Against Health" — the brand takes collateral damage that makes the tax look like the smaller problem.',
+          'Your Sacramento lobbying gets leaked to the LA Times under the headline "Big Food Fights Back Against Health" - the brand takes collateral damage that makes the tax look like the smaller problem.',
       },
     },
     isConditional: false,
     precondition: null,
   },
 
-  // V-08 — Meridian Governance Q2 Report (report card — auto-resolve)
+  // V-08 - Meridian Governance Q2 Report (report card - auto-resolve)
   {
     id: 'vevent_08',
     name: 'Meridian Governance Q2 Report',
@@ -621,7 +621,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 4,
     illustrationType: 'vevent-proxy-adviser-report',
     narrativeCard:
-      'Meridian Governance just published their pre-AGM assessment, and the headline is a masterclass in polite devastation: "Governance Remains Structurally Compromised." They single out the combined Chair/CEO role as "the defining concern" — underlined, bolded, the governance equivalent of a neon sign. Every institutional holder on your register will have this on their desk by morning, and the specific flags are generated from your board state. Think of it as a report card written by someone who already decided you\'re failing.',
+      'Meridian Governance just published their pre-AGM assessment, and the headline is a masterclass in polite devastation: "Governance Remains Structurally Compromised." They single out the combined Chair/CEO role as "the defining concern" - underlined, bolded, the governance equivalent of a neon sign. Every institutional holder on your register will have this on their desk by morning, and the specific flags are generated from your board state. Think of it as a report card written by someone who already decided you\'re failing.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.40,
     secondaryDomains: [
@@ -635,23 +635,23 @@ export const vantageEvents: GameEvent[] = [
     outcomeTiers: {
       CRITICAL_SUCCESS: {
         svRange: [0, 0],
-        narrative: 'Meridian notes improvements — your AGM prep just got marginally less painful.',
+        narrative: 'Meridian notes improvements - your AGM prep just got marginally less painful.',
       },
       SUCCESS: {
         svRange: [0, 0],
-        narrative: 'The report is mixed but survivable — governance flags will shape the AGM conversation.',
+        narrative: 'The report is mixed but survivable - governance flags will shape the AGM conversation.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
-        narrative: 'Multiple flags raised — the AGM is going to be a knife fight and Meridian just handed out the knives.',
+        narrative: 'Multiple flags raised - the AGM is going to be a knife fight and Meridian just handed out the knives.',
       },
       FAILURE: {
         svRange: [0, 0],
-        narrative: 'Severe governance concerns across the board — institutional holders are now war-gaming their AGM votes.',
+        narrative: 'Severe governance concerns across the board - institutional holders are now war-gaming their AGM votes.',
       },
       CRITICAL_FAILURE: {
         svRange: [0, 0],
-        narrative: 'Meridian recommends voting against the entire slate — the governance equivalent of a no-confidence motion.',
+        narrative: 'Meridian recommends voting against the entire slate - the governance equivalent of a no-confidence motion.',
       },
     },
     isConditional: false,
@@ -662,7 +662,7 @@ export const vantageEvents: GameEvent[] = [
   // AGM EVENT
   // ══════════════════════════════════════════════════════════
 
-  // V-09 — Annual General Meeting
+  // V-09 - Annual General Meeting
   {
     id: 'vevent_09',
     name: 'Annual General Meeting',
@@ -671,7 +671,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 1,
     illustrationType: 'vevent-agm',
     narrativeCard:
-      'The AGM is here, and the room feels like a courtroom. Four contested resolutions. Apex Capital\'s representatives are seated in the third row, legal pads out, looking like they\'ve been waiting for this moment all year — because they have. Meridian\'s recommendations are already baked into every institutional proxy card. Sandra Okafor is in the hallway doing a last-minute call with your largest friendly holder. The webcast is live. The vote tallies will move markets.',
+      'The AGM is here, and the room feels like a courtroom. Four contested resolutions. Apex Capital\'s representatives are seated in the third row, legal pads out, looking like they\'ve been waiting for this moment all year - because they have. Meridian\'s recommendations are already baked into every institutional proxy card. Sandra Okafor is in the hallway doing a last-minute call with your largest friendly holder. The webcast is live. The vote tallies will move markets.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.40,
     secondaryDomains: [
@@ -720,27 +720,27 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.0, 5.0],
         narrative:
-          'All four resolutions pass with comfortable margins — Apex\'s representative sits through the results stone-faced, and by the time the webcast ends, the stock is up 5%.',
+          'All four resolutions pass with comfortable margins - Apex\'s representative sits through the results stone-faced, and by the time the webcast ends, the stock is up 5%.',
       },
       SUCCESS: {
         svRange: [2.0, 3.0],
         narrative:
-          'Three of four pass — a credible showing that keeps the board intact and gives you a mandate to govern for another year.',
+          'Three of four pass - a credible showing that keeps the board intact and gives you a mandate to govern for another year.',
       },
       PARTIAL_SUCCESS: {
         svRange: [-1.0, 0],
         narrative:
-          'Two pass, two fail — the kind of split decision that satisfies nobody and guarantees six more months of activist pressure.',
+          'Two pass, two fail - the kind of split decision that satisfies nobody and guarantees six more months of activist pressure.',
       },
       FAILURE: {
         svRange: [-4.0, -3.0],
         narrative:
-          'Say-on-pay goes down in flames and only one resolution passes — three analysts downgraded before lunch, the kind of consensus that takes quarters to reverse.',
+          'Say-on-pay goes down in flames and only one resolution passes - three analysts downgraded before lunch, the kind of consensus that takes quarters to reverse.',
       },
       CRITICAL_FAILURE: {
         svRange: [-6.0, -6.0],
         narrative:
-          'Every contested item fails — the room empties in silence, Apex issues a statement within the hour, and proxy advisers are already drafting their "board reconstitution" recommendations.',
+          'Every contested item fails - the room empties in silence, Apex issues a statement within the hour, and proxy advisers are already drafting their "board reconstitution" recommendations.',
       },
     },
     isConditional: false,
@@ -748,10 +748,10 @@ export const vantageEvents: GameEvent[] = [
   },
 
   // ══════════════════════════════════════════════════════════
-  // Q3 EVENTS (Tier 2 — escalation)
+  // Q3 EVENTS (Tier 2 - escalation)
   // ══════════════════════════════════════════════════════════
 
-  // V-10 — Apex Escalation (conditional)
+  // V-10 - Apex Escalation (conditional)
   {
     id: 'vevent_10',
     name: 'Apex Escalation',
@@ -760,7 +760,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 1,
     illustrationType: 'vevent-apex-escalation',
     narrativeCard:
-      'Marcus Adler just went public. Apex Capital\'s open letter to Vantage shareholders dropped simultaneously on the WSJ, Bloomberg, and CNBC — coordinated like a military operation, because that\'s exactly what it is. Two board seats. Immediate commitment to Chair/CEO separation. An independent strategic review led by advisers of Apex\'s choosing. The letter is twelve pages, footnoted like a law review article, and every sentence is a weapon. Sandra Okafor called it "a declaration of war." She\'s not wrong.',
+      'Marcus Adler just went public. Apex Capital\'s open letter to Vantage shareholders dropped simultaneously on the WSJ, Bloomberg, and CNBC - coordinated like a military operation, because that\'s exactly what it is. Two board seats. Immediate commitment to Chair/CEO separation. An independent strategic review led by advisers of Apex\'s choosing. The letter is twelve pages, footnoted like a law review article, and every sentence is a weapon. Sandra Okafor called it "a declaration of war." She\'s not wrong.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -818,27 +818,27 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.0, 4.0],
         narrative:
-          'Apex agrees to a standstill — one seat, governance commitments, and a joint statement that makes the market exhale so hard the stock rallies 4% in the last hour of trading.',
+          'Apex agrees to a standstill - one seat, governance commitments, and a joint statement that makes the market exhale so hard the stock rallies 4% in the last hour of trading.',
       },
       SUCCESS: {
         svRange: [2.0, 2.0],
         narrative:
-          'A pragmatic deal is struck behind closed doors — Apex scales back publicly, though everyone knows they\'re keeping the receipts.',
+          'A pragmatic deal is struck behind closed doors - Apex scales back publicly, though everyone knows they\'re keeping the receipts.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'An uneasy ceasefire — Apex suspends the campaign but makes it clear this is a pause, not a peace.',
+          'An uneasy ceasefire - Apex suspends the campaign but makes it clear this is a pause, not a peace.',
       },
       FAILURE: {
         svRange: [-5.0, -5.0],
         narrative:
-          'Negotiations collapse at 2 AM — by market open, Apex announces a full proxy contest and the stock sells off 5% in the first thirty minutes.',
+          'Negotiations collapse at 2 AM - by market open, Apex announces a full proxy contest and the stock sells off 5% in the first thirty minutes.',
       },
       CRITICAL_FAILURE: {
         svRange: [-8.0, -8.0],
         narrative:
-          'Apex requisitions an EGM before your response letter even hits inboxes — a full proxy battle is now inevitable, and the market is pricing in regime change.',
+          'Apex requisitions an EGM before your response letter even hits inboxes - a full proxy battle is now inevitable, and the market is pricing in regime change.',
       },
     },
     isConditional: true,
@@ -850,7 +850,7 @@ export const vantageEvents: GameEvent[] = [
     },
   },
 
-  // V-11 — Brand Crisis: Social Media Viral Moment
+  // V-11 - Brand Crisis: Social Media Viral Moment
   {
     id: 'vevent_11',
     name: 'Brand Crisis: Social Media Viral Moment',
@@ -859,7 +859,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 2,
     illustrationType: 'vevent-brand-crisis',
     narrativeCard:
-      'A college student in Austin dropped a Vantage Crunch Bar into a glass of water on TikTok and filmed it not dissolving for 47 minutes. The video hit 18 million views in 48 hours. #VantagePoison is the number-one trending hashtag in the US. Your head of consumer affairs just forwarded an email chain from Kroger, Walmart, and Target — all asking for a statement by end of business. The science is on your side — the product is safe — but nobody cares about science when 18 million people just watched a snack bar survive a glass of water.',
+      'A college student in Austin dropped a Vantage Crunch Bar into a glass of water on TikTok and filmed it not dissolving for 47 minutes. The video hit 18 million views in 48 hours. #VantagePoison is the number-one trending hashtag in the US. Your head of consumer affairs just forwarded an email chain from Kroger, Walmart, and Target - all asking for a statement by end of business. The science is on your side - the product is safe - but nobody cares about science when 18 million people just watched a snack bar survive a glass of water.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -911,7 +911,7 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.0, 2.0],
         narrative:
-          'Your food scientist\'s calm, data-driven response video goes viral in its own right — 22 million views, #VantageTransparency trends, and the original TikToker posts an apology.',
+          'Your food scientist\'s calm, data-driven response video goes viral in its own right - 22 million views, #VantageTransparency trends, and the original TikToker posts an apology.',
       },
       SUCCESS: {
         svRange: [1.0, 1.0],
@@ -921,7 +921,7 @@ export const vantageEvents: GameEvent[] = [
       PARTIAL_SUCCESS: {
         svRange: [-1.0, -1.0],
         narrative:
-          'The hashtag fades but doesn\'t disappear — your brand tracker shows a 3-point dip among 18-34 consumers that your CMO calls "manageable but annoying."',
+          'The hashtag fades but doesn\'t disappear - your brand tracker shows a 3-point dip among 18-34 consumers that your CMO calls "manageable but annoying."',
       },
       FAILURE: {
         svRange: [-4.0, -4.0],
@@ -938,7 +938,7 @@ export const vantageEvents: GameEvent[] = [
     precondition: null,
   },
 
-  // V-12 — FTC Inquiry: Acquisition Anti-Trust Review
+  // V-12 - FTC Inquiry: Acquisition Anti-Trust Review
   {
     id: 'vevent_12',
     name: 'FTC Inquiry: Acquisition Anti-Trust Review',
@@ -947,7 +947,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 3,
     illustrationType: 'vevent-ftc-inquiry',
     narrativeCard:
-      'The FTC just opened a preliminary inquiry into Vantage\'s proposed acquisition of NatureFirst — the regional health food brand you announced two quarters ago as the cornerstone of your portfolio pivot. The Commission is citing "potential anti-competitive effects in the natural snacks segment," which is FTC-speak for "we think you\'re trying to corner a market." The deal was supposed to close this quarter. Your advisory fees are running at $2 million a month. The market is nervous, and the arb desks are widening the spread.',
+      'The FTC just opened a preliminary inquiry into Vantage\'s proposed acquisition of NatureFirst - the regional health food brand you announced two quarters ago as the cornerstone of your portfolio pivot. The Commission is citing "potential anti-competitive effects in the natural snacks segment," which is FTC-speak for "we think you\'re trying to corner a market." The deal was supposed to close this quarter. Your advisory fees are running at $2 million a month. The market is nervous, and the arb desks are widening the spread.',
     primaryDomain: 'regulatoryLegal',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -996,27 +996,27 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.0, 4.0],
         narrative:
-          'The FTC clears the deal with minor conditions — NatureFirst is yours, the health portfolio thesis is alive, and a Morgan Stanley note calls it "the most accretive deal in consumer staples this year."',
+          'The FTC clears the deal with minor conditions - NatureFirst is yours, the health portfolio thesis is alive, and a Morgan Stanley note calls it "the most accretive deal in consumer staples this year."',
       },
       SUCCESS: {
         svRange: [2.0, 2.0],
         narrative:
-          'The deal closes with targeted divestitures in the natural snacks overlap — not the clean win you wanted, but the arb desks are closing their positions and moving on.',
+          'The deal closes with targeted divestitures in the natural snacks overlap - not the clean win you wanted, but the arb desks are closing their positions and moving on.',
       },
       PARTIAL_SUCCESS: {
         svRange: [-0.5, -0.5],
         narrative:
-          'Second request issued — the deal is in FTC purgatory, the advisory clock is still running at $2M a month, and your CFO is losing patience.',
+          'Second request issued - the deal is in FTC purgatory, the advisory clock is still running at $2M a month, and your CFO is losing patience.',
       },
       FAILURE: {
         svRange: [-4.0, -4.0],
         narrative:
-          'The FTC blocks the acquisition — $45 million in advisory fees evaporated, the health portfolio strategy is in shambles, and your competitors are already circling NatureFirst.',
+          'The FTC blocks the acquisition - $45 million in advisory fees evaporated, the health portfolio strategy is in shambles, and your competitors are already circling NatureFirst.',
       },
       CRITICAL_FAILURE: {
         svRange: [-6.0, -6.0],
         narrative:
-          'The FTC doesn\'t just block the deal — they open a broader investigation into Vantage\'s acquisition practices across consumer brands, and suddenly every deal you\'ve done in five years is under a microscope.',
+          'The FTC doesn\'t just block the deal - they open a broader investigation into Vantage\'s acquisition practices across consumer brands, and suddenly every deal you\'ve done in five years is under a microscope.',
       },
     },
     isConditional: false,
@@ -1024,10 +1024,10 @@ export const vantageEvents: GameEvent[] = [
   },
 
   // ══════════════════════════════════════════════════════════
-  // Q4 EVENTS (Tier 2–3 — endgame)
+  // Q4 EVENTS (Tier 2–3 - endgame)
   // ══════════════════════════════════════════════════════════
 
-  // V-13 — Hostile Bid Approach: Constellation Foods
+  // V-13 - Hostile Bid Approach: Constellation Foods
   {
     id: 'vevent_13',
     name: 'Hostile Bid Approach: Constellation Foods',
@@ -1036,7 +1036,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 1,
     illustrationType: 'vevent-hostile-bid',
     narrativeCard:
-      'A courier delivered an envelope to your Lead Independent Director\'s home at 7 AM on a Saturday. Inside: a merger proposal from Constellation Foods at a 14% premium — $4.8 billion — typed on Wachtell letterhead, which tells you everything about how serious they are. The letter gives the board 21 days to respond before Constellation takes the offer directly to shareholders. Sandra Okafor found out at 7:15 and has already called three board members. She wants to fight. The question is whether the board has the firepower to win.',
+      'A courier delivered an envelope to your Lead Independent Director\'s home at 7 AM on a Saturday. Inside: a merger proposal from Constellation Foods at a 14% premium - $4.8 billion - typed on Wachtell letterhead, which tells you everything about how serious they are. The letter gives the board 21 days to respond before Constellation takes the offer directly to shareholders. Sandra Okafor found out at 7:15 and has already called three board members. She wants to fight. The question is whether the board has the firepower to win.',
     primaryDomain: 'strategyMarkets',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -1048,7 +1048,7 @@ export const vantageEvents: GameEvent[] = [
         id: 'vevent_13_a',
         label: 'Reject and mount independent valuation defence',
         description:
-          'Poison pill defence. Strategy ≥ 80 AND Financial ≥ 75 required. High risk — if defence fails, SV collapses.',
+          'Poison pill defence. Strategy ≥ 80 AND Financial ≥ 75 required. High risk - if defence fails, SV collapses.',
         multiplier: 1.20,
         competencyGates: [
           { domain: 'strategyMarkets', minimumRating: 80 },
@@ -1090,27 +1090,27 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [12.0, 20.0],
         narrative:
-          'The independent valuation proves the company is worth 30% more than Constellation\'s offer — they withdraw, the stock rerates to a two-year high, and Sandra Okafor sends the Wachtell letter back with a one-word note: "No."',
+          'The independent valuation proves the company is worth 30% more than Constellation\'s offer - they withdraw, the stock rerates to a two-year high, and Sandra Okafor sends the Wachtell letter back with a one-word note: "No."',
       },
       SUCCESS: {
         svRange: [10.0, 15.0],
         narrative:
-          'Negotiation extracts a significantly improved premium — the kind of number that makes shareholders feel like the board actually earned their fees this year.',
+          'Negotiation extracts a significantly improved premium - the kind of number that makes shareholders feel like the board actually earned their fees this year.',
       },
       PARTIAL_SUCCESS: {
         svRange: [5.0, 8.0],
         narrative:
-          'A modest bump in terms — the deal closes at a reasonable premium, and the board can argue it got the best available price, even if nobody\'s popping champagne.',
+          'A modest bump in terms - the deal closes at a reasonable premium, and the board can argue it got the best available price, even if nobody\'s popping champagne.',
       },
       FAILURE: {
         svRange: [-10.0, -10.0],
         narrative:
-          'The defence crumbles — Constellation takes the offer hostile, the stock collapses below the bid price on execution risk, and the board just lost control of the company\'s future.',
+          'The defence crumbles - Constellation takes the offer hostile, the stock collapses below the bid price on execution risk, and the board just lost control of the company\'s future.',
       },
       CRITICAL_FAILURE: {
         svRange: [-15.0, -15.0],
         narrative:
-          'Constellation wins at the original 14% premium — the board fought, lost, and now gets to watch someone else run the company they couldn\'t protect.',
+          'Constellation wins at the original 14% premium - the board fought, lost, and now gets to watch someone else run the company they couldn\'t protect.',
       },
     },
     isConditional: true,
@@ -1118,7 +1118,7 @@ export const vantageEvents: GameEvent[] = [
     precondition: 'vantage_hostile_bid',
   },
 
-  // V-14 — Data Breach: Consumer Data Exposed
+  // V-14 - Data Breach: Consumer Data Exposed
   {
     id: 'vevent_14',
     name: 'Data Breach: Consumer Data Exposed',
@@ -1127,7 +1127,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 2,
     illustrationType: 'vevent-data-breach',
     narrativeCard:
-      'Your CISO just called an emergency board briefing: an external threat actor accessed the consumer loyalty programme database — 8.4 million customers\' personal data, including payment information. The breach was discovered at 11 PM last night. The 72-hour CCPA notification clock started the moment your security team confirmed the intrusion. It\'s now hour 14. The FTC notification template is open on General Counsel\'s laptop. The breach has not leaked to the press yet, but with 8.4 million affected consumers, "yet" is doing a lot of heavy lifting in that sentence.',
+      'Your CISO just called an emergency board briefing: an external threat actor accessed the consumer loyalty programme database - 8.4 million customers\' personal data, including payment information. The breach was discovered at 11 PM last night. The 72-hour CCPA notification clock started the moment your security team confirmed the intrusion. It\'s now hour 14. The FTC notification template is open on General Counsel\'s laptop. The breach has not leaked to the press yet, but with 8.4 million affected consumers, "yet" is doing a lot of heavy lifting in that sentence.',
     primaryDomain: 'technologyDigital',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -1155,7 +1155,7 @@ export const vantageEvents: GameEvent[] = [
         id: 'vevent_14_c',
         label: 'Brief media proactively before regulators',
         description:
-          'High risk — regulators may view pre-notification media as inappropriate. Requires Stakeholder ≥ 75.',
+          'High risk - regulators may view pre-notification media as inappropriate. Requires Stakeholder ≥ 75.',
         multiplier: 0.70,
         competencyGates: [{ domain: 'stakeholderComms', minimumRating: 75 }],
       },
@@ -1175,17 +1175,17 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [1.0, 1.0],
         narrative:
-          'The FTC calls your incident response "a benchmark for the industry" — all 8.4 million consumers are notified within 36 hours, and the story runs once and dies.',
+          'The FTC calls your incident response "a benchmark for the industry" - all 8.4 million consumers are notified within 36 hours, and the story runs once and dies.',
       },
       SUCCESS: {
         svRange: [-0.5, -0.5],
         narrative:
-          'CCPA notification completed with 11 hours to spare — the FTC closes with a warning letter, and the brand damage is limited to a single bad news cycle.',
+          'CCPA notification completed with 11 hours to spare - the FTC closes with a warning letter, and the brand damage is limited to a single bad news cycle.',
       },
       PARTIAL_SUCCESS: {
         svRange: [-2.0, -2.0],
         narrative:
-          'Notification goes out late — the FTC imposes a fine that\'s small enough to pay but large enough to make headlines, and loyalty programme signups drop 22% the following month.',
+          'Notification goes out late - the FTC imposes a fine that\'s small enough to pay but large enough to make headlines, and loyalty programme signups drop 22% the following month.',
       },
       FAILURE: {
         svRange: [-6.0, -6.0],
@@ -1195,14 +1195,14 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-12.0, -12.0],
         narrative:
-          'The delayed notification attempt is discovered by a whistleblower — FTC enforcement, CCPA penalties, Congressional hearings, and a brand reputation crater that will take years to fill.',
+          'The delayed notification attempt is discovered by a whistleblower - FTC enforcement, CCPA penalties, Congressional hearings, and a brand reputation crater that will take years to fill.',
       },
     },
     isConditional: false,
     precondition: null,
   },
 
-  // V-15 — Full Proxy Battle (conditional — Tier 3 existential)
+  // V-15 - Full Proxy Battle (conditional - Tier 3 existential)
   {
     id: 'vevent_15',
     name: 'Full Proxy Battle',
@@ -1211,7 +1211,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 3,
     illustrationType: 'vevent-proxy-battle',
     narrativeCard:
-      'This is it. Apex Capital has requisitioned an Extraordinary General Meeting — the nuclear option. They want your Lead Independent Director and two NEDs removed and replaced with their own nominees: a former ConAgra CFO, a governance activist from CalPERS, and a restructuring specialist who\'s never lost a proxy fight. Sterling Proxy has issued a preliminary note supporting Apex on all three demands. Marcus Adler called your LID this morning — not to negotiate, but to inform. Sandra Okafor is in the war room with Skadden on one line and Goldman on the other. This is a full proxy contest, and the next three weeks will determine who controls this company.',
+      'This is it. Apex Capital has requisitioned an Extraordinary General Meeting - the nuclear option. They want your Lead Independent Director and two NEDs removed and replaced with their own nominees: a former ConAgra CFO, a governance activist from CalPERS, and a restructuring specialist who\'s never lost a proxy fight. Sterling Proxy has issued a preliminary note supporting Apex on all three demands. Marcus Adler called your LID this morning - not to negotiate, but to inform. Sandra Okafor is in the war room with Skadden on one line and Goldman on the other. This is a full proxy contest, and the next three weeks will determine who controls this company.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -1263,27 +1263,27 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [6.0, 6.0],
         narrative:
-          'The institutions rally — every major index fund backs the incumbent slate, Apex\'s nominees are defeated by double-digit margins, and the stock closes up 6% as the Street prices in governance stability.',
+          'The institutions rally - every major index fund backs the incumbent slate, Apex\'s nominees are defeated by double-digit margins, and the stock closes up 6% as the Street prices in governance stability.',
       },
       SUCCESS: {
         svRange: [2.0, 2.0],
         narrative:
-          'A negotiated settlement at the eleventh hour — Apex gets one seat and a governance roadmap, the board keeps control, and both sides call it a win in their press releases.',
+          'A negotiated settlement at the eleventh hour - Apex gets one seat and a governance roadmap, the board keeps control, and both sides call it a win in their press releases.',
       },
       PARTIAL_SUCCESS: {
         svRange: [-3.0, -3.0],
         narrative:
-          'Apex takes two seats — the board technically retains control, but the power dynamics in the boardroom just shifted in ways that can\'t be undone with a committee reshuffle.',
+          'Apex takes two seats - the board technically retains control, but the power dynamics in the boardroom just shifted in ways that can\'t be undone with a committee reshuffle.',
       },
       FAILURE: {
         svRange: [-12.0, -12.0],
         narrative:
-          'Apex wins the proxy contest — the board is reconstituted, management change is imminent, and Sandra Okafor\'s lawyers are already reviewing her employment agreement.',
+          'Apex wins the proxy contest - the board is reconstituted, management change is imminent, and Sandra Okafor\'s lawyers are already reviewing her employment agreement.',
       },
       CRITICAL_FAILURE: {
         svRange: [-22.0, -22.0],
         narrative:
-          'Total capitulation — Apex sweeps all three seats, the LID is removed, Sandra Okafor is terminated by the new board before the EGM room clears, and the company you were hired to govern belongs to someone else now.',
+          'Total capitulation - Apex sweeps all three seats, the LID is removed, Sandra Okafor is terminated by the new board before the EGM room clears, and the company you were hired to govern belongs to someone else now.',
       },
     },
     isConditional: true,

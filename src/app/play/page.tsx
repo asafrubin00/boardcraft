@@ -235,23 +235,23 @@ function PlayPageInner() {
   );
 
   // ── Forced Change handlers ──
-  const handleForcedDismiss = useCallback((directorId: string) => {
-    if (!gameState) return;
-    const updated = applyForcedRemoval(gameState, directorId);
-    setGameState(updated);
-  }, [gameState]);
+  /** Atomic: dismiss departing director AND appoint replacement in one state update */
+  const handleForcedDismissAndReplace = useCallback(
+    (dismissedDirectorId: string, newDirectorId: string, role: _DevBoardRole) => {
+      if (!gameState) return;
+      // First remove the departing director, then appoint the replacement
+      const afterRemoval = applyForcedRemoval(gameState, dismissedDirectorId);
+      const afterReplacement = applyReplacement(afterRemoval, newDirectorId, role);
+      const breakdown = recalcGovernanceBreakdown(afterReplacement);
+      afterReplacement.governanceHealthBreakdown = rescaleBreakdown(breakdown, afterReplacement.governanceHealth);
+      setGameState(afterReplacement);
+    },
+    [gameState]
+  );
 
   const handleForcedRetain = useCallback(() => {
     if (!gameState) return;
     const updated = applyRetainDirector(gameState);
-    const breakdown = recalcGovernanceBreakdown(updated);
-    updated.governanceHealthBreakdown = rescaleBreakdown(breakdown, updated.governanceHealth);
-    setGameState(updated);
-  }, [gameState]);
-
-  const handleForcedReplace = useCallback((newDirectorId: string, role: _DevBoardRole) => {
-    if (!gameState) return;
-    const updated = applyReplacement(gameState, newDirectorId, role);
     const breakdown = recalcGovernanceBreakdown(updated);
     updated.governanceHealthBreakdown = rescaleBreakdown(breakdown, updated.governanceHealth);
     setGameState(updated);
@@ -295,7 +295,7 @@ function PlayPageInner() {
       // Check if there are more turns
       const nextNext = advanceToNextTurn(next);
       if (nextNext.currentQuarter === next.currentQuarter && nextNext.currentTurn === next.currentTurn) {
-        // Stuck — move to year end
+        // Stuck - move to year end
         next = { ...next, phase: 'year_end' as const };
         break;
       }
@@ -399,7 +399,7 @@ function PlayPageInner() {
     setPhase('gameplay');
   }, [gameState]);
 
-  // ── Restart — skip company select, go straight to board construction ──
+  // ── Restart - skip company select, go straight to board construction ──
   const handleRestart = useCallback(() => {
     setGameState(null);
     setAgmResults(null);
@@ -408,7 +408,7 @@ function PlayPageInner() {
     setPhase('board_construction');
   }, []);
 
-  // ── Change Company — full reset back to company select ──
+  // ── Change Company - full reset back to company select ──
   const handleChangeCompany = useCallback(() => {
     setGameState(null);
     setAgmResults(null);
@@ -472,9 +472,8 @@ function PlayPageInner() {
         onSkipEvent={handleSkipEvent}
         regenDirectorIds={regenDirectorIds}
         onClearRegen={() => setRegenDirectorIds([])}
-        onForcedDismiss={handleForcedDismiss}
+        onForcedDismissAndReplace={handleForcedDismissAndReplace}
         onForcedRetain={handleForcedRetain}
-        onForcedReplace={handleForcedReplace}
       />
     );
   }
@@ -522,13 +521,29 @@ const TIER_BADGE: Record<Director['availabilityTier'], { label: string; cls: str
   C: { label: 'Search Firm', cls: 'bg-gold/10 text-gold border border-gold/30' },
 };
 
-const ALL_BOARD_ROLES: BoardRole[] = ['chair', 'sid', 'auditChair', 'remChair', 'nomChair', 'energyTransitionChair', 'ned'];
+const ALL_BOARD_ROLES: BoardRole[] = ['chair', 'sid', 'auditChair', 'remChair', 'nomChair', 'energyTransitionChair', 'csrdChair', 'strategyChair', 'ned'];
 
-// ETC seat position (matches BoardroomTable's ETC_POSITION)
-const ETC_TABLE_POS = { defaultRole: 'energyTransitionChair' as BoardRole, label: 'ETC Chair', leftPct: 32, topPct: 94, isChair: false };
+// Optional committee seat positions (must match BoardroomTable's exported constants)
+const ETC_TABLE_POS = { defaultRole: 'energyTransitionChair' as BoardRole, label: 'ETC Chair', leftPct: 32.4, topPct: 79.4, isChair: false };
+const CSRD_TABLE_POS = { defaultRole: 'csrdChair' as BoardRole, label: 'CSRD Chair', leftPct: 67.6, topPct: 79.4, isChair: false };
+const STRATEGY_TABLE_POS = { defaultRole: 'strategyChair' as BoardRole, label: 'Strategy Chair', leftPct: 50, topPct: 94, isChair: false };
 
-function getTablePosition(posIdx: number) {
-  return posIdx < TABLE_POSITIONS.length ? TABLE_POSITIONS[posIdx] : ETC_TABLE_POS;
+function getTablePosition(posIdx: number, hasEnergyTransition = false, hasCsrd = false, hasStrategy = false) {
+  if (posIdx < TABLE_POSITIONS.length) return TABLE_POSITIONS[posIdx];
+  // Optional slots: ET is pos 8, CSRD is next, Strategy is after
+  let optIdx = TABLE_POSITIONS.length;
+  if (hasEnergyTransition) {
+    if (posIdx === optIdx) return ETC_TABLE_POS;
+    optIdx++;
+  }
+  if (hasCsrd) {
+    if (posIdx === optIdx) return CSRD_TABLE_POS;
+    optIdx++;
+  }
+  if (hasStrategy) {
+    if (posIdx === optIdx) return STRATEGY_TABLE_POS;
+  }
+  return ETC_TABLE_POS; // fallback
 }
 
 function BoardConstructionWrapper({
@@ -662,7 +677,7 @@ function BoardConstructionWrapper({
 
   const boardIds = useMemo(() => seats.map((s) => s.directorId), [seats]);
   const boardIdSet = useMemo(() => new Set(boardIds), [boardIds]);
-  const tablePos = useMemo(() => deriveTablePositions(seats, hasEnergyTransition), [seats, hasEnergyTransition]);
+  const tablePos = useMemo(() => deriveTablePositions(seats, hasEnergyTransition, hasCsrd, hasStrategy), [seats, hasEnergyTransition, hasCsrd, hasStrategy]);
   const overflowIds = useMemo(() => getOverflowDirectorIds(seats, tablePos), [seats, tablePos]);
   const overflowSet = useMemo(() => new Set(overflowIds), [overflowIds]);
 
@@ -720,7 +735,7 @@ function BoardConstructionWrapper({
     if (hintsShown === 3 && hasAuditChairFilled) setHintsShown(4);
     // Hint 4: skip if rem chair already filled
     if (hintsShown === 4 && hasRemChairFilled) setHintsShown(5);
-    // Hint 5: Board Strength popover — skip if popover was already opened (wait handled below)
+    // Hint 5: Board Strength popover - skip if popover was already opened (wait handled below)
     // Hint 6: skip if no independence error and board has 6+ seats
     if (hintsShown === 6 && !hasIndependenceError && seats.length >= 6) setHintsShown(7);
     // Hint 7: skip if budget is not low and board is nearly full
@@ -784,9 +799,27 @@ function BoardConstructionWrapper({
     setHasEnergyTransition((p) => !p);
   }, [hasEnergyTransition, pushAndSetSeats, directorMap]);
 
+  const handleToggleCsrd = useCallback(() => {
+    // If toggling off, demote any csrdChair seat back to NED
+    if (hasCsrd) {
+      pushAndSetSeats((p) => p.map((s) => s.role === 'csrdChair'
+        ? { ...s, role: 'ned', feeWithPremium: computeFeeWithPremium(directorMap.get(s.directorId)?.annualFee ?? 0, 'ned') } : s));
+    }
+    setHasCsrd((p) => !p);
+  }, [hasCsrd, pushAndSetSeats, directorMap]);
+
+  const handleToggleStrategy = useCallback(() => {
+    // If toggling off, demote any strategyChair seat back to NED
+    if (hasStrategy) {
+      pushAndSetSeats((p) => p.map((s) => s.role === 'strategyChair'
+        ? { ...s, role: 'ned', feeWithPremium: computeFeeWithPremium(directorMap.get(s.directorId)?.annualFee ?? 0, 'ned') } : s));
+    }
+    setHasStrategy((p) => !p);
+  }, [hasStrategy, pushAndSetSeats, directorMap]);
+
   // ── New interaction handlers ──
   const handleAssignToSeat = useCallback((directorId: string, posIdx: number) => {
-    const pos = getTablePosition(posIdx);
+    const pos = getTablePosition(posIdx, hasEnergyTransition, hasCsrd, hasStrategy);
     if (boardIdSet.has(directorId)) {
       handleRoleChange(directorId, pos.defaultRole);
     } else {
@@ -795,7 +828,7 @@ function BoardConstructionWrapper({
       const fee = computeFeeWithPremium(d.annualFee, pos.defaultRole);
       if (committed + fee > budget) return;
       // Remove any existing occupant of this unique role to prevent duplicate role entries
-      const uniqRoles: BoardRole[] = ['chair','auditChair','remChair','nomChair','sid','safetyEnvChair','energyTransitionChair'];
+      const uniqRoles: BoardRole[] = ['chair','auditChair','remChair','nomChair','sid','safetyEnvChair','energyTransitionChair','csrdChair','strategyChair'];
       pushAndSetSeats((p) => {
         const filtered = uniqRoles.includes(pos.defaultRole)
           ? p.filter((s) => s.role !== pos.defaultRole)
@@ -824,7 +857,7 @@ function BoardConstructionWrapper({
   const handleAssignCandidate = useCallback(() => {
     if (activeSeatIdx === null || !selectedDirId) return;
     const cur = tablePos[activeSeatIdx]; if (!cur) return;
-    const pos = getTablePosition(activeSeatIdx);
+    const pos = getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy);
     const cand = directorMap.get(selectedDirId); if (!cand) return;
     const candOnBoard = boardIdSet.has(selectedDirId);
     pushAndSetSeats((p) => {
@@ -849,9 +882,13 @@ function BoardConstructionWrapper({
       if (ao !== bo) return ao ? -1 : 1;
       if (sortBy === 'fee') return (a.annualFee - b.annualFee) * dir;
       if (sortBy === 'score') {
-        const aMax = Math.max(...ALL_DOMAINS.map((dom) => a.domainRatings[dom]));
-        const bMax = Math.max(...ALL_DOMAINS.map((dom) => b.domainRatings[dom]));
-        return (aMax - bMax) * dir;
+        const aScore = filterDomain
+          ? a.domainRatings[filterDomain]
+          : Math.max(...ALL_DOMAINS.map((d) => a.domainRatings[d]));
+        const bScore = filterDomain
+          ? b.domainRatings[filterDomain]
+          : Math.max(...ALL_DOMAINS.map((d) => b.domainRatings[d]));
+        return (aScore - bScore) * dir;
       }
       return 0;
     });
@@ -892,9 +929,11 @@ function BoardConstructionWrapper({
     return ALL_BOARD_ROLES.filter((r) => {
       if (r === 'energyTransitionChair' && !hasEnergyTransition) return false;
       if (r === 'safetyEnvChair' && !hasSafetyEnv) return false;
+      if (r === 'csrdChair' && !hasCsrd) return false;
+      if (r === 'strategyChair' && !hasStrategy) return false;
       return true;
     });
-  }, [hasEnergyTransition, hasSafetyEnv]);
+  }, [hasEnergyTransition, hasSafetyEnv, hasCsrd, hasStrategy]);
 
   return (
     <div className="h-screen bg-navy text-foreground flex flex-col overflow-hidden">
@@ -903,7 +942,7 @@ function BoardConstructionWrapper({
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-gold tracking-wide font-narrative">BOARDCRAFT</h1>
-            <p className="text-xs text-gold-dim mt-0.5">Board Construction — {company.name}</p>
+            <p className="text-xs text-gold-dim mt-0.5">Board Construction - {company.name}</p>
           </div>
           <div className="text-right text-xs text-foreground/50">
             {company.industry} · {company.jurisdiction} · GH {company.startingGovernanceHealth}/100
@@ -914,13 +953,13 @@ function BoardConstructionWrapper({
       {/* Permanent picks warning banner */}
       <div className="bg-gold/10 border-b border-gold/30 px-4 py-2 flex items-center justify-center gap-2 text-sm flex-shrink-0">
         <span className="text-gold font-semibold">&#9888;</span>
-        <span className="text-gold/90 font-narrative text-xs">Your picks are permanent until the AGM — choose carefully.</span>
+        <span className="text-gold/90 font-narrative text-xs">Your picks are permanent until the AGM - choose carefully.</span>
       </div>
 
       <AnimatePresence>
         {showRestartBanner && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.4 }} className="bg-gold/10 border-b border-gold/30 text-center py-2 flex-shrink-0">
-            <p className="text-gold font-narrative text-sm italic">New game — same company. Build a better board.</p>
+            <p className="text-gold font-narrative text-sm italic">New game - same company. Build a better board.</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -968,7 +1007,7 @@ function BoardConstructionWrapper({
             }}
           >
             {overflowIds.length > 0 && (
-              <p className="text-[10px] text-warning font-medium mb-2">⚠ Unseated directors — click a table seat to place them</p>
+              <p className="text-[10px] text-warning font-medium mb-2">⚠ Unseated directors - click a table seat to place them</p>
             )}
             <div className="grid grid-cols-4 gap-1.5">
               {sortedPool.map((d) => (
@@ -1013,7 +1052,7 @@ function BoardConstructionWrapper({
                   </p>
                 </div>
                 <CompliancePanel errors={complianceErrors} />
-                {/* ET Toggle — only show if company has ET committee definition */}
+                {/* ET Toggle - only show if company has ET committee definition */}
                 {hasETCommittee && (
                   <div className={`rounded-lg border p-4 cursor-pointer transition-all ${hasEnergyTransition ? 'border-gold bg-gold/5' : 'border-card-border hover:border-gold/50'}`} onClick={handleToggleET}>
                     <div className="flex items-center justify-between">
@@ -1027,9 +1066,9 @@ function BoardConstructionWrapper({
                     </div>
                   </div>
                 )}
-                {/* CSRD Toggle — Rheinfeld only */}
+                {/* CSRD Toggle - Rheinfeld only */}
                 {csrdFormationCost > 0 && (
-                  <div className={`rounded-lg border p-4 cursor-pointer transition-all ${hasCsrd ? 'border-gold bg-gold/5' : 'border-card-border hover:border-gold/50'}`} onClick={() => setHasCsrd((p) => !p)}>
+                  <div className={`rounded-lg border p-4 cursor-pointer transition-all ${hasCsrd ? 'border-gold bg-gold/5' : 'border-card-border hover:border-gold/50'}`} onClick={handleToggleCsrd}>
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <h3 className="text-sm font-semibold text-gold">{company.committees.find((c) => c.id === 'csrd')?.name ?? 'CSRD / Sustainability Committee'}</h3>
@@ -1041,9 +1080,9 @@ function BoardConstructionWrapper({
                     </div>
                   </div>
                 )}
-                {/* Strategy Committee Toggle — Rheinfeld only */}
+                {/* Strategy Committee Toggle - Rheinfeld only */}
                 {strategyFormationCost > 0 && (
-                  <div className={`rounded-lg border p-4 cursor-pointer transition-all ${hasStrategy ? 'border-gold bg-gold/5' : 'border-card-border hover:border-gold/50'}`} onClick={() => setHasStrategy((p) => !p)}>
+                  <div className={`rounded-lg border p-4 cursor-pointer transition-all ${hasStrategy ? 'border-gold bg-gold/5' : 'border-card-border hover:border-gold/50'}`} onClick={handleToggleStrategy}>
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <h3 className="text-sm font-semibold text-gold">{company.committees.find((c) => c.id === 'strategy')?.name ?? 'Strategy Committee'}</h3>
@@ -1070,7 +1109,7 @@ function BoardConstructionWrapper({
               <motion.div key="sel" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col items-center justify-center p-5 text-center">
                 <div className="w-20 h-20 rounded-full border-2 border-dashed border-gold/40 flex items-center justify-center mb-4 animate-pulse"><span className="text-gold/40 text-3xl">+</span></div>
                 <h3 className="text-lg font-bold text-gold font-narrative mb-2">Select a Director</h3>
-                <p className="text-xs text-foreground/50 max-w-xs">Choose a director from the pool to fill the <span className="text-gold font-semibold">{activeSeatIdx !== null ? getTablePosition(activeSeatIdx).label : ''}</span> seat.</p>
+                <p className="text-xs text-foreground/50 max-w-xs">Choose a director from the pool to fill the <span className="text-gold font-semibold">{activeSeatIdx !== null ? getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy).label : ''}</span> seat.</p>
                 {/* Cancel handled by sticky Back to Overview button above */}
               </motion.div>
             )}
@@ -1149,7 +1188,7 @@ function BoardConstructionWrapper({
             {mode === 'comparison' && seatOccDir && selDir && (() => {
               const cur = seatOccDir, cand = selDir;
               const curFee = seatRec?.feeWithPremium ?? 0;
-              const candRole = activeSeatIdx !== null ? getTablePosition(activeSeatIdx).defaultRole : 'ned' as BoardRole;
+              const candRole = activeSeatIdx !== null ? getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy).defaultRole : 'ned' as BoardRole;
               const candFee = computeFeeWithPremium(cand.annualFee, candRole);
               const fd = candFee - curFee;
               return (
@@ -1239,6 +1278,8 @@ function BoardConstructionWrapper({
               activeSeatIndex={activeSeatIdx}
               onSeatClick={handleSeatClick}
               hasEnergyTransition={hasEnergyTransition}
+              hasCsrd={hasCsrd}
+              hasStrategy={hasStrategy}
               onDropOnSeat={handleAssignToSeat}
               companyShortName={company.shortName}
               companyShortNameSuffix={company.shortNameSuffix}
@@ -1250,7 +1291,7 @@ function BoardConstructionWrapper({
           </div>
           <p className="text-[10px] text-foreground/30 mt-2 text-center flex-shrink-0">Click a seat to assign · Click a filled seat to view profile</p>
 
-          {/* Board Strength — hover popover */}
+          {/* Board Strength - hover popover */}
           {seats.length > 0 && (
             <div className="mt-3 flex-shrink-0 relative" onMouseLeave={() => setShowStrength(false)}>
               <button

@@ -34,9 +34,9 @@ interface GameBoardScreenProps {
   onSkipEvent: () => void;
   regenDirectorIds?: string[];
   onClearRegen?: () => void;
-  onForcedDismiss?: (directorId: string) => void;
+  /** Atomic: dismiss departing director + appoint replacement in a single state update */
+  onForcedDismissAndReplace?: (dismissedDirectorId: string, newDirectorId: string, role: BoardRole) => void;
   onForcedRetain?: () => void;
-  onForcedReplace?: (newDirectorId: string, role: BoardRole) => void;
 }
 
 // Volume level indicator bars component
@@ -67,9 +67,8 @@ export default function GameBoardScreen({
   onSkipEvent,
   regenDirectorIds = [],
   onClearRegen,
-  onForcedDismiss,
+  onForcedDismissAndReplace,
   onForcedRetain,
-  onForcedReplace,
 }: GameBoardScreenProps) {
   const [showDashboard, setShowDashboard] = useState(false);
   const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
@@ -97,7 +96,7 @@ export default function GameBoardScreen({
     setVolumeLevel(next);
   }, []);
 
-  // Wound indicators — track failed event domains (max 3)
+  // Wound indicators - track failed event domains (max 3)
   const wounds = useMemo(() => {
     const w: { type: 'sv' | 'gov'; eventName: string }[] = [];
     for (const re of gameState.resolvedEvents) {
@@ -154,13 +153,15 @@ export default function GameBoardScreen({
 
   const maxTurns = getMaxTurnsForQuarter(gameState.currentQuarter);
 
-  // Determine if Energy Transition committee is active
+  // Determine active optional committees
   const hasEnergyTransition = gameState.committees?.energyTransition?.active ?? false;
+  const hasCsrd = gameState.committees?.csrd?.active ?? false;
+  const hasStrategy = gameState.committees?.strategy?.active ?? false;
 
   // Derive table positions so we can map seat click → director
   const tablePositions = useMemo(
-    () => deriveTablePositions(gameState.board.seats, hasEnergyTransition),
-    [gameState.board.seats, hasEnergyTransition]
+    () => deriveTablePositions(gameState.board.seats, hasEnergyTransition, hasCsrd, hasStrategy),
+    [gameState.board.seats, hasEnergyTransition, hasCsrd, hasStrategy]
   );
 
   // Play card deal sound when a new event appears
@@ -190,7 +191,7 @@ export default function GameBoardScreen({
     return boardDirectors.find((d) => d.id === selectedDirectorId) ?? null;
   }, [selectedDirectorId, boardDirectors]);
 
-  // Handle strategy selection — Do Nothing bypasses deployment modal
+  // Handle strategy selection - Do Nothing bypasses deployment modal
   const handleSelectStrategy = useCallback((strategyId: string) => {
     if (!currentEvent) return;
     const strategy = currentEvent.strategies.find(s => s.id === strategyId);
@@ -209,7 +210,7 @@ export default function GameBoardScreen({
   const handleDoNothing = useCallback(() => {
     if (!currentEvent) return;
 
-    // Event 08 (report card) — auto-resolve
+    // Event 08 (report card) - auto-resolve
     if (currentEvent.strategies.length === 0) {
       onSkipEvent();
       setWaitingForNext(true);
@@ -301,7 +302,7 @@ export default function GameBoardScreen({
 
   return (
     <div className="h-screen bg-navy text-foreground flex flex-col overflow-hidden">
-      {/* Top Bar — all game info merged here */}
+      {/* Top Bar - all game info merged here */}
       <header className="border-b border-card-border px-4 py-2 flex items-center justify-between bg-navy-dark/50 shrink-0">
         {/* Left: Logo */}
         <h1 className="text-lg font-bold text-gold tracking-wide shrink-0">BOARDCRAFT</h1>
@@ -376,9 +377,9 @@ export default function GameBoardScreen({
         </div>
       )}
 
-      {/* Main Content — 40/60 split */}
+      {/* Main Content - 40/60 split */}
       <div className="flex-1 flex overflow-hidden" style={{ height: 'calc(100vh - 90px)' }}>
-        {/* Left 40% — Boardroom Table + Director Detail */}
+        {/* Left 40% - Boardroom Table + Director Detail */}
         <div className="flex flex-col border-r border-card-border" style={{ width: '40%' }}>
           {/* Boardroom Table */}
           <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center p-3" style={{ paddingTop: '8px' }}>
@@ -388,6 +389,8 @@ export default function GameBoardScreen({
               activeSeatIndex={selectedDirectorId ? tablePositions.indexOf(selectedDirectorId) : null}
               onSeatClick={handleTableSeatClick}
               hasEnergyTransition={hasEnergyTransition}
+              hasCsrd={hasCsrd}
+              hasStrategy={hasStrategy}
               companyShortName={gameState.company.shortName}
               companyShortNameSuffix={gameState.company.shortNameSuffix}
               jurisdiction={jurisdiction}
@@ -395,7 +398,7 @@ export default function GameBoardScreen({
             />
           </div>
 
-          {/* Director Detail Box — fixed 180px, scrolls internally, margin-bottom clears ticker */}
+          {/* Director Detail Box - fixed 180px, scrolls internally, margin-bottom clears ticker */}
           <div className="flex-none border-t border-card-border bg-navy-dark/30 px-4 py-3 overflow-y-auto" style={{ height: '180px', marginBottom: '44px' }}>
             {selectedDir ? (
               <div className="flex gap-4">
@@ -457,7 +460,7 @@ export default function GameBoardScreen({
           </div>
         </div>
 
-        {/* Right 60% — Event Area: full width, 20px padding, stops above ticker */}
+        {/* Right 60% - Event Area: full width, 20px padding, stops above ticker */}
         <main className="flex-1 overflow-y-auto py-6" style={{ height: 'calc(100vh - 100px)', paddingLeft: '20px', paddingRight: '20px' }}>
           <div className="w-full">
             <AnimatePresence mode="wait">
@@ -530,7 +533,7 @@ export default function GameBoardScreen({
       </AnimatePresence>
 
       {/* Forced Change Modal */}
-      {gameState.forcedChange && onForcedDismiss && onForcedReplace && (
+      {gameState.forcedChange && onForcedDismissAndReplace && (
         <ForcedChangeModal
           forcedChange={gameState.forcedChange}
           directors={gameState.directors}
@@ -539,9 +542,8 @@ export default function GameBoardScreen({
           budget={gameState.company.boardBudget}
           committed={gameState.board.totalCommittedBudget}
           jurisdiction={jurisdiction}
-          onDismiss={onForcedDismiss}
+          onDismissAndReplace={onForcedDismissAndReplace}
           onRetain={gameState.forcedChange.canRetain ? onForcedRetain : undefined}
-          onReplace={onForcedReplace}
         />
       )}
 

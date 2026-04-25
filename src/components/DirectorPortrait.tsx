@@ -3,7 +3,7 @@
 /**
  * Deterministic SVG portrait generator for directors.
  * Uses the director ID as a seed to produce a unique but consistent
- * abstract geometric portrait — no photos, no emoji, no unicode.
+ * abstract geometric portrait - no photos, no emoji, no unicode.
  */
 
 interface DirectorPortraitProps {
@@ -29,7 +29,7 @@ function hashSeed(id: string): number[] {
   return values;
 }
 
-// Palette — muted professional tones
+// Palette - muted professional tones
 const SKIN_TONES = [
   '#F5D0A9', '#E8B88A', '#D4956B', '#C07B56',
   '#A66B4F', '#8D5B3E', '#704830', '#553622',

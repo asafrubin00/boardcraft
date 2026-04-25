@@ -6,7 +6,7 @@ interface HarwickLogoProps {
 }
 
 /**
- * Abstract mark for Harwick Energy PLC — a stylised flame/droplet
+ * Abstract mark for Harwick Energy PLC - a stylised flame/droplet
  * suggesting energy and the North Sea. Gold on navy.
  */
 export default function HarwickLogo({ size = 48, className = '' }: HarwickLogoProps) {
@@ -19,9 +19,9 @@ export default function HarwickLogo({ size = 48, className = '' }: HarwickLogoPr
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      {/* Outer circle — navy background */}
+      {/* Outer circle - navy background */}
       <circle cx="32" cy="32" r="30" fill="#0D1B2A" stroke="#C8960C" strokeWidth="1.5" />
-      {/* Flame / oil-drop shape — gold */}
+      {/* Flame / oil-drop shape - gold */}
       <path
         d="M32 12
            C32 12 20 28 20 38

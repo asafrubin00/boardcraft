@@ -1,7 +1,7 @@
 import type { Director } from '@/types/game';
 
 export const rheinfeldDirectors: Director[] = [
-  // ── Heinrich Rheinfeld — Fixed Supervisory Board Chair ──
+  // ── Heinrich Rheinfeld - Fixed Supervisory Board Chair ──
   {
     id: 'rdir_heinrich',
     name: 'Heinrich Rheinfeld',
@@ -24,11 +24,11 @@ export const rheinfeldDirectors: Director[] = [
       triggerCategories: ['regulatoryLegal', 'stakeholderComms'],
       activated: false,
     },
-    suitableRoles: 'Fixed Chair — cannot be removed except via Tier 3 shareholder vote event.',
+    suitableRoles: 'Fixed Chair - cannot be removed except via Tier 3 shareholder vote event.',
     inherited: true,
   },
 
-  // ── Margarethe Rheinfeld — Inherited NED (shareholder) ──
+  // ── Margarethe Rheinfeld - Inherited NED (shareholder) ──
   {
     id: 'rdir_margarethe',
     name: 'Margarethe Rheinfeld',
@@ -50,12 +50,12 @@ export const rheinfeldDirectors: Director[] = [
     inherited: true,
   },
 
-  // ── Dr. Wolfgang Strasser — Inherited NED (shareholder, questionable) ──
+  // ── Dr. Wolfgang Strasser - Inherited NED (shareholder, questionable) ──
   {
     id: 'rdir_strasser',
     name: 'Dr. Wolfgang Strasser',
     background:
-      'Former Rheinfeld AG CFO. Eight years on the Supervisory Board. GCGC flags former executives on supervisory boards — the two-year cooling-off period should apply but he was appointed before stricter enforcement.',
+      'Former Rheinfeld AG CFO. Eight years on the Supervisory Board. GCGC flags former executives on supervisory boards - the two-year cooling-off period should apply but he was appointed before stricter enforcement.',
     domainRatings: {
       financialOversight: 78, regulatoryLegal: 52, strategyMarkets: 65,
       peopleCulture: 35, esgSustainability: 28, geopoliticalMacro: 40,
@@ -68,11 +68,11 @@ export const rheinfeldDirectors: Director[] = [
     availabilityTier: 'A',
     currentEnergy: 100,
     riskFlag: null,
-    suitableRoles: 'NED. Financial expertise but independence is questionable — former executive.',
+    suitableRoles: 'NED. Financial expertise but independence is questionable - former executive.',
     inherited: true,
   },
 
-  // ── Worker Representatives (Fixed — cannot be assigned or removed) ──
+  // ── Worker Representatives (Fixed - cannot be assigned or removed) ──
   {
     id: 'rdir_w_koch',
     name: 'Hans-Werner Koch',
@@ -90,7 +90,7 @@ export const rheinfeldDirectors: Director[] = [
     availabilityTier: 'A',
     currentEnergy: 100,
     riskFlag: null,
-    suitableRoles: 'Worker representative — fixed seat, non-assignable.',
+    suitableRoles: 'Worker representative - fixed seat, non-assignable.',
     inherited: true,
   },
   {
@@ -110,7 +110,7 @@ export const rheinfeldDirectors: Director[] = [
     availabilityTier: 'A',
     currentEnergy: 100,
     riskFlag: null,
-    suitableRoles: 'Worker representative — fixed seat, non-assignable.',
+    suitableRoles: 'Worker representative - fixed seat, non-assignable.',
     inherited: true,
   },
   {
@@ -130,7 +130,7 @@ export const rheinfeldDirectors: Director[] = [
     availabilityTier: 'A',
     currentEnergy: 100,
     riskFlag: null,
-    suitableRoles: 'Worker representative — fixed seat, non-assignable.',
+    suitableRoles: 'Worker representative - fixed seat, non-assignable.',
     inherited: true,
   },
   {
@@ -150,7 +150,7 @@ export const rheinfeldDirectors: Director[] = [
     availabilityTier: 'A',
     currentEnergy: 100,
     riskFlag: null,
-    suitableRoles: 'Worker representative — fixed seat, non-assignable. Most reform-friendly worker rep.',
+    suitableRoles: 'Worker representative - fixed seat, non-assignable. Most reform-friendly worker rep.',
     inherited: true,
   },
   {
@@ -170,11 +170,11 @@ export const rheinfeldDirectors: Director[] = [
     availabilityTier: 'A',
     currentEnergy: 100,
     riskFlag: null,
-    suitableRoles: 'Worker representative — fixed seat, non-assignable.',
+    suitableRoles: 'Worker representative - fixed seat, non-assignable.',
     inherited: true,
   },
 
-  // ── New Directors — Available for Appointment ──
+  // ── New Directors - Available for Appointment ──
 
   // 1. Prof. Dr. Sabine Lehrmann
   {
@@ -194,7 +194,7 @@ export const rheinfeldDirectors: Director[] = [
     availabilityTier: 'B',
     currentEnergy: 100,
     riskFlag: null,
-    suitableRoles: 'Audit Committee Chair (strong), CSRD Committee Chair if formed, Nomination Committee reform — the single most important appointment available.',
+    suitableRoles: 'Audit Committee Chair (strong), CSRD Committee Chair if formed, Nomination Committee reform - the single most important appointment available.',
     inherited: false,
   },
 
@@ -216,7 +216,7 @@ export const rheinfeldDirectors: Director[] = [
     availabilityTier: 'A',
     currentEnergy: 100,
     riskFlag: null,
-    suitableRoles: 'Audit Committee Chair (ideal — financial expert qualification met), Remuneration Committee member.',
+    suitableRoles: 'Audit Committee Chair (ideal - financial expert qualification met), Remuneration Committee member.',
     inherited: false,
   },
 
@@ -260,7 +260,7 @@ export const rheinfeldDirectors: Director[] = [
     availabilityTier: 'A',
     currentEnergy: 100,
     riskFlag: null,
-    suitableRoles: 'China pivot events, US tariff events, geopolitical risk events — uniquely valuable for Rheinfeld\'s Asian exposure.',
+    suitableRoles: 'China pivot events, US tariff events, geopolitical risk events - uniquely valuable for Rheinfeld\'s Asian exposure.',
     inherited: false,
   },
 
@@ -291,7 +291,7 @@ export const rheinfeldDirectors: Director[] = [
     id: 'rdir_06_brandt',
     name: 'Karl-Heinz Brandt',
     background:
-      'Former CEO of a mid-size German automotive supplier. Understands the industry deeply. Has restructured two companies and managed two rounds of workforce reduction — IG Metall knows and respects him even when they disagree.',
+      'Former CEO of a mid-size German automotive supplier. Understands the industry deeply. Has restructured two companies and managed two rounds of workforce reduction - IG Metall knows and respects him even when they disagree.',
     domainRatings: {
       financialOversight: 68, regulatoryLegal: 44, strategyMarkets: 88,
       peopleCulture: 72, esgSustainability: 45, geopoliticalMacro: 58,
@@ -374,7 +374,7 @@ export const rheinfeldDirectors: Director[] = [
     inherited: false,
   },
 
-  // 10. Dr. Thomas Richter — TIER C (Search Firm Only)
+  // 10. Dr. Thomas Richter - TIER C (Search Firm Only)
   {
     id: 'rdir_10_richter',
     name: 'Dr. Thomas Richter',
@@ -392,16 +392,16 @@ export const rheinfeldDirectors: Director[] = [
     availabilityTier: 'C',
     currentEnergy: 100,
     riskFlag: null,
-    suitableRoles: 'Supervisory Board Chair candidate (if Heinrich removed), institutional shareholder events, government relations, strategic review — the most powerful director in the pool.',
+    suitableRoles: 'Supervisory Board Chair candidate (if Heinrich removed), institutional shareholder events, government relations, strategic review - the most powerful director in the pool.',
     inherited: false,
   },
 
-  // 11. Dr. Marta Kowalski — TIER C (Search Firm Only)
+  // 11. Dr. Marta Kowalski - TIER C (Search Firm Only)
   {
     id: 'rdir_11_kowalski',
     name: 'Dr. Marta Kowalski',
     background:
-      'Former ECB supervisory board member. Expert in European financial regulation, CSRD implementation, and cross-border industrial governance. Polish-German background — uniquely positioned for EU regulatory events.',
+      'Former ECB supervisory board member. Expert in European financial regulation, CSRD implementation, and cross-border industrial governance. Polish-German background - uniquely positioned for EU regulatory events.',
     domainRatings: {
       financialOversight: 78, regulatoryLegal: 88, strategyMarkets: 60,
       peopleCulture: 50, esgSustainability: 82, geopoliticalMacro: 70,
@@ -414,7 +414,7 @@ export const rheinfeldDirectors: Director[] = [
     availabilityTier: 'C',
     currentEnergy: 100,
     riskFlag: null,
-    suitableRoles: 'CSRD Committee Chair (elite), Audit Committee Chair, EU regulatory events — the best combined financial/ESG director in the pool.',
+    suitableRoles: 'CSRD Committee Chair (elite), Audit Committee Chair, EU regulatory events - the best combined financial/ESG director in the pool.',
     inherited: false,
   },
 ];

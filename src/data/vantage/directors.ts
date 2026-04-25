@@ -1,4 +1,4 @@
-// ── Vantage Consumer Brands — Director Pool ──
+// ── Vantage Consumer Brands - Director Pool ──
 // 18 Vantage-specific directors (4 inherited, 14 new candidates incl. 2 Tier C)
 // + 5 cross-listed from Harwick pool (referenced by their existing dir_ IDs)
 
@@ -9,7 +9,7 @@ export const vantageDirectors: Director[] = [
   // INHERITED DIRECTORS (already on board at game start)
   // ═══════════════════════════════════════════════════════
 
-  // 1. Robert Kellerman — Lead Independent Director (inherited)
+  // 1. Robert Kellerman - Lead Independent Director (inherited)
   {
     id: 'vdir_01_kellerman',
     name: 'Robert Kellerman',
@@ -33,11 +33,11 @@ export const vantageDirectors: Director[] = [
     currentEnergy: 100,
     riskFlag: null,
     suitableRoles:
-      'LID (current, weak), NED — not suitable for committee chairs given low domain scores',
+      'LID (current, weak), NED - not suitable for committee chairs given low domain scores',
     inherited: true,
   },
 
-  // 2. Patricia Nguyen — NED / Audit Chair (inherited, flagged)
+  // 2. Patricia Nguyen - NED / Audit Chair (inherited, flagged)
   {
     id: 'vdir_02_nguyen',
     name: 'Patricia Nguyen',
@@ -67,16 +67,16 @@ export const vantageDirectors: Director[] = [
       activated: true,
     },
     suitableRoles:
-      'Cannot chair Audit Committee while conflict exists. Plain NED role is marginal — most players will remove her.',
+      'Cannot chair Audit Committee while conflict exists. Plain NED role is marginal - most players will remove her.',
     inherited: true,
   },
 
-  // 3. James Whitfield — NED (inherited)
+  // 3. James Whitfield - NED (inherited)
   {
     id: 'vdir_03_whitfield',
     name: 'James Whitfield',
     background:
-      'Former CFO of a major US food conglomerate. Strong financial expertise. 8 years on the Vantage board — approaching ISS\'s 9-year independence flag.',
+      'Former CFO of a major US food conglomerate. Strong financial expertise. 8 years on the Vantage board - approaching ISS\'s 9-year independence flag.',
     domainRatings: {
       financialOversight: 88,
       regulatoryLegal: 52,
@@ -100,12 +100,12 @@ export const vantageDirectors: Director[] = [
     tenureYears: 8,
   },
 
-  // 4. Dr. Cynthia Park — NED (inherited)
+  // 4. Dr. Cynthia Park - NED (inherited)
   {
     id: 'vdir_04_park',
     name: 'Dr. Cynthia Park',
     background:
-      'Former VP of Sustainability at a Fortune 100 consumer goods company. Expert in ESG disclosure, supply chain ethics, and consumer regulation. Two years on the Vantage board — underutilised.',
+      'Former VP of Sustainability at a Fortune 100 consumer goods company. Expert in ESG disclosure, supply chain ethics, and consumer regulation. Two years on the Vantage board - underutilised.',
     domainRatings: {
       financialOversight: 38,
       regulatoryLegal: 61,
@@ -129,7 +129,7 @@ export const vantageDirectors: Director[] = [
   },
 
   // ═══════════════════════════════════════════════════════
-  // NEW DIRECTORS — Financial & Audit
+  // NEW DIRECTORS - Financial & Audit
   // ═══════════════════════════════════════════════════════
 
   // 5. Howard Stern III
@@ -156,7 +156,7 @@ export const vantageDirectors: Director[] = [
     currentEnergy: 100,
     riskFlag: null,
     suitableRoles:
-      'Audit Committee Chair (ideal — meets SEC financial expert requirement), Comp Committee member',
+      'Audit Committee Chair (ideal - meets SEC financial expert requirement), Comp Committee member',
     inherited: false,
   },
 
@@ -189,7 +189,7 @@ export const vantageDirectors: Director[] = [
   },
 
   // ═══════════════════════════════════════════════════════
-  // NEW DIRECTORS — Regulatory & Legal
+  // NEW DIRECTORS - Regulatory & Legal
   // ═══════════════════════════════════════════════════════
 
   // 7. Senator Barbara Finch (ret.)
@@ -249,7 +249,7 @@ export const vantageDirectors: Director[] = [
   },
 
   // ═══════════════════════════════════════════════════════
-  // NEW DIRECTORS — Strategy & Markets
+  // NEW DIRECTORS - Strategy & Markets
   // ═══════════════════════════════════════════════════════
 
   // 9. Diana Marchetti
@@ -285,7 +285,7 @@ export const vantageDirectors: Director[] = [
     id: 'vdir_10_reinholt',
     name: 'Todd Reinholt',
     background:
-      'Managing Director at a major US activist hedge fund (retired). Knows exactly how activists think and operate. Controversial appointment — signals the board is serious about reform.',
+      'Managing Director at a major US activist hedge fund (retired). Knows exactly how activists think and operate. Controversial appointment - signals the board is serious about reform.',
     domainRatings: {
       financialOversight: 74,
       regulatoryLegal: 48,
@@ -310,12 +310,12 @@ export const vantageDirectors: Director[] = [
       activated: false,
     },
     suitableRoles:
-      'Activist defence events (uniquely effective — knows the playbook), M&A strategy, proxy battle defence',
+      'Activist defence events (uniquely effective - knows the playbook), M&A strategy, proxy battle defence',
     inherited: false,
   },
 
   // ═══════════════════════════════════════════════════════
-  // NEW DIRECTORS — People, Culture & Governance
+  // NEW DIRECTORS - People, Culture & Governance
   // ═══════════════════════════════════════════════════════
 
   // 11. Dr. Josephine Carter
@@ -375,7 +375,7 @@ export const vantageDirectors: Director[] = [
   },
 
   // ═══════════════════════════════════════════════════════
-  // NEW DIRECTORS — ESG & Sustainability
+  // NEW DIRECTORS - ESG & Sustainability
   // ═══════════════════════════════════════════════════════
 
   // 13. Maya Thornton
@@ -407,7 +407,7 @@ export const vantageDirectors: Director[] = [
   },
 
   // ═══════════════════════════════════════════════════════
-  // NEW DIRECTORS — Technology & Digital
+  // NEW DIRECTORS - Technology & Digital
   // ═══════════════════════════════════════════════════════
 
   // 14. Carlos Mendez
@@ -439,7 +439,7 @@ export const vantageDirectors: Director[] = [
   },
 
   // ═══════════════════════════════════════════════════════
-  // NEW DIRECTORS — Stakeholder & Chair Candidates
+  // NEW DIRECTORS - Stakeholder & Chair Candidates
   // ═══════════════════════════════════════════════════════
 
   // 15. Eleanor Vance
@@ -466,7 +466,7 @@ export const vantageDirectors: Director[] = [
     currentEnergy: 100,
     riskFlag: null,
     suitableRoles:
-      'BOARD CHAIR / INDEPENDENT CHAIR (primary candidate — highest Stakeholder score, Chair experience, activist credibility). Also LID-capable.',
+      'BOARD CHAIR / INDEPENDENT CHAIR (primary candidate - highest Stakeholder score, Chair experience, activist credibility). Also LID-capable.',
     inherited: false,
   },
 
@@ -499,10 +499,10 @@ export const vantageDirectors: Director[] = [
   },
 
   // ═══════════════════════════════════════════════════════
-  // TIER C — Search Firm Only
+  // TIER C - Search Firm Only
   // ═══════════════════════════════════════════════════════
 
-  // 17. Dr. Amara Singh — TIER C
+  // 17. Dr. Amara Singh - TIER C
   {
     id: 'vdir_17_singh',
     name: 'Dr. Amara Singh',
@@ -526,11 +526,11 @@ export const vantageDirectors: Director[] = [
     currentEnergy: 100,
     riskFlag: null,
     suitableRoles:
-      'Regulatory events (elite effectiveness), FTC/FDA investigations, Consumer Affairs & Regulatory Committee Chair — the most powerful regulatory director in the Vantage pool',
+      'Regulatory events (elite effectiveness), FTC/FDA investigations, Consumer Affairs & Regulatory Committee Chair - the most powerful regulatory director in the Vantage pool',
     inherited: false,
   },
 
-  // 18. Richard Blackwood — TIER C
+  // 18. Richard Blackwood - TIER C
   {
     id: 'vdir_18_blackwood',
     name: 'Richard Blackwood',
@@ -554,7 +554,7 @@ export const vantageDirectors: Director[] = [
     currentEnergy: 100,
     riskFlag: null,
     suitableRoles:
-      'Board Chair (elite), activist defence events, strategic review events — the strongest overall director in the Vantage pool',
+      'Board Chair (elite), activist defence events, strategic review events - the strongest overall director in the Vantage pool',
     inherited: false,
   },
 ];

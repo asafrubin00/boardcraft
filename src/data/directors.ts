@@ -7,7 +7,7 @@ import { vantageDirectors } from './vantage/directors';
 import { rheinfeldDirectors } from './rheinfeld/directors';
 
 export const directors: Director[] = [
-  // ── Dame Helen Forsyth — departing inherited Chair ──
+  // ── Dame Helen Forsyth - departing inherited Chair ──
   {
     id: 'dir_00_forsyth',
     name: 'Dame Helen Forsyth',
@@ -31,7 +31,7 @@ export const directors: Director[] = [
     currentEnergy: 100,
     riskFlag: null,
     suitableRoles:
-      'Departing Chair. Marked for departure at AGM — not available for reappointment.',
+      'Departing Chair. Marked for departure at AGM - not available for reappointment.',
     inherited: true,
   },
 
@@ -59,7 +59,7 @@ export const directors: Director[] = [
     currentEnergy: 100,
     riskFlag: null,
     suitableRoles:
-      'Audit Committee Chair (primary). Board Chair possible but not ideal — low ESG score will be scrutinised.',
+      'Audit Committee Chair (primary). Board Chair possible but not ideal - low ESG score will be scrutinised.',
     inherited: false,
   },
 
@@ -242,7 +242,7 @@ export const directors: Director[] = [
     inherited: false,
   },
 
-  // ── 8. Geoffrey Crane — inherited ──
+  // ── 8. Geoffrey Crane - inherited ──
   {
     id: 'dir_08_crane',
     name: 'Geoffrey Crane',
@@ -355,7 +355,7 @@ export const directors: Director[] = [
     inherited: false,
   },
 
-  // ── 12. Yuki Tanaka — inherited ──
+  // ── 12. Yuki Tanaka - inherited ──
   {
     id: 'dir_12_tanaka',
     name: 'Yuki Tanaka',
@@ -383,7 +383,7 @@ export const directors: Director[] = [
     inherited: true,
   },
 
-  // ── 13. Sir David Okafor — inherited ──
+  // ── 13. Sir David Okafor - inherited ──
   {
     id: 'dir_13_okafor',
     name: 'Sir David Okafor',
@@ -439,7 +439,7 @@ export const directors: Director[] = [
     inherited: false,
   },
 
-  // ── 15. Margaret Holt — inherited ──
+  // ── 15. Margaret Holt - inherited ──
   {
     id: 'dir_15_holt',
     name: 'Margaret Holt',
@@ -547,7 +547,7 @@ export const directors: Director[] = [
     currentEnergy: 100,
     riskFlag: null,
     suitableRoles:
-      'BOARD CHAIR (primary candidate — highest Stakeholder score, Chair experience). Also SID-capable.',
+      'BOARD CHAIR (primary candidate - highest Stakeholder score, Chair experience). Also SID-capable.',
     inherited: false,
   },
 
@@ -607,7 +607,7 @@ export const directors: Director[] = [
     inherited: false,
   },
 
-  // ── 24. Dr. Eleanor Voss — TIER C ──
+  // ── 24. Dr. Eleanor Voss - TIER C ──
   {
     id: 'dir_24_voss',
     name: 'Dr. Eleanor Voss',
@@ -631,11 +631,11 @@ export const directors: Director[] = [
     currentEnergy: 100,
     riskFlag: null,
     suitableRoles:
-      'Energy Transition Committee Chair (elite). Board Chair candidate. M&A/activist events — the best overall NED in the Harwick pool.',
+      'Energy Transition Committee Chair (elite). Board Chair candidate. M&A/activist events - the best overall NED in the Harwick pool.',
     inherited: false,
   },
 
-  // ── 25. Professor Nnamdi Achebe — TIER C ──
+  // ── 25. Professor Nnamdi Achebe - TIER C ──
   {
     id: 'dir_25_achebe',
     name: 'Professor Nnamdi Achebe',
@@ -659,7 +659,7 @@ export const directors: Director[] = [
     currentEnergy: 100,
     riskFlag: null,
     suitableRoles:
-      "West Africa operations events. Emerging market geopolitical events — uniquely valuable for Harwick's Guyana exposure.",
+      "West Africa operations events. Emerging market geopolitical events - uniquely valuable for Harwick's Guyana exposure.",
     inherited: false,
   },
 

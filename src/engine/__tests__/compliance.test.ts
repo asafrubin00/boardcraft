@@ -32,6 +32,8 @@ const emptyCommittees: Record<CommitteeId, CommitteeState> = {
   nomination: { active: true, chairDirectorId: null },
   safetyEnvironment: { active: false, chairDirectorId: null },
   energyTransition: { active: false, chairDirectorId: null },
+  csrd: { active: false, chairDirectorId: null },
+  strategy: { active: false, chairDirectorId: null },
 };
 
 describe('Nom/Gov Chair compliance check', () => {
@@ -47,6 +49,7 @@ describe('Nom/Gov Chair compliance check', () => {
         peopleCulture: 65,
         esgSustainability: 58,
         geopoliticalMacro: 50,
+        technologyDigital: 60,
         stakeholderComms: 72,
       },
     });
@@ -62,6 +65,7 @@ describe('Nom/Gov Chair compliance check', () => {
         peopleCulture: 44,
         esgSustainability: 38,
         geopoliticalMacro: 55,
+        technologyDigital: 50,
         stakeholderComms: 52,
       },
     });

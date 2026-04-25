@@ -11,7 +11,7 @@ const GENERIC_HEADLINES = [
   'FTSE 250 flat in morning trading',
   'Fed signals rates on hold through Q3',
   'ESG governance standards tightened by FRC',
-  'Proxy adviser season begins — boards on notice',
+  'Proxy adviser season begins - boards on notice',
 ];
 
 let headlineCounter = 0;
@@ -31,10 +31,10 @@ function getStartHeadlines(companyName: string): NewsHeadline[] {
 function getOutcomeHeadline(companyName: string, tier: OutcomeTier): NewsHeadline | null {
   switch (tier) {
     case 'CRITICAL_SUCCESS':
-      return makeHeadline(`${companyName} board praised for decisive action — analysts upgrade`);
+      return makeHeadline(`${companyName} board praised for decisive action - analysts upgrade`);
     case 'FAILURE':
     case 'CRITICAL_FAILURE':
-      return makeHeadline(`${companyName} faces scrutiny after board misstep — proxy advisers take note`);
+      return makeHeadline(`${companyName} faces scrutiny after board misstep - proxy advisers take note`);
     default:
       return null;
   }
@@ -42,7 +42,7 @@ function getOutcomeHeadline(companyName: string, tier: OutcomeTier): NewsHeadlin
 
 function getSvHeadline(companyName: string, sv: number): NewsHeadline | null {
   if (sv > 110) {
-    return makeHeadline(`${companyName} shareholder value outperforms sector — governance premium emerges`);
+    return makeHeadline(`${companyName} shareholder value outperforms sector - governance premium emerges`);
   }
   if (sv < 90) {
     return makeHeadline(`${companyName} under pressure as shareholder value erodes`);
@@ -101,7 +101,7 @@ export function useNewsTicker(gameState: GameState | null) {
       prevApexStatus.current === 'monitoring'
     ) {
       newHeadlines.push(
-        makeHeadline(`BREAKING: Activist fund takes stake in ${companyName} — board under pressure`)
+        makeHeadline(`BREAKING: Activist fund takes stake in ${companyName} - board under pressure`)
       );
     }
     prevApexStatus.current = gameState.apexStatus;
@@ -109,7 +109,7 @@ export function useNewsTicker(gameState: GameState | null) {
     // AGM concluded
     if (prevQuarter.current === 'AGM' && gameState.currentQuarter !== 'AGM') {
       newHeadlines.push(
-        makeHeadline(`${companyName} AGM concludes — board survives shareholder vote`)
+        makeHeadline(`${companyName} AGM concludes - board survives shareholder vote`)
       );
     }
     prevQuarter.current = gameState.currentQuarter;

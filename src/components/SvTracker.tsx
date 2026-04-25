@@ -63,7 +63,7 @@ export default function SvTracker({ svIndex, svHistory, onOpenDashboard }: SvTra
         {showTooltip && (
           <div className="absolute top-full left-0 mt-2 z-50 w-72 bg-navy border border-gold/40 rounded-lg p-3 shadow-lg pointer-events-none">
             <p className="text-xs text-foreground/90 font-narrative leading-relaxed">
-              <span className="text-gold font-bold">Shareholder Value Index</span> — tracks the percentage change in your company&apos;s value since game start. Starting value: 100. Your goal: finish as high as possible.
+              <span className="text-gold font-bold">Shareholder Value Index</span> - tracks the percentage change in your company&apos;s value since game start. Starting value: 100. Your goal: finish as high as possible.
             </p>
           </div>
         )}

@@ -115,7 +115,7 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
                 <div className="flex items-center gap-3 text-sm">
                   <span className="text-foreground">{jurisdictionFlag(company.jurisdiction)}</span>
                   <span className="bg-navy-dark text-foreground px-2 py-0.5 rounded text-xs">
-                    {company.stockExchange} — {company.marketCap}
+                    {company.stockExchange} - {company.marketCap}
                   </span>
                 </div>
 
@@ -192,7 +192,7 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
                 {company.name}
               </h2>
               <p className="text-foreground text-sm opacity-70">
-                {company.region} — {company.industry}
+                {company.region} - {company.industry}
               </p>
               <span className={`text-xs ${difficultyColor(company.difficulty)}`}>
                 Difficulty: {difficultyLabel(company.difficulty)}

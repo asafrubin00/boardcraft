@@ -97,7 +97,7 @@ export default function SvDashboardModal({
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-narrative font-bold text-gold">
-                SV Dashboard — Current: {svIndex}
+                SV Dashboard - Current: {svIndex}
               </h2>
               <button
                 onClick={onClose}

@@ -32,12 +32,14 @@ function randomInt(rng: () => number, min: number, max: number): number {
 }
 
 // ── Energy modifier lookup ──
+// Spec: >80 → 1.0, >60 → 0.9, >40 → 0.75, >20 → 0.55, else → 0.3
+// Boundary values: 80 → 0.9, 60 → 0.75, 40 → 0.55, 20 → 0.3
 
 function getEnergyModifier(energy: number): number {
-  if (energy >= 80) return 1.0;
-  if (energy >= 60) return 0.9;
-  if (energy >= 40) return 0.75;
-  if (energy >= 20) return 0.55;
+  if (energy > 80) return 1.0;
+  if (energy > 60) return 0.9;
+  if (energy > 40) return 0.75;
+  if (energy > 20) return 0.55;
   return 0.3;
 }
 
@@ -223,7 +225,7 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
           strategyMultiplier = fallbackStrategy.multiplier;
         }
       } else {
-        // No fallback — use the strategy anyway but it shouldn't reach here
+        // No fallback - use the strategy anyway but it shouldn't reach here
         strategyMultiplier = strategy.multiplier;
       }
     }
@@ -267,7 +269,7 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
   // Step 9: Outcome tier
   let outcomeTier = getOutcomeTier(finalScore);
 
-  // Step 9b: Wildcard modifier — 8% chance to shift one tier unexpectedly
+  // Step 9b: Wildcard modifier - 8% chance to shift one tier unexpectedly
   const TIER_ORDER: OutcomeTier[] = ['CRITICAL_FAILURE', 'FAILURE', 'PARTIAL_SUCCESS', 'SUCCESS', 'CRITICAL_SUCCESS'];
   let wildcard = false;
   const wildcardRoll = rng();
@@ -315,6 +317,25 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
         followOnEvents.push(followOn.eventId);
       }
     }
+  }
+
+  // ── Dev logging ──
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Resolution]', {
+      event: event.id,
+      deployedDirectors: deployedDirectors.map((d) => d.id),
+      strategyChoice,
+      isDoNothing,
+      matchScore: Math.round(matchScore * 100) / 100,
+      strategyMultiplier,
+      committeeBonus,
+      rawScore: Math.round(rawScore * 100) / 100,
+      randomFactor: Math.round(randomFactor * 1000) / 1000,
+      finalScore: Math.round(finalScore * 100) / 100,
+      outcomeTier,
+      wildcard,
+      svDelta,
+    });
   }
 
   return {

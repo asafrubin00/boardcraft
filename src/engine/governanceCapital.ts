@@ -1,4 +1,4 @@
-// ── Governance Capital (GC) — persistent cross-game currency ──
+// ── Governance Capital (GC) - persistent cross-game currency ──
 
 import type { GameState } from '@/types/game';
 

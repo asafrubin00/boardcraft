@@ -31,8 +31,13 @@ export const TABLE_POSITIONS: TablePosition[] = [
 
 // ── Derivation: map seats → table positions ──
 
-export function deriveTablePositions(seats: BoardSeat[], hasEnergyTransition = false): (string | null)[] {
-  const totalSlots = hasEnergyTransition ? 9 : 8;
+export function deriveTablePositions(
+  seats: BoardSeat[],
+  hasEnergyTransition = false,
+  hasCsrd = false,
+  hasStrategy = false,
+): (string | null)[] {
+  const totalSlots = 8 + (hasEnergyTransition ? 1 : 0) + (hasCsrd ? 1 : 0) + (hasStrategy ? 1 : 0);
   const positions: (string | null)[] = Array(totalSlots).fill(null);
   const placed = new Set<string>();
 
@@ -40,9 +45,16 @@ export function deriveTablePositions(seats: BoardSeat[], hasEnergyTransition = f
   const roleToPosition: Record<string, number> = {
     chair: 0, sid: 1, auditChair: 2, remChair: 4, nomChair: 6,
   };
-  // ETC chair maps to position 8 (only when ET is active)
+  // Optional committee chairs get sequential slots after the 8 base
+  let nextOptSlot = 8;
   if (hasEnergyTransition) {
-    roleToPosition['energyTransitionChair'] = 8;
+    roleToPosition['energyTransitionChair'] = nextOptSlot++;
+  }
+  if (hasCsrd) {
+    roleToPosition['csrdChair'] = nextOptSlot++;
+  }
+  if (hasStrategy) {
+    roleToPosition['strategyChair'] = nextOptSlot++;
   }
 
   for (const seat of seats) {
@@ -96,6 +108,8 @@ interface BoardroomTableProps {
   activeSeatIndex: number | null;
   onSeatClick: (index: number) => void;
   hasEnergyTransition?: boolean;
+  hasCsrd?: boolean;
+  hasStrategy?: boolean;
   onDropOnSeat?: (directorId: string, seatIndex: number) => void;
   /** Company short name for table watermark (e.g. "HARWICK") */
   companyShortName?: string;
@@ -105,9 +119,9 @@ interface BoardroomTableProps {
   jurisdiction?: Jurisdiction;
   /** Whether the Chair seat is locked as Combined Chair/CEO (Vantage) */
   combinedChairCeo?: boolean;
-  /** Director IDs that are worker representatives — steel blue ring, non-interactive */
+  /** Director IDs that are worker representatives - steel blue ring, non-interactive */
   workerRepIds?: string[];
-  /** Director IDs of locked seats (e.g. fixed chair) — gold ring, portrait shown, non-interactive */
+  /** Director IDs of locked seats (e.g. fixed chair) - gold ring, portrait shown, non-interactive */
   lockedDirectorIds?: string[];
   /** Director IDs with a conflict-of-interest indicator (red badge overlay) */
   conflictDirectorIds?: string[];
@@ -123,12 +137,32 @@ const ETC_POSITION: TablePosition = {
   isChair: false,
 };
 
+// CSRD Committee Chair position (appears at bottom-right when CSRD committee is active)
+const CSRD_POSITION: TablePosition = {
+  defaultRole: 'csrdChair',
+  label: 'CSRD Chair',
+  leftPct: 67.6,
+  topPct: 79.4,
+  isChair: false,
+};
+
+// Strategy Committee Chair position (appears below bottom-centre when Strategy committee is active)
+const STRATEGY_POSITION: TablePosition = {
+  defaultRole: 'strategyChair',
+  label: 'Strategy Chair',
+  leftPct: 50,
+  topPct: 94,
+  isChair: false,
+};
+
 export default function BoardroomTable({
   seats,
   directors,
   activeSeatIndex,
   onSeatClick,
   hasEnergyTransition = false,
+  hasCsrd = false,
+  hasStrategy = false,
   onDropOnSeat,
   companyShortName = 'HARWICK',
   companyShortNameSuffix = 'ENERGY PLC',
@@ -141,12 +175,15 @@ export default function BoardroomTable({
   const workerRepSet = new Set(workerRepIds);
   const lockedSet = new Set(lockedDirectorIds);
   const conflictSet = new Set(conflictDirectorIds);
-  // Build effective positions: base 8 + optional ETC seat
-  const effectivePositions = hasEnergyTransition
-    ? [...TABLE_POSITIONS, ETC_POSITION]
-    : TABLE_POSITIONS;
+  // Build effective positions: base 8 + optional committee chair seats
+  const effectivePositions: TablePosition[] = [
+    ...TABLE_POSITIONS,
+    ...(hasEnergyTransition ? [ETC_POSITION] : []),
+    ...(hasCsrd ? [CSRD_POSITION] : []),
+    ...(hasStrategy ? [STRATEGY_POSITION] : []),
+  ];
 
-  const positions = deriveTablePositions(seats, hasEnergyTransition);
+  const positions = deriveTablePositions(seats, hasEnergyTransition, hasCsrd, hasStrategy);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   const getDirector = (id: string) => directors.find((d) => d.id === id);
@@ -172,14 +209,14 @@ export default function BoardroomTable({
           >
             <line x1="0" y1="4" x2="8" y2="4" stroke="#2A5580" strokeWidth="0.3" opacity="0.2" />
           </pattern>
-          {/* Radial gradient — lighter centre */}
+          {/* Radial gradient - lighter centre */}
           <radialGradient id="tableGrad" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#1A3A5C" stopOpacity="0.35" />
             <stop offset="100%" stopColor="#0D1B2A" stopOpacity="0" />
           </radialGradient>
         </defs>
 
-        {/* Outer table surface — rounded rectangle */}
+        {/* Outer table surface - rounded rectangle */}
         <rect x="120" y="55" width="160" height="190" rx="35" fill="#0D1B2A" stroke="#C8960C" strokeWidth="2" />
         {/* Wood-grain overlay */}
         <rect x="120" y="55" width="160" height="190" rx="35" fill="url(#woodGrain)" />
@@ -224,7 +261,7 @@ export default function BoardroomTable({
         </text>
       </svg>
 
-      {/* Seat circles — positioned over SVG */}
+      {/* Seat circles - positioned over SVG */}
       {effectivePositions.map((pos, index) => {
         const directorId = positions[index];
         const director = directorId ? getDirector(directorId) : null;
@@ -314,7 +351,7 @@ export default function BoardroomTable({
               <div
                 className="absolute top-0 right-0 w-4 h-4 rounded-full bg-error flex items-center justify-center"
                 style={{ fontSize: '9px', color: 'white', fontWeight: 'bold', zIndex: 10 }}
-                title="Conflict of interest — Heinrich's side-deal revealed"
+                title="Conflict of interest - Heinrich's side-deal revealed"
               >
                 !
               </div>
@@ -323,7 +360,7 @@ export default function BoardroomTable({
         );
       })}
 
-      {/* Labels — absolutely-positioned HTML elements outside the seat circles */}
+      {/* Labels - absolutely-positioned HTML elements outside the seat circles */}
       {effectivePositions.map((pos, index) => {
         const directorId = positions[index];
         const director = directorId ? getDirector(directorId) : null;

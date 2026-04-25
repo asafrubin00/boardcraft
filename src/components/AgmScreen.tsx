@@ -160,7 +160,7 @@ export default function AgmScreen({
   // Resolution 1 gets a penalty if Crane's long tenure is still on the board
   const res1TenurePenalty = craneOnBoard ? -8 : 0;
 
-  // Resolution 2 adjustments (Say-on-Pay — Event 06)
+  // Resolution 2 adjustments (Say-on-Pay - Event 06)
   const ev06 = gameState.resolvedEvents.find((r) => r.eventId === 'event_06');
   let res2Adjustment = 0;
   if (ev06) {
@@ -171,7 +171,7 @@ export default function AgmScreen({
     }
   }
 
-  // Resolution 3 adjustments (ESG — energyTransition committee + Event 05)
+  // Resolution 3 adjustments (ESG - energyTransition committee + Event 05)
   let res3Adjustment = 0;
   if (gameState.committees.energyTransition.active) {
     res3Adjustment += 10;
@@ -213,25 +213,25 @@ export default function AgmScreen({
     let res1Explanation: string;
     if (results.resolution1Pass) {
       res1Explanation = craneOnBoard
-        ? `Passed — ${ghLevel} governance health offset Crane's 12-year tenure concerns.`
-        : `Passed — ${ghLevel} governance health and no tenure flags on the board.`;
+        ? `Passed - ${ghLevel} governance health offset Crane's 12-year tenure concerns.`
+        : `Passed - ${ghLevel} governance health and no tenure flags on the board.`;
     } else {
       res1Explanation = craneOnBoard
-        ? `Failed — Geoffrey Crane's 12-year tenure flagged by Meridian Governance, compounded by ${ghLevel} governance health.`
-        : `Failed — ${ghLevel} governance health undermined institutional confidence in the board slate.`;
+        ? `Failed - Geoffrey Crane's 12-year tenure flagged by Meridian Governance, compounded by ${ghLevel} governance health.`
+        : `Failed - ${ghLevel} governance health undermined institutional confidence in the board slate.`;
     }
 
     let res2Explanation: string;
     if (results.resolution2Pass) {
       res2Explanation = ev06
         ? (ev06.outcomeTier === 'SUCCESS' || ev06.outcomeTier === 'CRITICAL_SUCCESS')
-          ? `Passed — prior remuneration review strengthened the case for Blaine's package.`
-          : `Passed — ${ghLevel} governance health and proxy adviser recommendation carried the vote.`
-        : `Passed — ${ghLevel} governance health and proxy adviser recommendation carried the vote.`;
+          ? `Passed - prior remuneration review strengthened the case for Blaine's package.`
+          : `Passed - ${ghLevel} governance health and proxy adviser recommendation carried the vote.`
+        : `Passed - ${ghLevel} governance health and proxy adviser recommendation carried the vote.`;
     } else {
       res2Explanation = ev06 && (ev06.outcomeTier === 'FAILURE' || ev06.outcomeTier === 'CRITICAL_FAILURE')
-        ? `Failed — earlier remuneration controversy eroded shareholder support for Blaine's £4.1m package.`
-        : `Failed — ${ghLevel} governance health left shareholders unconvinced on executive pay.`;
+        ? `Failed - earlier remuneration controversy eroded shareholder support for Blaine's £4.1m package.`
+        : `Failed - ${ghLevel} governance health left shareholders unconvinced on executive pay.`;
     }
 
     let res3Explanation: string;
@@ -239,17 +239,17 @@ export default function AgmScreen({
     const ev05Failed = ev05 && (ev05.outcomeTier === 'FAILURE' || ev05.outcomeTier === 'CRITICAL_FAILURE');
     if (results.resolution3Pass) {
       res3Explanation = etActive
-        ? `Passed — the Energy Transition Committee demonstrated credible ESG governance.`
-        : `Passed — ${ghLevel} governance health and proxy adviser support swung the vote.`;
+        ? `Passed - the Energy Transition Committee demonstrated credible ESG governance.`
+        : `Passed - ${ghLevel} governance health and proxy adviser support swung the vote.`;
     } else {
       if (ev05Failed && !etActive) {
-        res3Explanation = `Failed — prior ESG incident and absence of an Energy Transition Committee undermined credibility.`;
+        res3Explanation = `Failed - prior ESG incident and absence of an Energy Transition Committee undermined credibility.`;
       } else if (ev05Failed) {
-        res3Explanation = `Failed — prior ESG incident damaged the board's environmental credentials despite the ET Committee.`;
+        res3Explanation = `Failed - prior ESG incident damaged the board's environmental credentials despite the ET Committee.`;
       } else if (!etActive) {
-        res3Explanation = `Failed — no Energy Transition Committee left shareholders sceptical of ESG commitment.`;
+        res3Explanation = `Failed - no Energy Transition Committee left shareholders sceptical of ESG commitment.`;
       } else {
-        res3Explanation = `Failed — ${ghLevel} governance health eroded shareholder confidence on ESG disclosure.`;
+        res3Explanation = `Failed - ${ghLevel} governance health eroded shareholder confidence on ESG disclosure.`;
       }
     }
 
@@ -261,7 +261,7 @@ export default function AgmScreen({
 
     return (
       <div className="min-h-screen bg-navy flex flex-col items-center justify-center px-4 py-12">
-        {/* Change Company — subtle top-left */}
+        {/* Change Company - subtle top-left */}
         {onChangeCompany && (
           <button
             onClick={onChangeCompany}
@@ -285,7 +285,7 @@ export default function AgmScreen({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          AGM Results — {gameState.company.name}
+          AGM Results - {gameState.company.name}
         </motion.h1>
 
         <div className="flex flex-col gap-4 w-full max-w-xl mt-8">
@@ -354,7 +354,7 @@ export default function AgmScreen({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Annual General Meeting — {gameState.company.name}
+          Annual General Meeting - {gameState.company.name}
         </motion.h1>
 
         <motion.p

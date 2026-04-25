@@ -33,6 +33,8 @@ export const ROLE_LABELS: Record<BoardRole, string> = {
   techChair: 'Tech/Cyber Committee Chair',
   safetyEnvChair: 'Safety & Environment Chair',
   energyTransitionChair: 'Energy Transition Chair',
+  csrdChair: 'CSRD Committee Chair',
+  strategyChair: 'Strategy Committee Chair',
   ned: 'Non-Executive Director',
 };
 
@@ -54,6 +56,8 @@ export const AVAILABLE_ROLES: BoardRole[] = [
   'nomChair',
   'sid',
   'energyTransitionChair',
+  'csrdChair',
+  'strategyChair',
   'ned',
 ];
 

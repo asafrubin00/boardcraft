@@ -17,7 +17,7 @@ export default function NewsTicker({ headlines }: NewsTickerProps) {
       className="fixed bottom-0 left-0 right-0 z-50 flex items-center overflow-hidden select-none"
       style={{ height: 40, backgroundColor: '#080F1A' }}
     >
-      {/* LIVE badge — fixed, does not scroll */}
+      {/* LIVE badge - fixed, does not scroll */}
       <div
         className="shrink-0 flex items-center gap-1 px-3 h-full z-10"
         style={{ backgroundColor: '#080F1A' }}
@@ -30,7 +30,7 @@ export default function NewsTicker({ headlines }: NewsTickerProps) {
         </span>
       </div>
 
-      {/* Scrolling headlines — pauses on hover */}
+      {/* Scrolling headlines - pauses on hover */}
       <div className="flex-1 overflow-hidden relative h-full flex items-center news-ticker-area">
         <div
           className="news-ticker-text whitespace-nowrap text-foreground/60"

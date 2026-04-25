@@ -90,7 +90,7 @@ export function applyForcedRemoval(
   };
 }
 
-// ── Apply forced change retention (misconduct — keep director with penalties) ──
+// ── Apply forced change retention (misconduct - keep director with penalties) ──
 
 export function applyRetainDirector(state: GameState): GameState {
   // Governance health penalty: -8
@@ -124,7 +124,7 @@ export function tickForcedChangeTimer(state: GameState): GameState {
   };
 
   if (updated.turnsRemaining <= 0) {
-    // Time expired — apply governance health penalty
+    // Time expired - apply governance health penalty
     return {
       ...state,
       governanceHealth: Math.max(0, Math.min(100, state.governanceHealth - 10)),

@@ -81,7 +81,7 @@ function generateVerdict(gameState: GameState, careerTitle: string, eventNameMap
 
   let opening: string;
   if (sv > 115) opening = 'A masterclass in governance under pressure.';
-  else if (sv > 105) opening = 'A solid year — the board held its nerve when it mattered.';
+  else if (sv > 105) opening = 'A solid year - the board held its nerve when it mattered.';
   else if (sv > 95) opening = 'A mixed year. Some good decisions, some costly ones.';
   else if (sv > 85) opening = 'A difficult year that exposed real weaknesses in the board.';
   else opening = 'A governance failure. The board was not equal to the challenges it faced.';
@@ -91,7 +91,7 @@ function generateVerdict(gameState: GameState, careerTitle: string, eventNameMap
     const best = [...resolved].sort((a, b) => b.svDelta - a.svDelta)[0];
     if (best.svDelta > 0) {
       const tier = best.outcomeTier.replace('_', ' ').toLowerCase();
-      bestLine = ` Your strongest moment was ${eventNameMap[best.eventId] ?? best.eventId} — a ${tier} that added ${best.svDelta.toFixed(1)}% to shareholder value.`;
+      bestLine = ` Your strongest moment was ${eventNameMap[best.eventId] ?? best.eventId} - a ${tier} that added ${best.svDelta.toFixed(1)}% to shareholder value.`;
     }
   }
 
@@ -108,7 +108,7 @@ function generateVerdict(gameState: GameState, careerTitle: string, eventNameMap
   if (gh > startGh) {
     ghLine = ` Governance health improved across the year, ending at ${gh}/100.`;
   } else if (gh < startGh) {
-    ghLine = ` Governance health deteriorated, ending at ${gh}/100 — a warning sign for the year ahead.`;
+    ghLine = ` Governance health deteriorated, ending at ${gh}/100 - a warning sign for the year ahead.`;
   } else {
     ghLine = ` Governance health held steady at ${gh}/100.`;
   }
@@ -304,7 +304,7 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
   return (
     <div className="min-h-screen bg-navy px-4 py-8 md:py-12">
       <div className="max-w-5xl mx-auto">
-        {/* Change Company — subtle top-left */}
+        {/* Change Company - subtle top-left */}
         {onChangeCompany && (
           <button onClick={onChangeCompany} className="text-xs text-foreground/40 hover:text-foreground/70 transition-colors mb-4 cursor-pointer">
             &larr; Change Company
@@ -328,7 +328,7 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          Year End Summary — {gameState.company.name}
+          Year End Summary - {gameState.company.name}
         </motion.h1>
 
         {/* Three metric cards */}

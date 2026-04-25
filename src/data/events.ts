@@ -3,7 +3,7 @@ import { vantageEvents } from './vantage/events';
 import { rheinfeldEvents } from './rheinfeld/events';
 
 export const events: GameEvent[] = [
-  // ── EVENT 01 — The Remuneration Committee Chair Vacancy ──
+  // ── EVENT 01 - The Remuneration Committee Chair Vacancy ──
   {
     id: 'event_01',
     name: 'The Remuneration Committee Chair Vacancy',
@@ -12,7 +12,7 @@ export const events: GameEvent[] = [
     turn: 1,
     illustrationType: 'event-rem-chair-vacancy',
     narrativeCard:
-      'Two quarters without a Rem Committee Chair, and the silence from the institutions has turned from polite to pointed. Meridian Governance\'s note to the Company Secretary arrived this morning — not a threat, exactly, but the kind of language that leaves very little room for interpretation. If a Chair is not confirmed before Q2, they will recommend against the entire board at the AGM. The Company Secretary looked rather pale delivering it.',
+      'Two quarters without a Rem Committee Chair, and the silence from the institutions has turned from polite to pointed. Meridian Governance\'s note to the Company Secretary arrived this morning - not a threat, exactly, but the kind of language that leaves very little room for interpretation. If a Chair is not confirmed before Q2, they will recommend against the entire board at the AGM. The Company Secretary looked rather pale delivering it.',
     primaryDomain: 'peopleCulture',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -64,12 +64,12 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [1.5, 2.5], // interpolated
         narrative:
-          'Meridian\'s governance note now reads like a love letter — the kind they never send. Institutional confidence is, for once, entirely earned.',
+          'Meridian\'s governance note now reads like a love letter - the kind they never send. Institutional confidence is, for once, entirely earned.',
       },
       SUCCESS: {
         svRange: [1.0, 1.5],
         narrative:
-          'A credible appointment, quietly made — Meridian withdraws its threat with a terseness that passes for approval in proxy adviser circles.',
+          'A credible appointment, quietly made - Meridian withdraws its threat with a terseness that passes for approval in proxy adviser circles.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
@@ -84,14 +84,14 @@ export const events: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-3, -2], // interpolated
         narrative:
-          'The empty Rem Committee chair has become a punchline at governance conferences — the kind that makes Company Secretaries wince and activists smile.',
+          'The empty Rem Committee chair has become a punchline at governance conferences - the kind that makes Company Secretaries wince and activists smile.',
       },
     },
     isConditional: false,
     precondition: 'remChairVacant',
   },
 
-  // ── EVENT 02 — CFO Poaching Approach ──
+  // ── EVENT 02 - CFO Poaching Approach ──
   {
     id: 'event_02',
     name: 'CFO Poaching Approach',
@@ -100,7 +100,7 @@ export const events: GameEvent[] = [
     turn: 2,
     illustrationType: 'event-cfo-poaching',
     narrativeCard:
-      'Priya Sundaram mentioned it almost casually to Marcus Blaine over coffee — a FTSE 100 headhunter, a CFO vacancy, her name at the top of a very short list. She hasn\'t said yes. She hasn\'t said no. What she has said, with characteristic precision, is that she would appreciate the board making her decision easier. Sundaram is the only person the analysts actually believe when she speaks. Losing her now would be like pulling the last load-bearing wall out of a house you\'re still living in.',
+      'Priya Sundaram mentioned it almost casually to Marcus Blaine over coffee - a FTSE 100 headhunter, a CFO vacancy, her name at the top of a very short list. She hasn\'t said yes. She hasn\'t said no. What she has said, with characteristic precision, is that she would appreciate the board making her decision easier. Sundaram is the only person the analysts actually believe when she speaks. Losing her now would be like pulling the last load-bearing wall out of a house you\'re still living in.',
     primaryDomain: 'peopleCulture',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -151,12 +151,12 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [1.0, 2.0], // interpolated
         narrative:
-          'Sundaram signs for three more years and tells the FT she turned down the role because Harwick\'s strategy is "too interesting to leave half-finished" — the analysts eat it up.',
+          'Sundaram signs for three more years and tells the FT she turned down the role because Harwick\'s strategy is "too interesting to leave half-finished" - the analysts eat it up.',
       },
       SUCCESS: {
         svRange: [0.5, 1.0],
         narrative:
-          'Sundaram stays — quietly, without fanfare, which is exactly how she prefers things and exactly what the market needed.',
+          'Sundaram stays - quietly, without fanfare, which is exactly how she prefers things and exactly what the market needed.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
@@ -171,14 +171,14 @@ export const events: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-2.5, -1.5], // interpolated
         narrative:
-          'Sundaram tells the Sunday Times the board "lacked urgency" — three words that wipe out a quarter\'s worth of careful shareholder management overnight.',
+          'Sundaram tells the Sunday Times the board "lacked urgency" - three words that wipe out a quarter\'s worth of careful shareholder management overnight.',
       },
     },
     isConditional: false,
     precondition: null,
   },
 
-  // ── EVENT 03 — North Sea Safety Incident ──
+  // ── EVENT 03 - North Sea Safety Incident ──
   {
     id: 'event_03',
     name: 'North Sea Safety Incident',
@@ -187,7 +187,7 @@ export const events: GameEvent[] = [
     turn: 3,
     illustrationType: 'event-safety-incident',
     narrativeCard:
-      'At 04:17 this morning, a pressure coupling on Harwick\'s Shetland platform failed. Two contractors are in hospital — stable, but one required airlift. The HSE has been notified. No journalists yet, though the union rep has been making calls. The Safety & Environment Committee Chair received the briefing over breakfast and has, to her credit, already cancelled a holiday. What the board does in the next 48 hours will determine whether this is an incident report or a front page.',
+      'At 04:17 this morning, a pressure coupling on Harwick\'s Shetland platform failed. Two contractors are in hospital - stable, but one required airlift. The HSE has been notified. No journalists yet, though the union rep has been making calls. The Safety & Environment Committee Chair received the briefing over breakfast and has, to her credit, already cancelled a holiday. What the board does in the next 48 hours will determine whether this is an incident report or a front page.',
     primaryDomain: 'esgSustainability',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -238,7 +238,7 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [1.0, 2.0], // interpolated
         narrative:
-          'The HSE inspector who arrived expecting a fight left shaking hands — Harwick\'s response is cited in their next quarterly bulletin as the standard others should meet.',
+          'The HSE inspector who arrived expecting a fight left shaking hands - Harwick\'s response is cited in their next quarterly bulletin as the standard others should meet.',
       },
       SUCCESS: {
         svRange: [0.5, 1.0],
@@ -248,17 +248,17 @@ export const events: GameEvent[] = [
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'The HSE notes "areas for improvement" in the tone of a headmaster who expected better — they\'ll be back in six months to check your homework.',
+          'The HSE notes "areas for improvement" in the tone of a headmaster who expected better - they\'ll be back in six months to check your homework.',
       },
       FAILURE: {
         svRange: [-3, -2],
         narrative:
-          'The BBC runs it at six o\'clock — "Oil Giant Under Investigation" — and suddenly everyone on the board remembers they meant to prioritise safety culture.',
+          'The BBC runs it at six o\'clock - "Oil Giant Under Investigation" - and suddenly everyone on the board remembers they meant to prioritise safety culture.',
       },
       CRITICAL_FAILURE: {
         svRange: [-4, -3], // interpolated
         narrative:
-          'A second coupling fails on the same platform before the investigation report is even drafted — the kind of coincidence that ends careers and invites parliamentary questions.',
+          'A second coupling fails on the same platform before the investigation report is even drafted - the kind of coincidence that ends careers and invites parliamentary questions.',
       },
     },
     isConditional: false,
@@ -266,7 +266,7 @@ export const events: GameEvent[] = [
     precondition: null,
   },
 
-  // ── EVENT 04 — Greenvale Capital Discloses Its Stake ──
+  // ── EVENT 04 - Greenvale Capital Discloses Its Stake ──
   {
     id: 'event_04',
     name: 'Greenvale Capital Discloses Its Stake',
@@ -275,7 +275,7 @@ export const events: GameEvent[] = [
     turn: 4,
     illustrationType: 'event-activist-stake',
     narrativeCard:
-      'Greenvale Capital\'s 5.1% filing landed on a Tuesday morning with the subtlety of a brick through a window. Their statement — "governance drift," "constructive engagement" — was the kind of careful language that means exactly the opposite. Your SV ticked up 2% on the speculation, then settled, which is the market\'s way of saying: we\'re watching, and so is everyone else. Your phone hasn\'t stopped.',
+      'Greenvale Capital\'s 5.1% filing landed on a Tuesday morning with the subtlety of a brick through a window. Their statement - "governance drift," "constructive engagement" - was the kind of careful language that means exactly the opposite. Your SV ticked up 2% on the speculation, then settled, which is the market\'s way of saying: we\'re watching, and so is everyone else. Your phone hasn\'t stopped.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -326,12 +326,12 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.5, 4.0], // interpolated
         narrative:
-          'Greenvale\'s fund manager tells Bloomberg the board showed "refreshing openness" — in activist parlance, this is the equivalent of a standing ovation.',
+          'Greenvale\'s fund manager tells Bloomberg the board showed "refreshing openness" - in activist parlance, this is the equivalent of a standing ovation.',
       },
       SUCCESS: {
         svRange: [2.0, 2.5],
         narrative:
-          'Greenvale signals patience — the most dangerous word in an activist\'s vocabulary, but for now it means the guns stay holstered.',
+          'Greenvale signals patience - the most dangerous word in an activist\'s vocabulary, but for now it means the guns stay holstered.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0.5],
@@ -346,14 +346,14 @@ export const events: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-3, -2], // interpolated
         narrative:
-          'Greenvale publishes a scathing open letter that somehow manages to be more devastating for its restraint — every governance journalist in London has it before lunch.',
+          'Greenvale publishes a scathing open letter that somehow manages to be more devastating for its restraint - every governance journalist in London has it before lunch.',
       },
     },
     isConditional: false,
     precondition: null,
   },
 
-  // ── EVENT 05 — Institutional ESG Letter ──
+  // ── EVENT 05 - Institutional ESG Letter ──
   {
     id: 'event_05',
     name: 'Institutional ESG Letter',
@@ -362,7 +362,7 @@ export const events: GameEvent[] = [
     turn: 1,
     illustrationType: 'event-esg-letter',
     narrativeCard:
-      'The letter arrived jointly signed — LGIM, Aviva, Brunel Pension Partnership, together holding 18% — and it reads like an ultimatum wearing a dinner jacket. They want a credible net-zero pathway and a dedicated Energy Transition Committee before the AGM, and they have given you thirty days to respond before making the letter public. The coalition\'s lead signatory, you are told, is not bluffing. She never does.',
+      'The letter arrived jointly signed - LGIM, Aviva, Brunel Pension Partnership, together holding 18% - and it reads like an ultimatum wearing a dinner jacket. They want a credible net-zero pathway and a dedicated Energy Transition Committee before the AGM, and they have given you thirty days to respond before making the letter public. The coalition\'s lead signatory, you are told, is not bluffing. She never does.',
     primaryDomain: 'esgSustainability',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -414,27 +414,27 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.0, 3.0], // interpolated
         narrative:
-          'The coalition\'s lead signatory calls the Chair personally to say "well done" — two words that, from her, carry more weight than most annual reports.',
+          'The coalition\'s lead signatory calls the Chair personally to say "well done" - two words that, from her, carry more weight than most annual reports.',
       },
       SUCCESS: {
         svRange: [1.5, 2.0],
         narrative:
-          'The letter stays in its envelope — the coalition is satisfied, or at least satisfied enough to keep their powder dry.',
+          'The letter stays in its envelope - the coalition is satisfied, or at least satisfied enough to keep their powder dry.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0.5],
         narrative:
-          'The coalition acknowledges receipt of your response with the enthusiasm of someone returning a Christmas jumper — technically grateful, visibly unimpressed.',
+          'The coalition acknowledges receipt of your response with the enthusiasm of someone returning a Christmas jumper - technically grateful, visibly unimpressed.',
       },
       FAILURE: {
         svRange: [-3, -2],
         narrative:
-          'The letter appears in the FT\'s Monday edition, page three, under the headline "Harwick\'s Climate Silence" — the divestment notices start arriving by Thursday.',
+          'The letter appears in the FT\'s Monday edition, page three, under the headline "Harwick\'s Climate Silence" - the divestment notices start arriving by Thursday.',
       },
       CRITICAL_FAILURE: {
         svRange: [-4, -3], // interpolated
         narrative:
-          'The coalition launches a coordinated public campaign with its own website — the kind of organised institutional anger that makes boards very, very short-lived.',
+          'The coalition launches a coordinated public campaign with its own website - the kind of organised institutional anger that makes boards very, very short-lived.',
       },
     },
     isConditional: false,
@@ -442,11 +442,11 @@ export const events: GameEvent[] = [
     // player already established the ETC during board construction the narrative is misleading.
     // This is handled at runtime: getCurrentEvent() in gameStateManager.ts replaces event_05_a with
     // a "Leverage existing ETC" variant whenever state.committees.energyTransition.active is true.
-    // The relevantCommittee bonus is therefore always contextually correct — no code change needed.
+    // The relevantCommittee bonus is therefore always contextually correct - no code change needed.
     precondition: null,
   },
 
-  // ── EVENT 06 — CEO Pay Revolt Brewing ──
+  // ── EVENT 06 - CEO Pay Revolt Brewing ──
   {
     id: 'event_06',
     name: 'CEO Pay Revolt Brewing',
@@ -455,7 +455,7 @@ export const events: GameEvent[] = [
     turn: 2,
     illustrationType: 'event-ceo-pay',
     narrativeCard:
-      'Someone — HR suspect a disgruntled PA — has leaked Marcus Blaine\'s total compensation to two national papers: £4.1 million, 47 times what the median Harwick employee takes home. Blaine himself seems more annoyed about the leak than the optics, which tells you something about how long he\'s been in the job. The Rem Committee Chair, if you have one, needs to get ahead of this before the AGM say-on-pay vote turns into a public flogging.',
+      'Someone - HR suspect a disgruntled PA - has leaked Marcus Blaine\'s total compensation to two national papers: £4.1 million, 47 times what the median Harwick employee takes home. Blaine himself seems more annoyed about the leak than the optics, which tells you something about how long he\'s been in the job. The Rem Committee Chair, if you have one, needs to get ahead of this before the AGM say-on-pay vote turns into a public flogging.',
     primaryDomain: 'peopleCulture',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -506,17 +506,17 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [1.5, 2.5], // interpolated
         narrative:
-          'The Rem Chair\'s explanation is so thorough that the Guardian pivots to praising Harwick\'s transparency — a sentence nobody expected to write, least of all the journalist.',
+          'The Rem Chair\'s explanation is so thorough that the Guardian pivots to praising Harwick\'s transparency - a sentence nobody expected to write, least of all the journalist.',
       },
       SUCCESS: {
         svRange: [1.0, 1.5],
         narrative:
-          'The story runs once and dies — the say-on-pay vote will pass without the board needing to hold its breath.',
+          'The story runs once and dies - the say-on-pay vote will pass without the board needing to hold its breath.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'The headlines fade but the damage lingers in the proxy advisers\' notes like a stain on a white shirt — visible to anyone who looks.',
+          'The headlines fade but the damage lingers in the proxy advisers\' notes like a stain on a white shirt - visible to anyone who looks.',
       },
       FAILURE: {
         svRange: [-2.5, -1.5],
@@ -526,14 +526,14 @@ export const events: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-3.5, -2.5], // interpolated
         narrative:
-          'The pay revolt becomes the story of the AGM season — Harwick\'s name is now shorthand for "board that lost the room."',
+          'The pay revolt becomes the story of the AGM season - Harwick\'s name is now shorthand for "board that lost the room."',
       },
     },
     isConditional: false,
     precondition: null,
   },
 
-  // ── EVENT 07 — West Africa Operations: Regulatory Change ──
+  // ── EVENT 07 - West Africa Operations: Regulatory Change ──
   {
     id: 'event_07',
     name: 'West Africa Operations: Regulatory Change',
@@ -542,7 +542,7 @@ export const events: GameEvent[] = [
     turn: 3,
     illustrationType: 'event-west-africa-regulatory',
     narrativeCard:
-      'The decree arrived via state television at 9pm local time — 40% of all contracts to domestic firms within eighteen months, or face licence revocation. The Energy Minister gave the announcement the tone of a man who has made up his mind. Harwick\'s country manager rang the Chair at midnight, London time, sounding rather less composed than usual. This is manageable. It is also the kind of thing that has ended the African operations of companies far larger than Harwick.',
+      'The decree arrived via state television at 9pm local time - 40% of all contracts to domestic firms within eighteen months, or face licence revocation. The Energy Minister gave the announcement the tone of a man who has made up his mind. Harwick\'s country manager rang the Chair at midnight, London time, sounding rather less composed than usual. This is manageable. It is also the kind of thing that has ended the African operations of companies far larger than Harwick.',
     primaryDomain: 'geopoliticalMacro',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -593,7 +593,7 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.0, 3.5], // interpolated
         narrative:
-          'The Energy Minister shakes hands with Harwick\'s Chair for the cameras — "a model partnership," he calls it, while three rival operators quietly begin to panic.',
+          'The Energy Minister shakes hands with Harwick\'s Chair for the cameras - "a model partnership," he calls it, while three rival operators quietly begin to panic.',
       },
       SUCCESS: {
         svRange: [1.5, 2.0],
@@ -603,24 +603,24 @@ export const events: GameEvent[] = [
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'Harwick is technically compliant, technically on track, and the government\'s monitoring committee is technically satisfied — a lot of "technically" for comfort.',
+          'Harwick is technically compliant, technically on track, and the government\'s monitoring committee is technically satisfied - a lot of "technically" for comfort.',
       },
       FAILURE: {
         svRange: [-4, -3],
         narrative:
-          'The formal warning arrives on government letterhead — the kind with the presidential seal that means conversations with lawyers are about to become very expensive.',
+          'The formal warning arrives on government letterhead - the kind with the presidential seal that means conversations with lawyers are about to become very expensive.',
       },
       CRITICAL_FAILURE: {
         svRange: [-5, -4], // interpolated
         narrative:
-          'Revocation proceedings begin on a Friday afternoon — the country manager is given seventy-two hours to respond, which is not nearly enough time to save a decade of investment.',
+          'Revocation proceedings begin on a Friday afternoon - the country manager is given seventy-two hours to respond, which is not nearly enough time to save a decade of investment.',
       },
     },
     isConditional: false,
     precondition: null,
   },
 
-  // ── EVENT 08 — Meridian Governance Q2 Report (Proxy Adviser) ──
+  // ── EVENT 08 - Meridian Governance Q2 Report (Proxy Adviser) ──
   {
     id: 'event_08',
     name: 'Meridian Governance Q2 Report',
@@ -629,7 +629,7 @@ export const events: GameEvent[] = [
     turn: 4,
     illustrationType: 'event-proxy-adviser-report',
     narrativeCard:
-      'Meridian Governance\'s pre-AGM assessment lands in your inbox with the weight of a school report you didn\'t study for. Their headline — "improving but critical gaps remain" — is the proxy adviser equivalent of "could do better." Six weeks to the AGM. Their specific flags are listed below, and every institutional investor on your register has already read them.',
+      'Meridian Governance\'s pre-AGM assessment lands in your inbox with the weight of a school report you didn\'t study for. Their headline - "improving but critical gaps remain" - is the proxy adviser equivalent of "could do better." Six weeks to the AGM. Their specific flags are listed below, and every institutional investor on your register has already read them.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.40,
     secondaryDomains: [
@@ -649,29 +649,29 @@ export const events: GameEvent[] = [
       SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'Progress noted, concerns acknowledged — you have something to show the shareholders that won\'t make them wince.',
+          'Progress noted, concerns acknowledged - you have something to show the shareholders that won\'t make them wince.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'Meridian\'s tone is the institutional equivalent of a raised eyebrow — not hostile, but not exactly reassuring either.',
+          'Meridian\'s tone is the institutional equivalent of a raised eyebrow - not hostile, but not exactly reassuring either.',
       },
       FAILURE: {
         svRange: [0, 0],
         narrative:
-          'Meridian\'s flags read like a charge sheet — every unresolved issue laid out with the dispassionate precision of people who do this for a living.',
+          'Meridian\'s flags read like a charge sheet - every unresolved issue laid out with the dispassionate precision of people who do this for a living.',
       },
       CRITICAL_FAILURE: {
         svRange: [0, 0],
         narrative:
-          'Meridian recommends against — the two words that turn an AGM from a formality into a battlefield.',
+          'Meridian recommends against - the two words that turn an AGM from a formality into a battlefield.',
       },
     },
     isConditional: false,
     precondition: null,
   },
 
-  // ── EVENT 09 — Annual General Meeting ──
+  // ── EVENT 09 - Annual General Meeting ──
   {
     id: 'event_09',
     name: 'Annual General Meeting',
@@ -730,7 +730,7 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [3, 5], // interpolated
         narrative:
-          'All three resolutions pass with margins that make the proxy advisers look foolish for ever doubting — the Chair permits himself a very small smile.',
+          'All three resolutions pass with margins that make the proxy advisers look foolish for ever doubting - the Chair permits himself a very small smile.',
       },
       SUCCESS: {
         svRange: [1, 3],
@@ -740,28 +740,28 @@ export const events: GameEvent[] = [
       PARTIAL_SUCCESS: {
         svRange: [-2, 0],
         narrative:
-          'Two pass, one fails — the board survives but the cracks are now visible to anyone with a copy of the voting results, which is everyone.',
+          'Two pass, one fails - the board survives but the cracks are now visible to anyone with a copy of the voting results, which is everyone.',
       },
       FAILURE: {
         svRange: [-5, -3],
         narrative:
-          'One resolution passes; two fail — Greenvale\'s representative is seen making a phone call in the lobby before the results are even read aloud.',
+          'One resolution passes; two fail - Greenvale\'s representative is seen making a phone call in the lobby before the results are even read aloud.',
       },
       CRITICAL_FAILURE: {
         svRange: [-7, -5], // interpolated
         narrative:
-          'Three defeats — the Chair reads the results to a room that has already started leaving, which is somehow worse than the heckling.',
+          'Three defeats - the Chair reads the results to a room that has already started leaving, which is somehow worse than the heckling.',
       },
     },
     isConditional: false,
     // AUDIT: Strategies event_09_a and event_09_b name Geoffrey Crane (dir_08_crane) explicitly.
     // Crane is an inherited board member who could be removed via Forced Change. The AGM resolution
     // logic in AgmScreen.tsx already checks dir_08_crane presence at runtime, so the narrative labels
-    // are cosmetically stale when Crane is absent — but no game-breaking logic error results.
+    // are cosmetically stale when Crane is absent - but no game-breaking logic error results.
     precondition: null,
   },
 
-  // ── EVENT 10 — Greenvale Escalation (conditional) ──
+  // ── EVENT 10 - Greenvale Escalation (conditional) ──
   {
     id: 'event_10',
     name: 'Greenvale Escalation',
@@ -770,7 +770,7 @@ export const events: GameEvent[] = [
     turn: 1,
     illustrationType: 'event-greenvale-escalation',
     narrativeCard:
-      'Greenvale Capital\'s open letter went live at 7am, timed perfectly to catch the morning research notes. Two board seats. A full strategic review. The CEO removed from capital allocation. The language is measured, forensic, and devastating — the work of people who have done this before and expect to win. The FT is leading with it. By 9am, three of your largest institutional holders have asked for calls with the Chair.',
+      'Greenvale Capital\'s open letter went live at 7am, timed perfectly to catch the morning research notes. Two board seats. A full strategic review. The CEO removed from capital allocation. The language is measured, forensic, and devastating - the work of people who have done this before and expect to win. The FT is leading with it. By 9am, three of your largest institutional holders have asked for calls with the Chair.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -788,7 +788,7 @@ export const events: GameEvent[] = [
       {
         id: 'event_10_b',
         label: 'Reject publicly with a strong governance narrative',
-        description: 'Issue a detailed public rebuttal making the case that the current board is delivering value and governance improvements. High risk, high reward — requires genuine credibility.',
+        description: 'Issue a detailed public rebuttal making the case that the current board is delivering value and governance improvements. High risk, high reward - requires genuine credibility.',
         multiplier: 1.40,
         competencyGates: [
           { domain: 'stakeholderComms', minimumRating: 70 },
@@ -824,27 +824,27 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [3, 5], // interpolated
         narrative:
-          'Greenvale withdraws its demands with a press release so gracious it almost hides the surprise — the board\'s defence was, it turns out, rather better than anyone expected.',
+          'Greenvale withdraws its demands with a press release so gracious it almost hides the surprise - the board\'s defence was, it turns out, rather better than anyone expected.',
       },
       SUCCESS: {
         svRange: [2, 3],
         narrative:
-          'Greenvale accepts an observer seat — the diplomatic equivalent of putting the gun on the table but agreeing not to pick it up.',
+          'Greenvale accepts an observer seat - the diplomatic equivalent of putting the gun on the table but agreeing not to pick it up.',
       },
       PARTIAL_SUCCESS: {
         svRange: [-1, 0],
         narrative:
-          'Neither side blinks — the standoff continues with the polite menace of two chess players who both know the endgame but refuse to play it.',
+          'Neither side blinks - the standoff continues with the polite menace of two chess players who both know the endgame but refuse to play it.',
       },
       FAILURE: {
         svRange: [-5, -3],
         narrative:
-          'Greenvale\'s fund manager is having lunches with your top twenty shareholders — the kind of lunches where nobody orders dessert because the conversation is the main course.',
+          'Greenvale\'s fund manager is having lunches with your top twenty shareholders - the kind of lunches where nobody orders dessert because the conversation is the main course.',
       },
       CRITICAL_FAILURE: {
         svRange: [-8, -5], // interpolated
         narrative:
-          'The EGM requisition lands on the Company Secretary\'s desk like a declaration of war written in legalese — the share price drops 8% before lunch.',
+          'The EGM requisition lands on the Company Secretary\'s desk like a declaration of war written in legalese - the share price drops 8% before lunch.',
       },
     },
     isConditional: true,
@@ -855,7 +855,7 @@ export const events: GameEvent[] = [
     precondition: 'harwick_greenvale_active',
   },
 
-  // ── EVENT 11 — CEO Misconduct Rumour ──
+  // ── EVENT 11 - CEO Misconduct Rumour ──
   {
     id: 'event_11',
     name: 'CEO Misconduct Rumour',
@@ -864,7 +864,7 @@ export const events: GameEvent[] = [
     turn: 2,
     illustrationType: 'event-ceo-misconduct',
     narrativeCard:
-      'The tip reached a financial journalist at the Mail on Sunday — Marcus Blaine and the Chief People Officer, allegedly rather closer than the organisational chart suggests. Both deny it with the sort of emphatic brevity that makes lawyers comfortable and everyone else suspicious. Blaine\'s solicitor has already rung the editor. The story hasn\'t run yet, but three board members have received calls asking for "background comment," which is Fleet Street for "we\'re publishing this one way or another."',
+      'The tip reached a financial journalist at the Mail on Sunday - Marcus Blaine and the Chief People Officer, allegedly rather closer than the organisational chart suggests. Both deny it with the sort of emphatic brevity that makes lawyers comfortable and everyone else suspicious. Blaine\'s solicitor has already rung the editor. The story hasn\'t run yet, but three board members have received calls asking for "background comment," which is Fleet Street for "we\'re publishing this one way or another."',
     primaryDomain: 'peopleCulture',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -915,34 +915,34 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [1, 2], // interpolated
         narrative:
-          'The external investigators find nothing — and more importantly, the process was so thorough that even the journalist admits there\'s no story left to tell.',
+          'The external investigators find nothing - and more importantly, the process was so thorough that even the journalist admits there\'s no story left to tell.',
       },
       SUCCESS: {
         svRange: [0.5, 1.0],
         narrative:
-          'The story dies quietly — the journalist moves on to easier targets, and the board agrees never to speak of the matter again.',
+          'The story dies quietly - the journalist moves on to easier targets, and the board agrees never to speak of the matter again.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'The rumour circulates at executive level with the persistence of a bad smell in a lift — contained, but everyone knows it\'s there.',
+          'The rumour circulates at executive level with the persistence of a bad smell in a lift - contained, but everyone knows it\'s there.',
       },
       FAILURE: {
         svRange: [-4, -2],
         narrative:
-          'The Mail on Sunday runs it with a photograph — not incriminating, but suggestive enough that every Monday morning meeting in the City starts with the same conversation.',
+          'The Mail on Sunday runs it with a photograph - not incriminating, but suggestive enough that every Monday morning meeting in the City starts with the same conversation.',
       },
       CRITICAL_FAILURE: {
         svRange: [-6, -4], // interpolated
         narrative:
-          'It\'s on the front page of three papers and trending by lunchtime — the institutional shareholders aren\'t asking about governance any more, they\'re asking about the CEO\'s departure date.',
+          'It\'s on the front page of three papers and trending by lunchtime - the institutional shareholders aren\'t asking about governance any more, they\'re asking about the CEO\'s departure date.',
       },
     },
     isConditional: false,
     precondition: null,
   },
 
-  // ── EVENT 12 — Energy Transition: Institutional Ultimatum ──
+  // ── EVENT 12 - Energy Transition: Institutional Ultimatum ──
   {
     id: 'event_12',
     name: 'Energy Transition: Institutional Ultimatum',
@@ -951,7 +951,7 @@ export const events: GameEvent[] = [
     turn: 3,
     illustrationType: 'event-energy-transition',
     narrativeCard:
-      'LGIM\'s letter arrived by recorded delivery, which tells you everything about how seriously they mean it. Without a credible, quantified net-zero plan published before year-end, they will vote against the Chair\'s re-election and divest their 6.4% stake. The letter says "confidential" at the top, but LGIM\'s proxy voting team has already briefed the stewardship community — a contradiction so deliberate it barely qualifies as one. The Chair has until December. LGIM has been waiting since March.',
+      'LGIM\'s letter arrived by recorded delivery, which tells you everything about how seriously they mean it. Without a credible, quantified net-zero plan published before year-end, they will vote against the Chair\'s re-election and divest their 6.4% stake. The letter says "confidential" at the top, but LGIM\'s proxy voting team has already briefed the stewardship community - a contradiction so deliberate it barely qualifies as one. The Chair has until December. LGIM has been waiting since March.',
     primaryDomain: 'esgSustainability',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -996,37 +996,37 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4, 6], // interpolated
         narrative:
-          'LGIM\'s head of stewardship calls the plan "genuinely impressive" — and then, almost as an afterthought, increases their stake by 2%, which says rather more.',
+          'LGIM\'s head of stewardship calls the plan "genuinely impressive" - and then, almost as an afterthought, increases their stake by 2%, which says rather more.',
       },
       SUCCESS: {
         svRange: [3, 4],
         narrative:
-          'LGIM withdraws its threat with a letter exactly as formal as the one that started this — the Chair\'s position is secure, for now.',
+          'LGIM withdraws its threat with a letter exactly as formal as the one that started this - the Chair\'s position is secure, for now.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0.5, 1.0],
         narrative:
-          'LGIM acknowledges "directional progress" — the stewardship equivalent of marking an exam paper as "needs improvement but we won\'t fail you yet."',
+          'LGIM acknowledges "directional progress" - the stewardship equivalent of marking an exam paper as "needs improvement but we won\'t fail you yet."',
       },
       FAILURE: {
         svRange: [-4, -2],
         narrative:
-          'LGIM\'s divestment announcement triggers a domino effect — by Friday, three more ESG-mandated funds have filed exit notices.',
+          'LGIM\'s divestment announcement triggers a domino effect - by Friday, three more ESG-mandated funds have filed exit notices.',
       },
       CRITICAL_FAILURE: {
         svRange: [-5, -4],
         narrative:
-          'LGIM sells their entire position in a single block trade and names Harwick\'s Chair personally in their annual stewardship report — a first, and not the kind anyone wants.',
+          'LGIM sells their entire position in a single block trade and names Harwick\'s Chair personally in their annual stewardship report - a first, and not the kind anyone wants.',
       },
     },
     isConditional: false,
     // AUDIT: Strategy event_12_c already qualifies itself with "(if not yet done)" in the label,
     // and getCurrentEvent() in gameStateManager.ts replaces it with a "Leverage existing ETC"
-    // variant when state.committees.energyTransition.active is true — so no code change needed.
+    // variant when state.committees.energyTransition.active is true - so no code change needed.
     precondition: null,
   },
 
-  // ── EVENT 13 — Hostile Bid Approach ──
+  // ── EVENT 13 - Hostile Bid Approach ──
   {
     id: 'event_13',
     name: 'Hostile Bid Approach',
@@ -1035,7 +1035,7 @@ export const events: GameEvent[] = [
     turn: 1,
     illustrationType: 'event-hostile-bid',
     narrativeCard:
-      'Kestrel Petroleum\'s approach arrived via their corporate broker at 6pm on a Friday — the timing deliberate, the 12% premium calculated to sound generous to anyone who hasn\'t read Harwick\'s reserve reports. The letter proposes a "merger of equals," which in the E&P sector means the larger company swallows the smaller one and calls it partnership. The board has fourteen days before Kestrel goes to the market. Marcus Blaine, to his credit, has not panicked. He has, however, cancelled his weekend.',
+      'Kestrel Petroleum\'s approach arrived via their corporate broker at 6pm on a Friday - the timing deliberate, the 12% premium calculated to sound generous to anyone who hasn\'t read Harwick\'s reserve reports. The letter proposes a "merger of equals," which in the E&P sector means the larger company swallows the smaller one and calls it partnership. The board has fourteen days before Kestrel goes to the market. Marcus Blaine, to his credit, has not panicked. He has, however, cancelled his weekend.',
     primaryDomain: 'strategyMarkets',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -1063,7 +1063,7 @@ export const events: GameEvent[] = [
       {
         id: 'event_13_c',
         label: 'Seek a white knight (alternative bidder)',
-        description: 'Approach potential alternative acquirers — potentially an international energy company — to create a competing bid and drive up the price. Complex and requires global networks.',
+        description: 'Approach potential alternative acquirers - potentially an international energy company - to create a competing bid and drive up the price. Complex and requires global networks.',
         multiplier: 1.30,
         competencyGates: [
           { domain: 'stakeholderComms', minimumRating: 70 },
@@ -1092,27 +1092,27 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [12, 20], // interpolated
         narrative:
-          'Kestrel withdraws with a terse statement about "changed market conditions" — everyone knows they were outmanoeuvred, and the market reprices Harwick accordingly.',
+          'Kestrel withdraws with a terse statement about "changed market conditions" - everyone knows they were outmanoeuvred, and the market reprices Harwick accordingly.',
       },
       SUCCESS: {
         svRange: [8, 12],
         narrative:
-          'The board holds its nerve and the terms improve materially — the kind of outcome that gets studied in business schools and quietly celebrated in boardrooms.',
+          'The board holds its nerve and the terms improve materially - the kind of outcome that gets studied in business schools and quietly celebrated in boardrooms.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 4], // interpolated
         narrative:
-          'The negotiations enter their third week with no resolution — the uncertainty is costing more per day than most people earn in a year.',
+          'The negotiations enter their third week with no resolution - the uncertainty is costing more per day than most people earn in a year.',
       },
       FAILURE: {
         svRange: [-8, -4],
         narrative:
-          'Kestrel goes hostile with a full-page ad in the FT — "A Fair Offer Deserves a Fair Hearing" — and your largest shareholders start returning their calls.',
+          'Kestrel goes hostile with a full-page ad in the FT - "A Fair Offer Deserves a Fair Hearing" - and your largest shareholders start returning their calls.',
       },
       CRITICAL_FAILURE: {
         svRange: [-12, -8], // interpolated
         narrative:
-          'The defence folds like wet cardboard — shareholders accept Kestrel\'s terms at a discount everyone will regret in eighteen months, except Kestrel.',
+          'The defence folds like wet cardboard - shareholders accept Kestrel\'s terms at a discount everyone will regret in eighteen months, except Kestrel.',
       },
     },
     isConditional: false,
@@ -1120,7 +1120,7 @@ export const events: GameEvent[] = [
     precondition: null,
   },
 
-  // ── EVENT 14 — Cyber Attack on Offshore Infrastructure ──
+  // ── EVENT 14 - Cyber Attack on Offshore Infrastructure ──
   {
     id: 'event_14',
     name: 'Cyber Attack on Offshore Infrastructure',
@@ -1129,7 +1129,7 @@ export const events: GameEvent[] = [
     turn: 2,
     illustrationType: 'event-cyber-attack',
     narrativeCard:
-      'The screens went dark at 02:30 GMT. By the time the overnight operations manager understood what was happening, two platforms were locked out and a ransom note — professional, almost courteous in its formatting — was demanding £4 million in cryptocurrency. Production is suspended. The NCSC has been notified and is, in their words, "aware of the situation," which means they are deciding how worried to be. The analysts will notice the production halt by market open. You have roughly four hours of silence left.',
+      'The screens went dark at 02:30 GMT. By the time the overnight operations manager understood what was happening, two platforms were locked out and a ransom note - professional, almost courteous in its formatting - was demanding £4 million in cryptocurrency. Production is suspended. The NCSC has been notified and is, in their words, "aware of the situation," which means they are deciding how worried to be. The analysts will notice the production halt by market open. You have roughly four hours of silence left.',
     primaryDomain: 'technologyDigital',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -1180,12 +1180,12 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [1, 3], // interpolated
         narrative:
-          'The NCSC writes up Harwick\'s response as a case study in their next bulletin — the analysts who downgraded you last month have quietly reversed their calls.',
+          'The NCSC writes up Harwick\'s response as a case study in their next bulletin - the analysts who downgraded you last month have quietly reversed their calls.',
       },
       SUCCESS: {
         svRange: [0.5, 1.0],
         narrative:
-          'Systems restored, ransom unpaid, and the NCSC sends a commendation that the comms team wisely doesn\'t publicise — no need to advertise you were a target.',
+          'Systems restored, ransom unpaid, and the NCSC sends a commendation that the comms team wisely doesn\'t publicise - no need to advertise you were a target.',
       },
       PARTIAL_SUCCESS: {
         svRange: [-1, 0],
@@ -1195,19 +1195,19 @@ export const events: GameEvent[] = [
       FAILURE: {
         svRange: [-5, -3],
         narrative:
-          'Two weeks of outages, a formal NCSC inquiry, and three analyst downgrades — the board learns the hard way that "cyber" was never just an IT problem.',
+          'Two weeks of outages, a formal NCSC inquiry, and three analyst downgrades - the board learns the hard way that "cyber" was never just an IT problem.',
       },
       CRITICAL_FAILURE: {
         svRange: [-7, -5], // interpolated
         narrative:
-          'The attackers publish Harwick\'s operational data on a leak site before breakfast — the share price craters and the NCSC\'s tone shifts from "supportive" to "investigatory."',
+          'The attackers publish Harwick\'s operational data on a leak site before breakfast - the share price craters and the NCSC\'s tone shifts from "supportive" to "investigatory."',
       },
     },
     isConditional: false,
     precondition: null,
   },
 
-  // ── EVENT 15 — Full Proxy Battle (conditional) ──
+  // ── EVENT 15 - Full Proxy Battle (conditional) ──
   {
     id: 'event_15',
     name: 'Full Proxy Battle',
@@ -1216,7 +1216,7 @@ export const events: GameEvent[] = [
     turn: 3,
     illustrationType: 'event-proxy-battle',
     narrativeCard:
-      'It\'s finally here. Greenvale Capital has filed EGM requisitions to remove the Chair and two NEDs — names printed in black and white on Companies House filings that half the City has already downloaded. Their replacement nominees are serious people: a former FTSE 100 chair, a well-known energy analyst, a governance specialist who has done this twice before. Sterling Proxy\'s preliminary note supports Greenvale on two of three demands. The patient, smart activists have stopped being patient.',
+      'It\'s finally here. Greenvale Capital has filed EGM requisitions to remove the Chair and two NEDs - names printed in black and white on Companies House filings that half the City has already downloaded. Their replacement nominees are serious people: a former FTSE 100 chair, a well-known energy analyst, a governance specialist who has done this twice before. Sterling Proxy\'s preliminary note supports Greenvale on two of three demands. The patient, smart activists have stopped being patient.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -1244,7 +1244,7 @@ export const events: GameEvent[] = [
       {
         id: 'event_15_c',
         label: 'Seek support from largest friendly institutional shareholders',
-        description: 'Privately rally support from Harwick\'s largest long-term shareholders — pension funds, sovereign wealth funds — to build a blocking coalition against Greenvale\'s resolutions.',
+        description: 'Privately rally support from Harwick\'s largest long-term shareholders - pension funds, sovereign wealth funds - to build a blocking coalition against Greenvale\'s resolutions.',
         multiplier: 1.00,
         competencyGates: [{ domain: 'stakeholderComms', minimumRating: 70 }],
       },
@@ -1264,27 +1264,27 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [5, 8], // interpolated
         narrative:
-          'Greenvale concedes before the vote is even counted — the institutional roadshow was so convincing that their own proxy solicitor advised them to stand down.',
+          'Greenvale concedes before the vote is even counted - the institutional roadshow was so convincing that their own proxy solicitor advised them to stand down.',
       },
       SUCCESS: {
         svRange: [3, 5],
         narrative:
-          'A settlement is reached at 11pm the night before the EGM — minor concessions, board control preserved, and a bar tab that nobody will ever expense.',
+          'A settlement is reached at 11pm the night before the EGM - minor concessions, board control preserved, and a bar tab that nobody will ever expense.',
       },
       PARTIAL_SUCCESS: {
         svRange: [-3, -1],
         narrative:
-          'The board survives by a margin thin enough to be embarrassing — Greenvale\'s fund manager is already drafting next year\'s campaign in the taxi home.',
+          'The board survives by a margin thin enough to be embarrassing - Greenvale\'s fund manager is already drafting next year\'s campaign in the taxi home.',
       },
       FAILURE: {
         svRange: [-12, -8],
         narrative:
-          'The vote isn\'t close — the Chair clears his desk by Friday, and the two departing NEDs don\'t even get a proper goodbye from the Company Secretary.',
+          'The vote isn\'t close - the Chair clears his desk by Friday, and the two departing NEDs don\'t even get a proper goodbye from the Company Secretary.',
       },
       CRITICAL_FAILURE: {
         svRange: [-20, -12],
         narrative:
-          'Greenvale\'s nominees take their seats before the ink is dry on the EGM minutes — the board you built is gone, replaced by strangers who smile like they own the place, because they do.',
+          'Greenvale\'s nominees take their seats before the ink is dry on the EGM minutes - the board you built is gone, replaced by strangers who smile like they own the place, because they do.',
       },
     },
     isConditional: true,

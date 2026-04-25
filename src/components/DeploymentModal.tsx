@@ -103,7 +103,7 @@ export default function DeploymentModal({
             <div className="mb-3 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold text-foreground">
-                  Deploy Directors — {event.name}
+                  Deploy Directors - {event.name}
                 </h2>
                 <span className="text-xs text-foreground/50 font-semibold">
                   {selectedIds.length}/{MAX_SELECTED} selected
@@ -114,7 +114,7 @@ export default function DeploymentModal({
               </p>
             </div>
 
-            {/* Director grid — compact, responsive up to 4 cols */}
+            {/* Director grid - compact, responsive up to 4 cols */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-4 flex-1 min-h-0">
               {boardDirectors.map((director) => {
                 const isExhausted = director.currentEnergy === 0;
@@ -158,7 +158,7 @@ export default function DeploymentModal({
                       </div>
                     </div>
 
-                    {/* Domain rating — compact */}
+                    {/* Domain rating - compact */}
                     <div className="flex items-baseline gap-2 mb-1.5">
                       <span className={`text-xl font-bold leading-none ${scoreColor(domainRating)}`}>
                         {domainRating}

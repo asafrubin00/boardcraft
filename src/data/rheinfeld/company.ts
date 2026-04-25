@@ -5,10 +5,10 @@ export const rheinfeldAG: Company = {
   name: 'Rheinfeld AG',
   shortName: 'RHEINFELD',
   shortNameSuffix: 'AUFSICHTSRAT',
-  stockExchange: 'Frankfurt Stock Exchange (XETRA) — DAX mid-cap',
+  stockExchange: 'Frankfurt Stock Exchange (XETRA) - DAX mid-cap',
   marketCap: '€3.1 billion',
   marketCapTier: 'large',
-  industry: 'Industrial Manufacturing — precision engineering and automotive components',
+  industry: 'Industrial Manufacturing - precision engineering and automotive components',
   jurisdiction: 'EU',
   headquarters: 'Düsseldorf, North Rhine-Westphalia',
   operations: 'Germany (60%), EU (20%), US (12%), China (8%)',
@@ -27,7 +27,7 @@ export const rheinfeldAG: Company = {
   },
   difficultyTier: 4,
   narrative:
-    'Rheinfeld AG is a third-generation family business that went public fifteen years ago but never fully made the transition. The Rheinfeld family still controls 34% of the shares through a holding company, and the patriarch — Heinrich Rheinfeld, 71 — chairs the Supervisory Board with the quiet certainty of a man who built the company and cannot quite accept that he no longer runs it. The company faces three simultaneous crises: CSRD compliance gaps, US tariff exposure on €580m of automotive revenue, and an institutional shareholder demanding an independent strategic review.',
+    'Rheinfeld AG is a third-generation family business that went public fifteen years ago but never fully made the transition. The Rheinfeld family still controls 34% of the shares through a holding company, and the patriarch - Heinrich Rheinfeld, 71 - chairs the Supervisory Board with the quiet certainty of a man who built the company and cannot quite accept that he no longer runs it. The company faces three simultaneous crises: CSRD compliance gaps, US tariff exposure on €580m of automotive revenue, and an institutional shareholder demanding an independent strategic review.',
   executives: [
     {
       role: 'CEO (Vorstandsvorsitzender)',
@@ -75,7 +75,7 @@ export const rheinfeldAG: Company = {
       status: 'active',
       chairDirectorId: 'rdir_heinrich',
       membersRequired: 'Shareholder-side members only (no worker reps)',
-      notes: 'Heinrich controls this committee — all recent appointments have been family-friendly',
+      notes: 'Heinrich controls this committee - all recent appointments have been family-friendly',
     },
     {
       id: 'remuneration',
@@ -109,7 +109,7 @@ export const rheinfeldAG: Company = {
       status: 'not_established',
       chairDirectorId: null,
       membersRequired: 'N/A',
-      notes: 'Not applicable for Rheinfeld — industrial safety handled through Works Council',
+      notes: 'Not applicable for Rheinfeld - industrial safety handled through Works Council',
     },
     {
       id: 'energyTransition',
@@ -122,7 +122,7 @@ export const rheinfeldAG: Company = {
   ],
   excludeDirectorIds: [],
   inheritedBoard: [
-    // Fixed Chair — Heinrich Rheinfeld (locked)
+    // Fixed Chair - Heinrich Rheinfeld (locked)
     // baseFee 200_000 × chair premium 1.6 = 320_000 total committed fee
     { directorId: 'rdir_heinrich', role: 'chair', baseFee: 200_000 },
     // Shareholder NEDs (inherited, potentially replaceable)
