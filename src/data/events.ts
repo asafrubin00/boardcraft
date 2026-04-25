@@ -1,5 +1,6 @@
 import { GameEvent } from '@/types/game';
 import { vantageEvents } from './vantage/events';
+import { rheinfeldEvents } from './rheinfeld/events';
 
 export const events: GameEvent[] = [
   // ── EVENT 01 — The Remuneration Committee Chair Vacancy ──
@@ -1297,4 +1298,7 @@ export const events: GameEvent[] = [
 
   // ── Vantage Consumer Brands events ──
   ...vantageEvents,
+
+  // ── Rheinfeld AG events ──
+  ...rheinfeldEvents,
 ];

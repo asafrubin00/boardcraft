@@ -51,7 +51,9 @@ export type CommitteeId =
   | 'remuneration'
   | 'nomination'
   | 'safetyEnvironment'
-  | 'energyTransition';
+  | 'energyTransition'
+  | 'csrd'
+  | 'strategy';
 
 // ── Domain Ratings ──
 
@@ -343,4 +345,14 @@ export interface GameState {
   forcedChange: ForcedDirectorChange | null;
   /** Whether FMC-01 (health crisis) has already fired this game */
   healthCrisisFired: boolean;
+  /** Rheinfeld-specific: whether Heinrich's China side-deal has been revealed */
+  heinrichConflictRevealed: boolean;
+  /** Rheinfeld-specific: current state of worker representative relations */
+  workerRepRelations: 'hostile' | 'neutral' | 'cooperative';
+  /** Rheinfeld-specific: CSRD compliance progress (0–100) */
+  csrdProgress: number;
+  /** Rheinfeld-specific: whether Meridian Capital is still an active threat */
+  meridianActive: boolean;
+  /** Rheinfeld-specific: Meridian Capital activist status */
+  meridianStatus: 'watching' | 'escalating' | 'hostile';
 }

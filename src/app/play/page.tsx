@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import AboutModal from '@/components/AboutModal';
-import type { BoardSeat, GameState, ResolutionOutput, Company, ForcedDirectorChange } from '@/types/game';
+import type { BoardSeat, GameState, ResolutionOutput, Company, ForcedDirectorChange, CommitteeId } from '@/types/game';
 import {
   initializeGameState,
   getCurrentEvent,
@@ -28,6 +28,7 @@ import { computeFeeWithPremium as _devComputeFee } from '@/engine/compliance';
 import type { BoardRole as _DevBoardRole } from '@/types/game';
 import { harwickEnergy } from '@/data/company';
 import { vantageConsumer } from '@/data/vantage/company';
+import { rheinfeldAG } from '@/data/rheinfeld/company';
 import {
   checkHealthCrisis,
   checkMisconduct,
@@ -59,6 +60,19 @@ const DEV_BOARD_VANTAGE: { id: string; role: _DevBoardRole }[] = [
   { id: 'vdir_01_kellerman', role: 'ned' },
   { id: 'vdir_13_thornton', role: 'ned' },
   { id: 'vdir_14_mendez', role: 'ned' },
+];
+
+const DEV_BOARD_RHEINFELD: { id: string; role: _DevBoardRole }[] = [
+  { id: 'rdir_heinrich', role: 'chair' },
+  { id: 'rdir_margarethe', role: 'ned' },
+  { id: 'rdir_strasser', role: 'auditChair' },
+  { id: 'rdir_w_koch', role: 'ned' },
+  { id: 'rdir_w_alrashid', role: 'ned' },
+  { id: 'rdir_w_hoffmann', role: 'ned' },
+  { id: 'rdir_w_mehta', role: 'ned' },
+  { id: 'rdir_w_gruber', role: 'ned' },
+  { id: 'rdir_01_lehrmann', role: 'remChair' },
+  { id: 'rdir_02_fleischer', role: 'ned' },
 ];
 
 function buildDevBoard(board: { id: string; role: _DevBoardRole }[]): BoardSeat[] {
@@ -122,14 +136,16 @@ function PlayPageInner() {
     // Also support legacy ?dev=true (same as q1)
     const devKey = devParam === 'true' ? 'q1' : devParam.toLowerCase();
     const validKeys = ['q1', 'q2', 'q3', 'q4', 'agm', 'yearend',
-      'vantage-q1', 'vantage-q2', 'vantage-q3', 'vantage-q4', 'vantage-agm', 'vantage-yearend'];
+      'vantage-q1', 'vantage-q2', 'vantage-q3', 'vantage-q4', 'vantage-agm', 'vantage-yearend',
+      'rheinfeld-q1', 'rheinfeld-q2', 'rheinfeld-q3', 'rheinfeld-q4', 'rheinfeld-agm', 'rheinfeld-yearend'];
     if (!validKeys.includes(devKey)) return;
 
     setDevBooted(true);
     const isVantage = devKey.startsWith('vantage-');
-    const phaseKey = isVantage ? devKey.replace('vantage-', '') : devKey;
-    const devCompany = isVantage ? vantageConsumer : harwickEnergy;
-    const seats = buildDevBoard(isVantage ? DEV_BOARD_VANTAGE : DEV_BOARD_HARWICK);
+    const isRheinfeld = devKey.startsWith('rheinfeld-');
+    const phaseKey = isVantage ? devKey.replace('vantage-', '') : isRheinfeld ? devKey.replace('rheinfeld-', '') : devKey;
+    const devCompany = isVantage ? vantageConsumer : isRheinfeld ? rheinfeldAG : harwickEnergy;
+    const seats = buildDevBoard(isVantage ? DEV_BOARD_VANTAGE : isRheinfeld ? DEV_BOARD_RHEINFELD : DEV_BOARD_HARWICK);
     setSelectedCompany(devCompany);
     const state = initializeGameState(seats, false, devCompany);
 
@@ -164,8 +180,8 @@ function PlayPageInner() {
 
   // ── Board Construction → Gameplay ──
   const handleStartGame = useCallback(
-    (seats: BoardSeat[], hasEnergyTransition: boolean) => {
-      const state = initializeGameState(seats, hasEnergyTransition, selectedCompany ?? undefined);
+    (seats: BoardSeat[], hasEnergyTransition: boolean, optionalCommittees?: CommitteeId[]) => {
+      const state = initializeGameState(seats, hasEnergyTransition, selectedCompany ?? undefined, optionalCommittees);
       const started: GameState = {
         ...state,
         currentQuarter: 'Q1',
@@ -425,7 +441,7 @@ function PlayPageInner() {
   }
 
   if (phase === 'board_construction' && selectedCompany) {
-    return <BoardConstructionWrapper company={selectedCompany} onStartGame={(seats, hasET) => { setIsRestart(false); handleStartGame(seats, hasET); }} isRestart={isRestart} />;
+    return <BoardConstructionWrapper company={selectedCompany} onStartGame={(seats, hasET, optComm) => { setIsRestart(false); handleStartGame(seats, hasET, optComm); }} isRestart={isRestart} />;
   }
 
   if (phase === 'agm' && gameState) {
@@ -478,13 +494,13 @@ import BoardroomTable, {
   getOverflowDirectorIds,
 } from '@/components/BoardroomTable';
 import DirectorPortrait from '@/components/DirectorPortrait';
-import type { BoardRole, CompetencyDomain, CommitteeId, CommitteeState, Director } from '@/types/game';
+import type { BoardRole, CompetencyDomain, CommitteeState, Director } from '@/types/game';
 import { ALL_DOMAINS, DOMAIN_SHORT, ROLE_LABELS, getRoleLabel } from '@/engine/boardConstants';
 import { motion, AnimatePresence } from 'framer-motion';
 import CompanyLogo from '@/components/CompanyLogo';
 
 function fmtFee(value: number, jurisdiction: string = 'UK'): string {
-  const sym = jurisdiction === 'US' ? '$' : '£';
+  const sym = jurisdiction === 'US' ? '$' : jurisdiction === 'EU' ? '€' : '£';
   if (value >= 1_000_000) { const m = value / 1_000_000; return `${sym}${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}m`; }
   if (value >= 1_000) return `${sym}${Math.round(value / 1_000)}k`;
   return `${sym}${value}`;
@@ -521,7 +537,7 @@ function BoardConstructionWrapper({
   isRestart = false,
 }: {
   company: Company;
-  onStartGame: (seats: BoardSeat[], hasEnergyTransition: boolean) => void;
+  onStartGame: (seats: BoardSeat[], hasEnergyTransition: boolean, optionalCommittees?: CommitteeId[]) => void;
   isRestart?: boolean;
 }) {
   // ── Company-specific directors ──
@@ -548,6 +564,8 @@ function BoardConstructionWrapper({
   // ── Core state ──
   const [seats, setSeats] = useState<BoardSeat[]>(() => buildInitialSeats());
   const [hasEnergyTransition, setHasEnergyTransition] = useState(false);
+  const [hasCsrd, setHasCsrd] = useState(false);
+  const [hasStrategy, setHasStrategy] = useState(false);
   const [filterDomain, setFilterDomain] = useState<CompetencyDomain | null>(null);
   const [sortBy, setSortBy] = useState<'fee' | 'score'>('fee');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -633,9 +651,13 @@ function BoardConstructionWrapper({
   // ── Derived ──
   const budget = company.boardBudget;
   const etFormationCost = company.committees.find((c) => c.id === 'energyTransition')?.formationCost ?? 180_000;
+  const csrdFormationCost = company.committees.find((c) => c.id === 'csrd')?.formationCost ?? 0;
+  const strategyFormationCost = company.committees.find((c) => c.id === 'strategy')?.formationCost ?? 0;
   const etCost = hasEnergyTransition ? etFormationCost : 0;
+  const csrdCost = hasCsrd ? csrdFormationCost : 0;
+  const strategyCost = hasStrategy ? strategyFormationCost : 0;
   const seatsFee = seats.reduce((sum, s) => sum + s.feeWithPremium, 0);
-  const committed = seatsFee + etCost;
+  const committed = seatsFee + etCost + csrdCost + strategyCost;
   const remaining = budget - committed;
 
   const boardIds = useMemo(() => seats.map((s) => s.directorId), [seats]);
@@ -658,8 +680,16 @@ function BoardConstructionWrapper({
       nomination: { active: true, chairDirectorId: fc('nomChair') },
       safetyEnvironment: { active: hasSafetyEnv, chairDirectorId: fc('safetyEnvChair') },
       energyTransition: { active: hasEnergyTransition, chairDirectorId: fc('energyTransitionChair') },
+      csrd: {
+        active: company.committees.some((c) => c.id === 'csrd' && c.status === 'active') || hasCsrd,
+        chairDirectorId: null,
+      },
+      strategy: {
+        active: company.committees.some((c) => c.id === 'strategy' && c.status === 'active') || hasStrategy,
+        chairDirectorId: null,
+      },
     };
-  }, [seats, hasEnergyTransition, hasSafetyEnv]);
+  }, [seats, hasEnergyTransition, hasSafetyEnv, hasCsrd, hasStrategy, company]);
 
   const isCombinedChairCeo = company.id === 'company_vantage';
   const complianceErrors = useMemo(() => checkCompliance(seats, availableDirectors, committees, company.jurisdiction, isCombinedChairCeo), [seats, availableDirectors, committees, company.jurisdiction, isCombinedChairCeo]);
@@ -852,8 +882,9 @@ function BoardConstructionWrapper({
   }, [seats, directorMap]);
 
   // Determine which optional committees are available for this company
+  // Only show ET toggle if the committee is actually playable for this company (has a formation cost)
   const hasETCommittee = useMemo(() => {
-    return company.committees.some((c) => c.id === 'energyTransition');
+    return company.committees.some((c) => c.id === 'energyTransition' && c.formationCost !== undefined);
   }, [company]);
 
   // Filter board roles based on company's available committees
@@ -992,6 +1023,34 @@ function BoardConstructionWrapper({
                       </div>
                       <div className={`w-11 h-6 rounded-full relative transition-colors ${hasEnergyTransition ? 'bg-gold' : 'bg-navy-dark border border-foreground/30'}`}>
                         <div className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${hasEnergyTransition ? 'left-[22px] bg-navy-dark' : 'left-0.5 bg-foreground/50'}`} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* CSRD Toggle — Rheinfeld only */}
+                {csrdFormationCost > 0 && (
+                  <div className={`rounded-lg border p-4 cursor-pointer transition-all ${hasCsrd ? 'border-gold bg-gold/5' : 'border-card-border hover:border-gold/50'}`} onClick={() => setHasCsrd((p) => !p)}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-gold">{company.committees.find((c) => c.id === 'csrd')?.name ?? 'CSRD / Sustainability Committee'}</h3>
+                        <p className="text-[10px] text-foreground/50 mt-1">{fmt(csrdFormationCost)} p.a. · Grants +10 bonus on CSRD and ESG events</p>
+                      </div>
+                      <div className={`w-11 h-6 rounded-full relative transition-colors ${hasCsrd ? 'bg-gold' : 'bg-navy-dark border border-foreground/30'}`}>
+                        <div className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${hasCsrd ? 'left-[22px] bg-navy-dark' : 'left-0.5 bg-foreground/50'}`} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* Strategy Committee Toggle — Rheinfeld only */}
+                {strategyFormationCost > 0 && (
+                  <div className={`rounded-lg border p-4 cursor-pointer transition-all ${hasStrategy ? 'border-gold bg-gold/5' : 'border-card-border hover:border-gold/50'}`} onClick={() => setHasStrategy((p) => !p)}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-gold">{company.committees.find((c) => c.id === 'strategy')?.name ?? 'Strategy Committee'}</h3>
+                        <p className="text-[10px] text-foreground/50 mt-1">{fmt(strategyFormationCost)} p.a. · Grants +10 bonus on strategic review and M&A events</p>
+                      </div>
+                      <div className={`w-11 h-6 rounded-full relative transition-colors ${hasStrategy ? 'bg-gold' : 'bg-navy-dark border border-foreground/30'}`}>
+                        <div className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${hasStrategy ? 'left-[22px] bg-navy-dark' : 'left-0.5 bg-foreground/50'}`} />
                       </div>
                     </div>
                   </div>
@@ -1174,7 +1233,20 @@ function BoardConstructionWrapper({
 
           {/* Boardroom table */}
           <div className="flex-1 flex items-center justify-center">
-            <BoardroomTable seats={seats} directors={availableDirectors} activeSeatIndex={activeSeatIdx} onSeatClick={handleSeatClick} hasEnergyTransition={hasEnergyTransition} onDropOnSeat={handleAssignToSeat} companyShortName={company.shortName} companyShortNameSuffix={company.shortNameSuffix} jurisdiction={company.jurisdiction} combinedChairCeo={company.id === 'company_vantage'} />
+            <BoardroomTable
+              seats={seats}
+              directors={availableDirectors}
+              activeSeatIndex={activeSeatIdx}
+              onSeatClick={handleSeatClick}
+              hasEnergyTransition={hasEnergyTransition}
+              onDropOnSeat={handleAssignToSeat}
+              companyShortName={company.shortName}
+              companyShortNameSuffix={company.shortNameSuffix}
+              jurisdiction={company.jurisdiction}
+              combinedChairCeo={company.id === 'company_vantage'}
+              workerRepIds={company.id === 'company_rheinfeld' ? ['rdir_w_koch', 'rdir_w_alrashid', 'rdir_w_hoffmann', 'rdir_w_mehta', 'rdir_w_gruber'] : []}
+              lockedDirectorIds={company.id === 'company_rheinfeld' ? ['rdir_heinrich'] : []}
+            />
           </div>
           <p className="text-[10px] text-foreground/30 mt-2 text-center flex-shrink-0">Click a seat to assign · Click a filled seat to view profile</p>
 
@@ -1282,7 +1354,7 @@ function BoardConstructionWrapper({
               <p className="font-narrative text-foreground/80 mb-6">Once locked, your board composition cannot be changed until the AGM. Director roles, committee assignments, and budget allocation will be final.</p>
               <div className="flex gap-4">
                 <button onClick={() => setShowLockConfirm(false)} className="flex-1 py-2 rounded border border-card-border text-foreground/80 hover:border-gold/50 transition-colors">Review Board</button>
-                <button onClick={() => { playBoardConfirm(); setShowLockConfirm(false); onStartGame(seats, hasEnergyTransition); }} className="flex-1 py-2 rounded bg-gold text-navy-dark font-semibold hover:bg-gold-light transition-colors">Confirm & Start</button>
+                <button onClick={() => { playBoardConfirm(); setShowLockConfirm(false); const optComm: CommitteeId[] = [...(hasCsrd ? ['csrd' as CommitteeId] : []), ...(hasStrategy ? ['strategy' as CommitteeId] : [])]; onStartGame(seats, hasEnergyTransition, optComm.length ? optComm : undefined); }} className="flex-1 py-2 rounded bg-gold text-navy-dark font-semibold hover:bg-gold-light transition-colors">Confirm & Start</button>
               </div>
             </motion.div>
           </motion.div>

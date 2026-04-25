@@ -105,6 +105,12 @@ interface BoardroomTableProps {
   jurisdiction?: Jurisdiction;
   /** Whether the Chair seat is locked as Combined Chair/CEO (Vantage) */
   combinedChairCeo?: boolean;
+  /** Director IDs that are worker representatives — steel blue ring, non-interactive */
+  workerRepIds?: string[];
+  /** Director IDs of locked seats (e.g. fixed chair) — gold ring, portrait shown, non-interactive */
+  lockedDirectorIds?: string[];
+  /** Director IDs with a conflict-of-interest indicator (red badge overlay) */
+  conflictDirectorIds?: string[];
 }
 
 // ETC Chair position (appears at bottom-left when ET committee is active)
@@ -128,7 +134,13 @@ export default function BoardroomTable({
   companyShortNameSuffix = 'ENERGY PLC',
   jurisdiction = 'UK',
   combinedChairCeo = false,
+  workerRepIds = [],
+  lockedDirectorIds = [],
+  conflictDirectorIds = [],
 }: BoardroomTableProps) {
+  const workerRepSet = new Set(workerRepIds);
+  const lockedSet = new Set(lockedDirectorIds);
+  const conflictSet = new Set(conflictDirectorIds);
   // Build effective positions: base 8 + optional ETC seat
   const effectivePositions = hasEnergyTransition
     ? [...TABLE_POSITIONS, ETC_POSITION]
@@ -219,11 +231,15 @@ export default function BoardroomTable({
         const isActive = activeSeatIndex === index;
         const seatPx = pos.isChair ? 68 : 58;
         const isLockedChairCeo = combinedChairCeo && pos.isChair;
+        const isWorkerRep = directorId ? workerRepSet.has(directorId) : false;
+        const isLockedSeat = directorId ? lockedSet.has(directorId) : false;
+        const hasConflict = directorId ? conflictSet.has(directorId) : false;
+        const isNonInteractive = isLockedChairCeo || isWorkerRep || isLockedSeat;
 
         return (
           <div
             key={`seat-${index}`}
-            className={`absolute group ${isLockedChairCeo ? 'cursor-default' : 'cursor-pointer'}`}
+            className={`absolute group ${isNonInteractive ? 'cursor-default' : 'cursor-pointer'}`}
             style={{
               left: `${pos.leftPct}%`,
               top: `${pos.topPct}%`,
@@ -231,16 +247,16 @@ export default function BoardroomTable({
               width: seatPx,
               height: seatPx,
             }}
-            onClick={() => { if (!isLockedChairCeo) onSeatClick(index); }}
+            onClick={() => { if (!isNonInteractive) onSeatClick(index); }}
             onDragOver={(e) => {
-              if (isLockedChairCeo) return;
+              if (isNonInteractive) return;
               e.preventDefault();
               e.dataTransfer.dropEffect = 'move';
               setDragOverIdx(index);
             }}
             onDragLeave={() => setDragOverIdx(null)}
             onDrop={(e) => {
-              if (isLockedChairCeo) return;
+              if (isNonInteractive) return;
               e.preventDefault();
               setDragOverIdx(null);
               const dirId = e.dataTransfer.getData('text/plain');
@@ -248,9 +264,9 @@ export default function BoardroomTable({
             }}
           >
             <div
-              draggable={!!director && !isLockedChairCeo}
+              draggable={!!director && !isNonInteractive}
               onDragStart={(e) => {
-                if (!director || isLockedChairCeo) { e.preventDefault(); return; }
+                if (!director || isNonInteractive) { e.preventDefault(); return; }
                 e.dataTransfer.setData('text/plain', director.id);
                 e.dataTransfer.effectAllowed = 'move';
                 (e.currentTarget as HTMLElement).style.opacity = '0.5';
@@ -261,20 +277,25 @@ export default function BoardroomTable({
               className={`rounded-full flex items-center justify-center transition-all duration-200 w-full h-full ${
                 isLockedChairCeo
                   ? 'border-2 border-error/60 bg-error/5 opacity-70'
-                  : dragOverIdx === index
-                    ? 'border-2 border-dashed border-gold ring-2 ring-gold/40 bg-gold/10'
-                    : director
-                      ? `border-2 border-gold ${
-                          isActive
-                            ? 'ring-2 ring-gold/60 ring-offset-2 ring-offset-navy'
-                            : 'group-hover:ring-1 group-hover:ring-gold/30 group-hover:ring-offset-1 group-hover:ring-offset-navy'
-                        }`
-                      : `border-2 border-dashed ${
-                          isActive
-                            ? 'border-gold animate-pulse bg-gold/5'
-                            : 'border-foreground/20 bg-navy-dark/40 group-hover:border-foreground/40'
-                        }`
+                  : isWorkerRep
+                    ? 'border-2 opacity-80'
+                    : dragOverIdx === index
+                      ? 'border-2 border-dashed border-gold ring-2 ring-gold/40 bg-gold/10'
+                      : director
+                        ? `border-2 border-gold ${
+                            isActive
+                              ? 'ring-2 ring-gold/60 ring-offset-2 ring-offset-navy'
+                              : isLockedSeat
+                                ? ''
+                                : 'group-hover:ring-1 group-hover:ring-gold/30 group-hover:ring-offset-1 group-hover:ring-offset-navy'
+                          }`
+                        : `border-2 border-dashed ${
+                            isActive
+                              ? 'border-gold animate-pulse bg-gold/5'
+                              : 'border-foreground/20 bg-navy-dark/40 group-hover:border-foreground/40'
+                          }`
               }`}
+              style={isWorkerRep ? { borderColor: '#5B9BD5' } : undefined}
             >
               {isLockedChairCeo ? (
                 <span className="text-error/50 text-lg select-none font-bold">🔒</span>
@@ -288,6 +309,16 @@ export default function BoardroomTable({
                 <span className="text-foreground/20 text-lg select-none">+</span>
               )}
             </div>
+            {/* Conflict-of-interest indicator badge */}
+            {hasConflict && (
+              <div
+                className="absolute top-0 right-0 w-4 h-4 rounded-full bg-error flex items-center justify-center"
+                style={{ fontSize: '9px', color: 'white', fontWeight: 'bold', zIndex: 10 }}
+                title="Conflict of interest — Heinrich's side-deal revealed"
+              >
+                !
+              </div>
+            )}
           </div>
         );
       })}

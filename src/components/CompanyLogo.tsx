@@ -2,6 +2,7 @@
 
 import HarwickLogo from './HarwickLogo';
 import VantageLogo from './VantageLogo';
+import RheinfeldLogo from './RheinfeldLogo';
 
 interface CompanyLogoProps {
   companyId: string;
@@ -17,9 +18,12 @@ interface CompanyLogoProps {
 export default function CompanyLogo({ companyId, size = 48, className = '' }: CompanyLogoProps) {
   switch (companyId) {
     case 'harwick_energy':
+    case 'company_harwick':
       return <HarwickLogo size={size} className={className} />;
     case 'company_vantage':
       return <VantageLogo size={size} className={className} />;
+    case 'company_rheinfeld':
+      return <RheinfeldLogo size={size} className={className} />;
     default:
       // Generic fallback: gold circle with company initial
       return (

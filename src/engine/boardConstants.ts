@@ -66,10 +66,19 @@ export const ROLE_LABELS_US: Partial<Record<BoardRole, string>> = {
   energyTransitionChair: 'Consumer Affairs & Regulatory Committee Chair',
 };
 
+/** EU/German-specific role label overrides (Rheinfeld Aufsichtsrat) */
+export const ROLE_LABELS_EU: Partial<Record<BoardRole, string>> = {
+  chair: 'Supervisory Board Chair',
+  ned: 'Supervisory Board Member',
+};
+
 /** Get role label for a given jurisdiction */
 export function getRoleLabel(role: BoardRole, jurisdiction: Jurisdiction = 'UK'): string {
   if (jurisdiction === 'US') {
     return ROLE_LABELS_US[role] ?? ROLE_LABELS[role];
+  }
+  if (jurisdiction === 'EU') {
+    return ROLE_LABELS_EU[role] ?? ROLE_LABELS[role];
   }
   return ROLE_LABELS[role];
 }

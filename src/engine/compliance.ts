@@ -37,6 +37,9 @@ export function checkCompliance(
   if (jurisdiction === 'US') {
     return checkComplianceUS(seats, directors, committees, combinedChairCeo);
   }
+  if (jurisdiction === 'EU') {
+    return checkComplianceEU(seats, directors, committees);
+  }
   return checkComplianceUK(seats, directors, committees);
 }
 
@@ -227,6 +230,142 @@ function checkComplianceUK(
 
   // Energy Transition Chair check
   checkOptionalChairCompetency(seats, directors, errors, 'energyTransitionChair', 'esgSustainability', 70, 'Energy Transition Chair', 'error');
+
+  return errors;
+}
+
+// ══════════════════════════════════════════════════════════════
+// EU / German AktG + GCGC compliance rules (Rheinfeld AG)
+// ══════════════════════════════════════════════════════════════
+
+function checkComplianceEU(
+  seats: BoardSeat[],
+  directors: Director[],
+  committees: Record<CommitteeId, CommitteeState>,
+): ComplianceError[] {
+  const errors: ComplianceError[] = [];
+  const getDirector = (id: string) => directors.find((d) => d.id === id);
+
+  // Worker representative IDs are fixed seats — exclude from independence/size counts
+  const WORKER_REP_IDS = new Set([
+    'rdir_w_koch', 'rdir_w_alrashid', 'rdir_w_hoffmann', 'rdir_w_mehta', 'rdir_w_gruber',
+  ]);
+  const shareholderSeats = seats.filter((s) => !WORKER_REP_IDS.has(s.directorId));
+
+  // Supervisory Board Chair identification
+  const chairSeat = seats.find((s) => s.role === 'chair');
+  const chairId = chairSeat?.directorId ?? null;
+
+  // Rule 1: Audit Committee Chair must exist (AktG §107(4))
+  const auditChairSeat = seats.find((s) => s.role === 'auditChair');
+  if (!auditChairSeat) {
+    errors.push({
+      code: 'NO_AUDIT_CHAIR',
+      message: 'An Audit Committee Chair (Prüfungsausschuss) must be appointed (AktG §107).',
+      severity: 'error',
+    });
+  } else {
+    const auditDir = getDirector(auditChairSeat.directorId);
+
+    // Rule 1a: Supervisory Board Chair cannot chair the Audit Committee (GCGC Rec. D.3)
+    if (chairId && auditChairSeat.directorId === chairId) {
+      errors.push({
+        code: 'CHAIR_CHAIRS_AUDIT',
+        message: 'The Supervisory Board Chair cannot also chair the Audit Committee (GCGC Recommendation D.3 / AktG §107(4)).',
+        severity: 'error',
+      });
+    }
+
+    // Rule 1b: Audit Chair must have financial expertise (AktG §107(4))
+    if (auditDir && auditDir.domainRatings.financialOversight < 75) {
+      errors.push({
+        code: 'AUDIT_CHAIR_LOW_FIN',
+        message: `Audit Committee Chair requires financial expertise (Financial Oversight ≥ 75). ${auditDir.name} has ${auditDir.domainRatings.financialOversight} (AktG §107(4)).`,
+        severity: 'error',
+      });
+    }
+
+    // Rule 1c: Audit Chair independence warning
+    if (auditDir && auditDir.independence === 'non-independent') {
+      errors.push({
+        code: 'AUDIT_CHAIR_NOT_INDEPENDENT',
+        message: `The Audit Committee Chair should be independent. ${auditDir.name} is non-independent — this will draw ISS and proxy adviser scrutiny.`,
+        severity: 'warning',
+      });
+    }
+  }
+
+  // Rule 2: Remuneration Committee Chair recommended (GCGC Rec. G.6)
+  const remChairSeat = seats.find((s) => s.role === 'remChair');
+  if (!remChairSeat) {
+    errors.push({
+      code: 'NO_REM_CHAIR',
+      message: 'A Remuneration Committee Chair (Vergütungsausschuss) is recommended under GCGC G.6. CEO pay has not been benchmarked in three years.',
+      severity: 'warning',
+    });
+  } else {
+    const remDir = getDirector(remChairSeat.directorId);
+    if (remDir && remDir.domainRatings.peopleCulture < 60) {
+      errors.push({
+        code: 'REM_CHAIR_LOW_PC',
+        message: `Rem Chair requires People & Culture ≥ 60. ${remDir.name} has ${remDir.domainRatings.peopleCulture}.`,
+        severity: 'error',
+      });
+    }
+  }
+
+  // Rule 3: Nomination Committee Chair should not be the Supervisory Board Chair on contested matters
+  // (Heinrich chairs nom — this is a governance concern)
+  const nomChairSeat = seats.find((s) => s.role === 'nomChair');
+  if (nomChairSeat && chairId && nomChairSeat.directorId === chairId) {
+    errors.push({
+      code: 'CHAIR_CHAIRS_NOM',
+      message: 'The Supervisory Board Chair chairs the Nomination Committee. This concentrates influence over appointments — a significant governance concern noted by Meridian Capital (GCGC Rec. D.3).',
+      severity: 'warning',
+    });
+  }
+
+  // Rule 4: Former executive cooling-off warning (GCGC Rec. C.7)
+  // Flag Strasser specifically as a former executive without cooling-off compliance
+  const strasserSeat = seats.find((s) => s.directorId === 'rdir_strasser');
+  if (strasserSeat) {
+    errors.push({
+      code: 'FORMER_EXEC_NO_COOLING',
+      message: 'Dr. Wolfgang Strasser is a former Rheinfeld AG CFO. GCGC Rec. C.7 requires a two-year cooling-off period before former executives join the Supervisory Board. His appointment pre-dates stricter enforcement but proxy advisers will flag it.',
+      severity: 'warning',
+    });
+  }
+
+  // Rule 5: Shareholder-side independence — at least 50% of shareholder seats must be independent
+  // (Worker reps are by definition not independent but this is expected under MitbestG)
+  const independentShareholderCount = shareholderSeats.filter((s) => {
+    const d = getDirector(s.directorId);
+    return d?.independence === 'independent';
+  }).length;
+  if (shareholderSeats.length > 0 && independentShareholderCount / shareholderSeats.length < 0.5) {
+    errors.push({
+      code: 'LOW_INDEPENDENCE',
+      message: `At least 50% of shareholder-side seats should be independent (GCGC Rec. C.6). Currently ${independentShareholderCount}/${shareholderSeats.length} shareholder-side members are independent.`,
+      severity: 'error',
+    });
+  }
+
+  // Rule 6: Co-determination informational — worker reps are as expected under MitbestG
+  const workerRepCount = seats.filter((s) => WORKER_REP_IDS.has(s.directorId)).length;
+  if (workerRepCount === 5) {
+    // Correct — this is merely informational, not an error
+    errors.push({
+      code: 'MITBESTG_CODETERMINATION',
+      message: `${workerRepCount} worker representatives hold fixed Supervisory Board seats as required under MitbestG (co-determination). These seats are non-assignable.`,
+      severity: 'warning',
+    });
+  }
+
+  // Rule 7: Tenure warnings (GCGC Rec. C.7 — 12 years for German boards)
+  checkTenureWarnings(seats, directors, errors, 'GCGC Recommendation C.7');
+
+  // Rule 8: No duplicate directors
+  checkDuplicateDirectors(seats, errors);
 
   return errors;
 }

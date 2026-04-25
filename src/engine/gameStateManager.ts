@@ -50,7 +50,8 @@ export function getNextQuarterAndTurn(
 export function initializeGameState(
   seats: BoardSeat[],
   hasEnergyTransition: boolean,
-  company?: Company
+  company?: Company,
+  optionalCommittees?: CommitteeId[],
 ): GameState {
   // Default to Harwick for backwards compatibility
   const co = company ?? require('@/data/company').harwickEnergy as Company;
@@ -79,13 +80,27 @@ export function initializeGameState(
       active: hasEnergyTransition,
       chairDirectorId: findChair('energyTransitionChair'),
     },
+    // Rheinfeld-specific committees (activated via optional committees param)
+    csrd: {
+      active: co.committees.some((c) => c.id === 'csrd' && c.status === 'active') || (optionalCommittees?.includes('csrd') ?? false),
+      chairDirectorId: null,
+    },
+    strategy: {
+      active: co.committees.some((c) => c.id === 'strategy' && c.status === 'active') || (optionalCommittees?.includes('strategy') ?? false),
+      chairDirectorId: null,
+    },
   };
 
   const totalBudget = co.boardBudget;
   const etFormationCost = co.committees.find((c) => c.id === 'energyTransition')?.formationCost ?? 180_000;
+  const csrdFormationCost = co.committees.find((c) => c.id === 'csrd')?.formationCost ?? 0;
+  const strategyFormationCost = co.committees.find((c) => c.id === 'strategy')?.formationCost ?? 0;
+  const optCommitteesCost = (optionalCommittees?.includes('csrd') ? csrdFormationCost : 0)
+    + (optionalCommittees?.includes('strategy') ? strategyFormationCost : 0);
   const committed =
     seats.reduce((sum, s) => sum + s.feeWithPremium, 0) +
-    (hasEnergyTransition ? etFormationCost : 0);
+    (hasEnergyTransition ? etFormationCost : 0) +
+    optCommitteesCost;
 
   return {
     company: co,
@@ -110,12 +125,18 @@ export function initializeGameState(
     committees,
     randomSeed: Date.now(),
     // Vantage-specific fields (neutral defaults for non-Vantage companies)
-    apexStatus: co.jurisdiction === 'US' ? 'monitoring' : 'monitoring',
+    apexStatus: 'monitoring',
     chairCeoSeparationProgress: 0,
     apexActive: co.id === 'company_vantage',
     fdaInquiryActive: false,
     forcedChange: null,
     healthCrisisFired: false,
+    // Rheinfeld-specific fields (neutral defaults for non-Rheinfeld companies)
+    heinrichConflictRevealed: false,
+    workerRepRelations: 'neutral',
+    csrdProgress: co.id === 'company_rheinfeld' ? 15 : 0,
+    meridianActive: co.id === 'company_rheinfeld',
+    meridianStatus: 'watching',
   };
 }
 
@@ -223,6 +244,39 @@ export function checkEventPrecondition(
       if (state.governanceHealth >= 50) return false;
       return true; // conditionConfig handles GH check too
     }
+
+    // ── Rheinfeld-specific preconditions ──
+
+    // R-04: Heinrich blocks appointment — fires if the player filled one of the two
+    // vacant shareholder seats during board construction (board has > 8 seats, meaning
+    // at least one of the two slots beyond the 8 inherited members was filled).
+    case 'heinrichBlocks': {
+      const inheritedIds = new Set([
+        'rdir_heinrich', 'rdir_margarethe', 'rdir_strasser',
+        'rdir_w_koch', 'rdir_w_alrashid', 'rdir_w_hoffmann', 'rdir_w_mehta', 'rdir_w_gruber',
+      ]);
+      return state.board.seats.some((s) => !inheritedIds.has(s.directorId));
+    }
+
+    // R-12: Meridian EGM threat — fires if Meridian is escalating AND GH < 55
+    case 'meridianEGM': {
+      if (!state.meridianActive) return false;
+      if (state.meridianStatus !== 'escalating') return false;
+      return state.governanceHealth < 55;
+    }
+
+    // R-14: Heinrich conflict — fires only if the conflict has been revealed
+    case 'ceoConfidence': {
+      return state.heinrichConflictRevealed;
+    }
+
+    // R-15: Full crisis — fires only if GH < 45 AND conflict revealed AND Meridian hostile
+    case 'fullCrisis': {
+      if (!state.heinrichConflictRevealed) return false;
+      if (state.meridianStatus !== 'hostile') return false;
+      return state.governanceHealth < 45;
+    }
+
     default:
       return true;
   }
@@ -453,7 +507,11 @@ export function recalcGovernanceBreakdown(
   const getDir = (id: string) => state.directors.find((d) => d.id === id);
 
   // 1. Board Independence (0-20)
-  const nonChairSeats = seats.filter((s) => s.role !== 'chair');
+  // For German two-tier boards (Rheinfeld), exclude worker reps from independence count
+  // since co-determination means they're structurally non-independent (this is expected under MitbestG).
+  const workerRepPrefixes = ['rdir_w_'];
+  const isWorkerRep = (id: string) => workerRepPrefixes.some((p) => id.startsWith(p));
+  const nonChairSeats = seats.filter((s) => s.role !== 'chair' && !isWorkerRep(s.directorId));
   const independentCount = nonChairSeats.filter((s) => {
     const d = getDir(s.directorId);
     return d?.independence === 'independent';
@@ -470,6 +528,8 @@ export function recalcGovernanceBreakdown(
   if (committees.nomination.active && committees.nomination.chairDirectorId) committeeScore += 4;
   if (committees.safetyEnvironment.active && committees.safetyEnvironment.chairDirectorId) committeeScore += 3;
   if (committees.energyTransition.active && committees.energyTransition.chairDirectorId) committeeScore += 3;
+  // Rheinfeld: strategy committee contributes to committee completeness
+  if (committees.strategy.active) committeeScore += 3;
   const committeeCompleteness = Math.min(20, committeeScore);
 
   // 3. Chair-CEO Separation (0-20)
@@ -497,6 +557,8 @@ export function recalcGovernanceBreakdown(
     const chair = getDir(committees.energyTransition.chairDirectorId);
     if (chair && chair.domainRatings.esgSustainability >= 70) esgGovernance += 5;
   }
+  // Rheinfeld: CSRD committee contributes to ESG governance (replaces safetyEnvironment)
+  if (committees.csrd.active) esgGovernance += 8;
   esgGovernance = Math.min(20, esgGovernance);
 
   // 5. Skill Matrix Coverage (0-20)
