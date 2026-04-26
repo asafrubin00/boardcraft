@@ -23,7 +23,9 @@ const ROLE_ORDER: Record<BoardRole, number> = {
   techChair: 7,
   safetyEnvChair: 8,
   energyTransitionChair: 9,
-  ned: 10,
+  csrdChair: 10,
+  strategyChair: 11,
+  ned: 12,
 };
 
 const MANDATORY_ROLES: BoardRole[] = ['chair', 'auditChair'];

@@ -139,6 +139,8 @@ const committees: Record<CommitteeId, CommitteeState> = {
   nomination: { active: true, chairDirectorId: null },
   safetyEnvironment: { active: true, chairDirectorId: 'dir_13_okafor' },
   energyTransition: { active: false, chairDirectorId: null }, // NOT yet formed
+  csrd: { active: false, chairDirectorId: null },
+  strategy: { active: false, chairDirectorId: null },
 };
 
 describe('Resolution Engine', () => {
