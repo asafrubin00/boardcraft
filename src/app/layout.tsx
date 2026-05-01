@@ -13,11 +13,34 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const BASE_URL = "https://boardcraft-eight.vercel.app";
+
 export const metadata: Metadata = {
   title: "BoardCraft",
-  description: "Corporate governance strategy simulation",
+  description: "A corporate governance strategy game. Navigate board composition, proxy adviser dynamics, and AGM season.",
   icons: {
     icon: "/icon.svg",
+  },
+  openGraph: {
+    title: "BoardCraft",
+    description: "A corporate governance strategy game. Navigate board composition, proxy adviser dynamics, and AGM season.",
+    url: BASE_URL,
+    siteName: "BoardCraft",
+    images: [
+      {
+        url: `${BASE_URL}/preview.png`,
+        width: 1200,
+        height: 627,
+        alt: "BoardCraft — A corporate governance strategy game",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BoardCraft",
+    description: "A corporate governance strategy game. Navigate board composition, proxy adviser dynamics, and AGM season.",
+    images: [`${BASE_URL}/preview.png`],
   },
 };
 
