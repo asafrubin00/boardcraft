@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ForcedDirectorChange, Director, BoardRole, BoardSeat } from '@/types/game';
+import { ALL_DOMAINS, DOMAIN_SHORT } from '@/engine/boardConstants';
 import DirectorPortrait from './DirectorPortrait';
 import { computeFeeWithPremium } from '@/engine/compliance';
 
@@ -17,6 +18,65 @@ interface ForcedChangeModalProps {
   /** Called only when player has selected a replacement AND confirmed - atomic dismiss+replace */
   onDismissAndReplace: (dismissedDirectorId: string, newDirectorId: string, role: BoardRole) => void;
   onRetain?: () => void;
+}
+
+// ── Harvey Ball SVG helper ──
+function HarveyBall({ value, size = 18 }: { value: number; size?: number }) {
+  const pct = Math.min(100, Math.max(0, value));
+  // 0→empty, 20→quarter, 40→half, 60→three-quarter, 80→full
+  const fillFraction = pct >= 80 ? 1 : pct >= 60 ? 0.75 : pct >= 40 ? 0.5 : pct >= 20 ? 0.25 : 0;
+  const r = size / 2 - 1.5;
+  const cx = size / 2;
+  const cy = size / 2;
+
+  // Build SVG arc path for the pie slice
+  let arcPath = '';
+  if (fillFraction > 0 && fillFraction < 1) {
+    const angle = fillFraction * 2 * Math.PI;
+    // Start from top (−90°)
+    const startX = cx + r * Math.cos(-Math.PI / 2);
+    const startY = cy + r * Math.sin(-Math.PI / 2);
+    const endX = cx + r * Math.cos(-Math.PI / 2 + angle);
+    const endY = cy + r * Math.sin(-Math.PI / 2 + angle);
+    const largeArc = fillFraction > 0.5 ? 1 : 0;
+    arcPath = `M ${cx} ${cy} L ${startX} ${startY} A ${r} ${r} 0 ${largeArc} 1 ${endX} ${endY} Z`;
+  }
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
+      {/* Background filled circle */}
+      <circle cx={cx} cy={cy} r={r} fill={fillFraction === 1 ? '#C8960C' : 'rgba(13,27,42,0.8)'} />
+      {/* Pie slice fill */}
+      {fillFraction > 0 && fillFraction < 1 && (
+        <path d={arcPath} fill="#C8960C" />
+      )}
+      {/* Outer ring */}
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#C8960C" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
+// ── Domain score bar ──
+function ScoreBar({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
+  return (
+    <div style={{ marginBottom: 4 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+        <span style={{ fontSize: 10, color: highlight ? '#C8960C' : '#9BB4CC', whiteSpace: 'nowrap' }}>{label}</span>
+        <span style={{ fontSize: 10, color: highlight ? '#C8960C' : '#E8E4DC', fontWeight: 600, marginLeft: 4 }}>{value}</span>
+      </div>
+      <div style={{ height: 3, background: '#0D1B2A', borderRadius: 2, overflow: 'hidden' }}>
+        <div
+          style={{
+            height: '100%',
+            width: `${Math.min(100, value)}%`,
+            background: highlight ? '#C8960C' : '#2A5580',
+            borderRadius: 2,
+            transition: 'width 0.3s ease',
+          }}
+        />
+      </div>
+    </div>
+  );
 }
 
 const ROLE_OPTIONS: { role: BoardRole; label: string }[] = [
@@ -38,11 +98,17 @@ export default function ForcedChangeModal({
   onDismissAndReplace,
   onRetain,
 }: ForcedChangeModalProps) {
-  const [phase, setPhase] = useState<'decision' | 'replacement'>('decision');
   const [selectedDirId, setSelectedDirId] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<BoardRole>('ned');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [hoverCandidateId, setHoverCandidateId] = useState<string | null>(null);
 
   const boardDirIds = useMemo(() => new Set(boardSeats.map((s) => s.directorId)), [boardSeats]);
+
+  const departingDirector = useMemo(
+    () => directors.find((d) => d.id === forcedChange.directorId),
+    [directors, forcedChange.directorId]
+  );
 
   // Available directors for replacement (in company pool, not on board)
   const availableDirectors = useMemo(() => {
@@ -57,148 +123,421 @@ export default function ForcedChangeModal({
   const replacementFee = selectedDir ? computeFeeWithPremium(selectedDir.annualFee, selectedRole) : 0;
   const canAfford = replacementFee <= remaining;
 
+  // Board average domain scores (from current board members)
+  const boardAvg = useMemo(() => {
+    const boardMembers = boardSeats
+      .map((s) => directors.find((d) => d.id === s.directorId))
+      .filter(Boolean) as typeof directors;
+    if (boardMembers.length === 0) return {} as Record<string, number>;
+    const sums: Record<string, number> = {};
+    for (const domain of ALL_DOMAINS) {
+      sums[domain] = boardMembers.reduce((acc, d) => acc + (d.domainRatings[domain] ?? 0), 0) / boardMembers.length;
+    }
+    return sums;
+  }, [boardSeats, directors]);
+
+  // If hovering a candidate, show their scores overlaid on board avg
+  const hoverDir = hoverCandidateId ? directors.find((d) => d.id === hoverCandidateId) : null;
+  const displayedScores: Record<string, number> = hoverDir ? (hoverDir.domainRatings as Record<string, number>) : boardAvg;
+
+  const currencySymbol = jurisdiction === 'US' ? '$' : jurisdiction === 'EU' ? '€' : '£';
+
   const handleConfirm = () => {
     if (!selectedDirId || !canAfford) return;
-    // Single atomic call - dismiss the departing director AND appoint replacement
     onDismissAndReplace(forcedChange.directorId, selectedDirId, selectedRole);
   };
 
+  const typeLabel =
+    forcedChange.type === 'health_crisis'
+      ? 'Director Health Crisis'
+      : forcedChange.type === 'misconduct'
+      ? 'Director Misconduct'
+      : 'Regulatory Disqualification';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 50,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)',
+      }}
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-navy border-2 border-error/50 rounded-xl p-6 w-full max-w-2xl max-h-[85vh] overflow-y-auto"
+        style={{
+          background: '#0D2237',
+          border: '2px solid rgba(220,60,60,0.45)',
+          borderRadius: 16,
+          width: '100%',
+          maxWidth: 940,
+          maxHeight: '92vh',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          margin: '0 12px',
+        }}
       >
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-2xl">&#9888;</span>
-          <h2 className="text-xl font-bold text-error font-narrative">
-            {forcedChange.type === 'health_crisis' && 'Director Health Crisis'}
-            {forcedChange.type === 'misconduct' && 'Director Misconduct'}
-            {forcedChange.type === 'regulatory_disqualification' && 'Regulatory Disqualification'}
+        {/* Header bar */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '14px 20px',
+          borderBottom: '1px solid rgba(220,60,60,0.25)',
+          background: 'rgba(220,60,60,0.06)',
+          flexShrink: 0,
+        }}>
+          <span style={{ fontSize: 20 }}>⚠</span>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#E05050', fontFamily: 'Georgia, serif', margin: 0 }}>
+            {typeLabel}
           </h2>
+          <div style={{ flex: 1 }} />
+          <span style={{ fontSize: 12, color: 'rgba(232,228,220,0.55)', fontStyle: 'italic' }}>
+            {forcedChange.turnsRemaining} turn{forcedChange.turnsRemaining !== 1 ? 's' : ''} to resolve
+          </span>
         </div>
 
-        <p className="text-foreground/80 text-sm mb-6 font-narrative italic leading-relaxed">
+        {/* Narrative */}
+        <div style={{
+          padding: '10px 20px 0',
+          fontSize: 13, color: 'rgba(232,228,220,0.75)', fontStyle: 'italic', lineHeight: 1.55,
+          flexShrink: 0,
+        }}>
           {forcedChange.narrative}
-        </p>
+        </div>
 
-        <AnimatePresence mode="wait">
-          {phase === 'decision' ? (
-            <motion.div key="decision" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {/* Show affected director */}
-              <div className="flex items-center gap-3 bg-error/10 border border-error/30 rounded-lg p-3 mb-6">
-                <div className="rounded-full overflow-hidden border-2 border-error/50">
-                  <DirectorPortrait directorId={forcedChange.directorId} size={48} />
-                </div>
-                <div>
-                  <div className="font-bold text-foreground">{forcedChange.directorName}</div>
-                  <div className="text-xs text-error">
-                    {forcedChange.turnsRemaining} turn{forcedChange.turnsRemaining !== 1 ? 's' : ''} to resolve
+        {/* Three-column body */}
+        <div style={{
+          display: 'flex', flex: 1, overflow: 'hidden', padding: '12px 16px 16px', gap: 12,
+          minHeight: 0,
+        }}>
+          {/* ── Left: Departing Director ── */}
+          <div style={{
+            width: '28%', flexShrink: 0,
+            background: 'rgba(220,60,60,0.06)',
+            border: '1px solid rgba(220,60,60,0.2)',
+            borderRadius: 10, padding: '14px 12px',
+            overflowY: 'auto',
+          }}>
+            <div style={{ fontSize: 10, color: '#B08A30', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, fontWeight: 600 }}>
+              Departing Director
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(220,60,60,0.5)', marginBottom: 8 }}>
+                <DirectorPortrait directorId={forcedChange.directorId} size={64} />
+              </div>
+              <div style={{ fontWeight: 700, color: '#E8E4DC', fontSize: 13, textAlign: 'center', marginBottom: 4 }}>
+                {forcedChange.directorName}
+              </div>
+              {departingDirector && (
+                <>
+                  <div style={{
+                    fontSize: 10, background: 'rgba(220,60,60,0.15)',
+                    border: '1px solid rgba(220,60,60,0.3)',
+                    borderRadius: 4, padding: '2px 8px', color: '#E05050', marginBottom: 10,
+                  }}>
+                    {departingDirector.independence === 'independent' ? 'Independent' : departingDirector.independence === 'questionable' ? 'Questionable' : 'Non-Indep.'}
                   </div>
-                </div>
+                  <div style={{ width: '100%', marginBottom: 10 }}>
+                    {ALL_DOMAINS.map((domain) => (
+                      <ScoreBar
+                        key={domain}
+                        label={DOMAIN_SHORT[domain] ?? domain}
+                        value={departingDirector.domainRatings[domain] ?? 0}
+                      />
+                    ))}
+                  </div>
+                  <div style={{ width: '100%', marginBottom: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: 10, color: '#9BB4CC' }}>Energy</span>
+                      <span style={{ fontSize: 10, color: '#E8E4DC', fontWeight: 600 }}>
+                        {Math.round(departingDirector.currentEnergy * 100)}%
+                      </span>
+                    </div>
+                    <div style={{ height: 4, background: '#0D1B2A', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${Math.round(departingDirector.currentEnergy * 100)}%`,
+                        background: departingDirector.currentEnergy > 0.6 ? '#4CAF82' : departingDirector.currentEnergy > 0.3 ? '#C8960C' : '#E05050',
+                        borderRadius: 2,
+                      }} />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#9BB4CC', marginTop: 4 }}>
+                    Annual fee: <span style={{ color: '#C8960C', fontWeight: 600 }}>
+                      {currencySymbol}{Math.round(departingDirector.annualFee / 1000)}k
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* ── Centre: Board State ── */}
+          <div style={{
+            flex: '0 0 32%',
+            background: 'rgba(26,58,92,0.25)',
+            border: '1px solid rgba(200,150,12,0.2)',
+            borderRadius: 10, padding: '14px 12px',
+            overflowY: 'auto',
+          }}>
+            <div style={{ fontSize: 10, color: '#B08A30', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, fontWeight: 600 }}>
+              {hoverDir ? `Candidate: ${hoverDir.name}` : 'Your Board'}
+            </div>
+            {/* Harvey ball rows */}
+            <div style={{ marginBottom: 12 }}>
+              {ALL_DOMAINS.map((domain) => {
+                const score = Math.round((displayedScores as Record<string, number>)[domain] ?? 0);
+                return (
+                  <div key={domain} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                    <span style={{ fontSize: 10, color: '#9BB4CC', width: 68, flexShrink: 0 }}>
+                      {DOMAIN_SHORT[domain] ?? domain}
+                    </span>
+                    <HarveyBall value={score} size={16} />
+                    <div style={{ flex: 1, height: 3, background: '#0D1B2A', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${Math.min(100, score)}%`,
+                        background: hoverDir ? '#4CAF82' : '#2A5580',
+                        borderRadius: 2,
+                      }} />
+                    </div>
+                    <span style={{ fontSize: 10, color: '#E8E4DC', width: 22, textAlign: 'right', fontWeight: 600 }}>{score}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Board member list */}
+            <div style={{ borderTop: '1px solid rgba(200,150,12,0.15)', paddingTop: 8 }}>
+              <div style={{ fontSize: 10, color: '#9BB4CC', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Current Board
               </div>
+              {boardSeats.map((seat) => {
+                const dir = directors.find((d) => d.id === seat.directorId);
+                if (!dir) return null;
+                const isDeparting = seat.directorId === forcedChange.directorId;
+                return (
+                  <div key={seat.directorId} style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    marginBottom: 4, opacity: isDeparting ? 0.4 : 1,
+                  }}>
+                    <div style={{
+                      borderRadius: '50%', overflow: 'hidden',
+                      border: `1px solid ${isDeparting ? 'rgba(220,60,60,0.5)' : 'rgba(200,150,12,0.3)'}`,
+                      flexShrink: 0,
+                    }}>
+                      <DirectorPortrait directorId={dir.id} size={22} />
+                    </div>
+                    <span style={{
+                      fontSize: 10, color: isDeparting ? '#E05050' : '#E8E4DC',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {dir.name}
+                    </span>
+                    {isDeparting && (
+                      <span style={{ fontSize: 9, color: '#E05050', marginLeft: 'auto', flexShrink: 0 }}>Departing</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-              <div className="flex flex-col gap-3">
-                {/* Dismiss & Replace - moves to replacement picker, no game state change yet */}
-                <button
-                  onClick={() => setPhase('replacement')}
-                  className="w-full py-3 px-4 rounded-lg bg-gold/10 border border-gold/40 text-gold font-semibold hover:bg-gold/20 transition-colors text-sm cursor-pointer"
-                >
-                  Dismiss {forcedChange.directorName} &amp; Appoint Replacement
-                </button>
-
-                {/* Retain (misconduct only) */}
-                {forcedChange.canRetain && onRetain && (
-                  <button
-                    onClick={onRetain}
-                    className="w-full py-3 px-4 rounded-lg bg-error/10 border border-error/30 text-error font-semibold hover:bg-error/20 transition-colors text-sm cursor-pointer"
-                  >
-                    Retain {forcedChange.directorName} (GH -8, proxy flags)
-                  </button>
-                )}
+          {/* ── Right: Replacement Pool ── */}
+          <div style={{
+            flex: 1, minWidth: 0,
+            display: 'flex', flexDirection: 'column',
+            background: 'rgba(13,27,42,0.6)',
+            border: '1px solid rgba(200,150,12,0.2)',
+            borderRadius: 10, overflow: 'hidden',
+          }}>
+            <div style={{ padding: '12px 12px 8px', borderBottom: '1px solid rgba(200,150,12,0.15)', flexShrink: 0 }}>
+              <div style={{ fontSize: 10, color: '#B08A30', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 8 }}>
+                Replacement Pool
               </div>
-            </motion.div>
-          ) : (
-            <motion.div key="replacement" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {/* Back button */}
-              <button
-                onClick={() => { setPhase('decision'); setSelectedDirId(null); }}
-                className="text-xs text-foreground/50 hover:text-foreground mb-3 flex items-center gap-1 transition-colors cursor-pointer"
-              >
-                &#8592; Back
-              </button>
-
-              <h3 className="text-sm font-semibold text-gold uppercase tracking-wide mb-3">Select Replacement Director</h3>
-
               {/* Role selector */}
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-xs text-foreground/50">Role:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 11, color: '#9BB4CC' }}>Appoint as:</span>
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value as BoardRole)}
-                  className="text-xs bg-navy-dark text-foreground border border-card-border rounded px-2 py-1 focus:outline-none focus:border-gold"
+                  style={{
+                    fontSize: 11, background: '#0D1B2A', color: '#E8E4DC',
+                    border: '1px solid rgba(200,150,12,0.4)', borderRadius: 4,
+                    padding: '3px 6px', outline: 'none', cursor: 'pointer',
+                  }}
                 >
                   {ROLE_OPTIONS.map((r) => (
                     <option key={r.role} value={r.role}>{r.label}</option>
                   ))}
                 </select>
               </div>
+            </div>
 
-              {/* Director grid */}
-              <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto mb-4">
-                {availableDirectors.map((d) => {
+            {/* Candidate cards */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
+              {availableDirectors.length === 0 ? (
+                <p style={{ fontSize: 12, color: 'rgba(232,228,220,0.4)', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>
+                  No available directors in the pool.
+                </p>
+              ) : (
+                availableDirectors.map((d) => {
                   const fee = computeFeeWithPremium(d.annualFee, selectedRole);
                   const affordable = fee <= remaining;
                   const isSelected = selectedDirId === d.id;
+                  const isExpanded = expandedId === d.id;
+                  const topDoms = ALL_DOMAINS
+                    .map((dom) => ({ dom, val: d.domainRatings[dom] ?? 0 }))
+                    .sort((a, b) => b.val - a.val)
+                    .slice(0, 2);
+
                   return (
-                    <button
+                    <div
                       key={d.id}
                       onClick={() => affordable && setSelectedDirId(d.id)}
-                      disabled={!affordable}
-                      className={`flex items-center gap-2 p-2 rounded-lg border text-left transition-all ${
-                        isSelected
-                          ? 'border-gold bg-gold/10'
+                      onMouseEnter={() => setHoverCandidateId(d.id)}
+                      onMouseLeave={() => setHoverCandidateId(null)}
+                      style={{
+                        background: isSelected
+                          ? 'rgba(200,150,12,0.12)'
                           : affordable
-                            ? 'border-card-border hover:border-gold/50'
-                            : 'border-card-border opacity-40 cursor-not-allowed'
-                      }`}
+                          ? 'rgba(26,58,92,0.3)'
+                          : 'rgba(26,58,92,0.1)',
+                        border: isSelected
+                          ? '1.5px solid #C8960C'
+                          : '1px solid rgba(200,150,12,0.15)',
+                        borderRadius: 8,
+                        padding: '8px 10px',
+                        marginBottom: 6,
+                        cursor: affordable ? 'pointer' : 'not-allowed',
+                        opacity: affordable ? 1 : 0.42,
+                        transition: 'all 0.15s ease',
+                      }}
                     >
-                      <div className="rounded-full overflow-hidden border border-gold/30 shrink-0">
-                        <DirectorPortrait directorId={d.id} size={36} />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-foreground truncate">{d.name}</div>
-                        <div className="text-[11px] text-foreground/50">
-                          {jurisdiction === 'US' ? '$' : '£'}{Math.round(fee / 1000)}k
-                          {!affordable && ' (over budget)'}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{
+                          borderRadius: '50%', overflow: 'hidden',
+                          border: `1.5px solid ${isSelected ? '#C8960C' : 'rgba(200,150,12,0.3)'}`,
+                          flexShrink: 0,
+                        }}>
+                          <DirectorPortrait directorId={d.id} size={36} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#E8E4DC', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {d.name}
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                            {topDoms.map(({ dom, val }) => (
+                              <span key={dom} style={{ fontSize: 10, color: '#C8960C' }}>
+                                {DOMAIN_SHORT[dom] ?? dom} <strong>{val}</strong>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <div style={{ fontSize: 11, color: affordable ? '#C8960C' : '#E05050', fontWeight: 600 }}>
+                            {currencySymbol}{Math.round(fee / 1000)}k
+                          </div>
+                          <div style={{
+                            fontSize: 9, marginTop: 2,
+                            background: d.independence === 'independent' ? 'rgba(76,175,130,0.15)' : 'rgba(200,150,12,0.1)',
+                            border: `1px solid ${d.independence === 'independent' ? 'rgba(76,175,130,0.3)' : 'rgba(200,150,12,0.25)'}`,
+                            color: d.independence === 'independent' ? '#4CAF82' : '#C8960C',
+                            borderRadius: 3, padding: '1px 5px',
+                          }}>
+                            {d.independence === 'independent' ? 'Indep.' : d.independence === 'questionable' ? 'Quest.' : 'Non-Ind.'}
+                          </div>
                         </div>
                       </div>
-                    </button>
+
+                      {/* View Full Profile toggle */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : d.id); }}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          fontSize: 10, color: 'rgba(200,150,12,0.7)',
+                          padding: '4px 0 0', display: 'block',
+                        }}
+                      >
+                        {isExpanded ? '▲ Hide Profile' : '▼ View Full Profile'}
+                      </button>
+
+                      {/* Expanded profile */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            style={{ overflow: 'hidden' }}
+                          >
+                            <div style={{ paddingTop: 8 }}>
+                              {ALL_DOMAINS.map((domain) => (
+                                <ScoreBar
+                                  key={domain}
+                                  label={DOMAIN_SHORT[domain] ?? domain}
+                                  value={d.domainRatings[domain] ?? 0}
+                                  highlight={isSelected}
+                                />
+                              ))}
+                              <div style={{ fontSize: 10, color: '#9BB4CC', marginTop: 6, lineHeight: 1.5 }}>
+                                {d.background}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   );
-                })}
-              </div>
-
-              {availableDirectors.length === 0 && (
-                <p className="text-foreground/50 text-sm italic text-center py-4">No available directors in the pool.</p>
+                })
               )}
+            </div>
 
-              {/* Confirm - fires the atomic dismiss+replace only when a director is selected */}
+            {/* Bottom action buttons */}
+            <div style={{
+              padding: '10px 12px',
+              borderTop: '1px solid rgba(200,150,12,0.15)',
+              display: 'flex', flexDirection: 'column', gap: 8,
+              flexShrink: 0,
+            }}>
               <button
                 disabled={!selectedDirId || !canAfford}
                 onClick={handleConfirm}
-                className={`w-full py-3 rounded-lg font-semibold text-sm transition-all ${
-                  selectedDirId && canAfford
-                    ? 'bg-gold text-navy-dark hover:bg-gold-light cursor-pointer'
-                    : 'bg-navy-light text-foreground/40 cursor-not-allowed'
-                }`}
+                style={{
+                  width: '100%', padding: '10px 0',
+                  borderRadius: 8, fontWeight: 700, fontSize: 13,
+                  cursor: selectedDirId && canAfford ? 'pointer' : 'not-allowed',
+                  border: 'none',
+                  background: selectedDirId && canAfford ? '#C8960C' : 'rgba(26,58,92,0.4)',
+                  color: selectedDirId && canAfford ? '#0D1B2A' : 'rgba(232,228,220,0.3)',
+                  transition: 'all 0.15s ease',
+                }}
               >
-                {selectedDirId ? `Confirm: Dismiss & Appoint ${selectedDir?.name}` : 'Select a Director to Continue'}
+                {selectedDirId
+                  ? `Confirm Replacement: ${selectedDir?.name}`
+                  : 'Select a Director to Continue'}
               </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+              {/* Retain option (misconduct only) */}
+              {forcedChange.canRetain && onRetain && (
+                <button
+                  onClick={onRetain}
+                  style={{
+                    width: '100%', padding: '8px 0',
+                    borderRadius: 8, fontWeight: 600, fontSize: 12,
+                    cursor: 'pointer',
+                    background: 'transparent',
+                    border: '1px solid rgba(220,60,60,0.4)',
+                    color: '#E05050',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  Keep Vacancy (GH −8, proxy flags)
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </motion.div>
     </div>
   );

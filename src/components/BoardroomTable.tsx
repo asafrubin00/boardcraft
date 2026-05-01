@@ -29,6 +29,29 @@ export const TABLE_POSITIONS: TablePosition[] = [
   { defaultRole: 'ned', label: 'NED', leftPct: 19.4, topPct: 28.75, isChair: false },
 ];
 
+// ── Dynamic ellipse seat positions for medium (9-10) and large (11-12) boards ──
+
+function computeEllipsePositions(N: number): TablePosition[] {
+  const cx = 200, cy = 150;
+  const rx = N >= 11 ? 165 : 155;
+  const ry = N >= 11 ? 122 : 115;
+  const positions: TablePosition[] = [];
+  for (let i = 0; i < N; i++) {
+    const angleDeg = (270 + (360 / N) * i) % 360;
+    const angleRad = (angleDeg * Math.PI) / 180;
+    const leftPct = ((cx + rx * Math.cos(angleRad)) / 400) * 100;
+    const topPct = ((cy + ry * Math.sin(angleRad)) / 300) * 100;
+    positions.push({
+      defaultRole: i === 0 ? 'chair' : 'ned',
+      label: i === 0 ? 'Chair' : 'NED',
+      leftPct,
+      topPct,
+      isChair: i === 0,
+    });
+  }
+  return positions;
+}
+
 // ── Derivation: map seats → table positions ──
 
 export function deriveTablePositions(
@@ -37,7 +60,74 @@ export function deriveTablePositions(
   hasCsrd = false,
   hasStrategy = false,
 ): (string | null)[] {
-  const totalSlots = 8 + (hasEnergyTransition ? 1 : 0) + (hasCsrd ? 1 : 0) + (hasStrategy ? 1 : 0);
+  const seatCount = seats.length;
+  const optSlots = (hasEnergyTransition ? 1 : 0) + (hasCsrd ? 1 : 0) + (hasStrategy ? 1 : 0);
+
+  // For 9+ base seats, use ellipse layout (without optional committee slots in the ellipse itself)
+  if (seatCount >= 9) {
+    const totalSlots = seatCount + optSlots;
+    const positions: (string | null)[] = Array(totalSlots).fill(null);
+    const placed = new Set<string>();
+
+    // Named roles placed at specific ellipse positions (chair=0, then clockwise)
+    const namedRolePriority: BoardRole[] = ['chair', 'sid', 'auditChair', 'remChair', 'nomChair'];
+    let nextSlot = 0;
+
+    // Chair always at slot 0
+    const chairSeat = seats.find((s) => s.role === 'chair');
+    if (chairSeat) {
+      positions[0] = chairSeat.directorId;
+      placed.add(chairSeat.directorId);
+      nextSlot = 1;
+    } else {
+      nextSlot = 0;
+    }
+
+    // Place other named roles in subsequent slots
+    for (const role of namedRolePriority.slice(1)) {
+      const seat = seats.find((s) => s.role === role && !placed.has(s.directorId));
+      if (seat) {
+        while (positions[nextSlot] !== null) nextSlot++;
+        if (nextSlot < seatCount) {
+          positions[nextSlot] = seat.directorId;
+          placed.add(seat.directorId);
+          nextSlot++;
+        }
+      }
+    }
+
+    // Fill remaining slots with NEDs/worker reps
+    for (const seat of seats) {
+      if (!placed.has(seat.directorId)) {
+        while (nextSlot < seatCount && positions[nextSlot] !== null) nextSlot++;
+        if (nextSlot < seatCount) {
+          positions[nextSlot] = seat.directorId;
+          placed.add(seat.directorId);
+          nextSlot++;
+        }
+      }
+    }
+
+    // Optional committee chair slots after the main ellipse seats
+    let optSlotIdx = seatCount;
+    const roleToOptSlot: Record<string, number> = {};
+    if (hasEnergyTransition) roleToOptSlot['energyTransitionChair'] = optSlotIdx++;
+    if (hasCsrd) roleToOptSlot['csrdChair'] = optSlotIdx++;
+    if (hasStrategy) roleToOptSlot['strategyChair'] = optSlotIdx++;
+
+    for (const seat of seats) {
+      const idx = roleToOptSlot[seat.role];
+      if (idx !== undefined && !placed.has(seat.directorId)) {
+        positions[idx] = seat.directorId;
+        placed.add(seat.directorId);
+      }
+    }
+
+    return positions;
+  }
+
+  // ── Standard 8-seat layout ──
+  const totalSlots = 8 + optSlots;
   const positions: (string | null)[] = Array(totalSlots).fill(null);
   const placed = new Set<string>();
 
@@ -89,7 +179,23 @@ export function getOverflowDirectorIds(
 
 // ── Short role label for display under seat ──
 
-function shortRoleLabel(role: BoardRole, jurisdiction: Jurisdiction = 'UK'): string {
+function shortRoleLabel(
+  role: BoardRole,
+  jurisdiction: Jurisdiction = 'UK',
+  directorId?: string | null,
+  workerRepSet?: Set<string>,
+): string {
+  // Worker representative override (EU two-tier boards, Rheinfeld)
+  if (directorId && workerRepSet && workerRepSet.has(directorId)) {
+    return 'Worker Rep';
+  }
+
+  // EU-specific Supervisory Board terminology
+  if (jurisdiction === 'EU') {
+    if (role === 'chair') return 'SB Chair';
+    if (role === 'ned' || role === 'sid') return 'SB Member';
+  }
+
   const full = getRoleLabel(role, jurisdiction);
   return full
     .replace(' Committee Chair', ' Chair')
@@ -175,9 +281,29 @@ export default function BoardroomTable({
   const workerRepSet = new Set(workerRepIds);
   const lockedSet = new Set(lockedDirectorIds);
   const conflictSet = new Set(conflictDirectorIds);
-  // Build effective positions: base 8 + optional committee chair seats
+
+  // ── Dynamic layout for large boards (9+ seats) ──
+  const seatCount = seats.length;
+  const useDynamicLayout = seatCount >= 9;
+  const seatPxNormal = (_idx: number, isChairPos: boolean) =>
+    isChairPos ? 68 : 58;
+  const seatPxLarge = (_idx: number, isChairPos: boolean) =>
+    isChairPos ? 68 : seatCount >= 11 ? 52 : 58;
+
+  // Determine effective table SVG rect dimensions for dynamic layout
+  const tableRect = useDynamicLayout
+    ? seatCount >= 11
+      ? { x: 90, y: 30, w: 220, h: 240, rx: 42 }
+      : { x: 100, y: 38, w: 200, h: 224, rx: 40 }
+    : { x: 120, y: 55, w: 160, h: 190, rx: 35 };
+
+  // Build effective positions: base (static or dynamic) + optional committee chair seats
+  const basePositions: TablePosition[] = useDynamicLayout
+    ? computeEllipsePositions(seatCount)
+    : TABLE_POSITIONS;
+
   const effectivePositions: TablePosition[] = [
-    ...TABLE_POSITIONS,
+    ...basePositions,
     ...(hasEnergyTransition ? [ETC_POSITION] : []),
     ...(hasCsrd ? [CSRD_POSITION] : []),
     ...(hasStrategy ? [STRATEGY_POSITION] : []),
@@ -217,18 +343,18 @@ export default function BoardroomTable({
         </defs>
 
         {/* Outer table surface - rounded rectangle */}
-        <rect x="120" y="55" width="160" height="190" rx="35" fill="#0D1B2A" stroke="#C8960C" strokeWidth="2" />
+        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill="#0D1B2A" stroke="#C8960C" strokeWidth="2" />
         {/* Wood-grain overlay */}
-        <rect x="120" y="55" width="160" height="190" rx="35" fill="url(#woodGrain)" />
+        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill="url(#woodGrain)" />
         {/* Gradient overlay */}
-        <rect x="120" y="55" width="160" height="190" rx="35" fill="url(#tableGrad)" />
+        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill="url(#tableGrad)" />
         {/* Inner edge highlight */}
         <rect
-          x="125"
-          y="60"
-          width="150"
-          height="180"
-          rx="30"
+          x={tableRect.x + 5}
+          y={tableRect.y + 5}
+          width={tableRect.w - 10}
+          height={tableRect.h - 10}
+          rx={tableRect.rx - 5}
           fill="none"
           stroke="#C8960C"
           strokeWidth="0.5"
@@ -266,7 +392,7 @@ export default function BoardroomTable({
         const directorId = positions[index];
         const director = directorId ? getDirector(directorId) : null;
         const isActive = activeSeatIndex === index;
-        const seatPx = pos.isChair ? 68 : 58;
+        const seatPx = useDynamicLayout ? seatPxLarge(index, pos.isChair) : seatPxNormal(index, pos.isChair);
         const isLockedChairCeo = combinedChairCeo && pos.isChair;
         const isWorkerRep = directorId ? workerRepSet.has(directorId) : false;
         const isLockedSeat = directorId ? lockedSet.has(directorId) : false;
@@ -365,14 +491,14 @@ export default function BoardroomTable({
         const directorId = positions[index];
         const director = directorId ? getDirector(directorId) : null;
         const seat = directorId ? getSeat(directorId) : null;
-        const seatPx = pos.isChair ? 68 : 58;
+        const seatPx = useDynamicLayout ? seatPxLarge(index, pos.isChair) : seatPxNormal(index, pos.isChair);
         const isLockedChairCeo = combinedChairCeo && pos.isChair;
 
         const actualLabel = isLockedChairCeo
           ? 'Chair/CEO'
           : seat && seat.role !== pos.defaultRole
-            ? shortRoleLabel(seat.role, jurisdiction)
-            : shortRoleLabel(pos.defaultRole, jurisdiction);
+            ? shortRoleLabel(seat.role, jurisdiction, directorId, workerRepSet)
+            : shortRoleLabel(pos.defaultRole, jurisdiction, directorId, workerRepSet);
 
         // For the Chair (top seat, index 0), labels go ABOVE the portrait to avoid overlapping the table
         const isTopSeat = index === 0;

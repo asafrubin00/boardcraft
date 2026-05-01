@@ -523,12 +523,22 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
           animate={{ opacity: 1 }}
           transition={{ delay: 1, duration: 0.5 }}
         >
-          <button
-            onClick={onRestart}
-            className="px-12 py-4 rounded-lg bg-gold text-navy-dark font-bold text-xl hover:bg-gold-light transition-colors cursor-pointer"
-          >
-            Play Again
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={onRestart}
+              className="px-8 py-4 rounded-lg bg-gold text-navy-dark font-bold text-lg hover:bg-gold-light transition-colors cursor-pointer"
+            >
+              Same Company
+            </button>
+            {onChangeCompany && (
+              <button
+                onClick={onChangeCompany}
+                className="px-8 py-4 rounded-lg border border-gold/50 text-gold font-bold text-lg hover:bg-gold/10 transition-colors cursor-pointer"
+              >
+                New Company
+              </button>
+            )}
+          </div>
           <button
             onClick={() => setShowLeaderboard(true)}
             className="px-8 py-2 rounded-lg border border-gold/40 text-gold text-sm font-semibold hover:bg-gold/10 transition-colors cursor-pointer"

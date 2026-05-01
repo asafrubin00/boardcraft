@@ -135,10 +135,15 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
                   </div>
                 </div>
 
-                {/* Difficulty Badge */}
-                <span className={`text-xs mt-1 ${difficultyColor(company.difficultyTier)}`}>
-                  Difficulty: {difficultyLabel(company.difficultyTier)}
-                </span>
+                {/* Difficulty Badge & Event count */}
+                <div className="flex items-center gap-3 mt-1">
+                  <span className={`text-xs ${difficultyColor(company.difficultyTier)}`}>
+                    Difficulty: {difficultyLabel(company.difficultyTier)}
+                  </span>
+                  <span className="text-xs text-foreground/40">
+                    {company.eventSchedule.length} events
+                  </span>
+                </div>
               </div>
 
               {/* Expanded Content */}

@@ -193,7 +193,7 @@ function HomeInner() {
 
       {/* Version badge */}
       <div className="absolute bottom-4 right-4 text-foreground/20 text-xs">
-        v0.1 prototype
+        v0.2 beta
       </div>
 
       {/* CSS animations */}

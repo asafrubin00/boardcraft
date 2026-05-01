@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, Suspense, useRef } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import AboutModal from '@/components/AboutModal';
 import type { BoardSeat, GameState, ResolutionOutput, Company, ForcedDirectorChange, CommitteeId } from '@/types/game';
@@ -125,6 +125,8 @@ function PlayPageInner() {
   } | null>(null);
   const [regenDirectorIds, setRegenDirectorIds] = useState<string[]>([]);
   const [isRestart, setIsRestart] = useState(false);
+  // ── Replacement confirmed ref: prevents modal from re-showing after atomic dismiss+replace ──
+  const replacementConfirmed = useRef(false);
 
   // ── Dev shortcut: ?dev=q1|q2|q3|q4|agm|yearend skips to that phase ──
   useEffect(() => {
@@ -244,6 +246,8 @@ function PlayPageInner() {
       const afterReplacement = applyReplacement(afterRemoval, newDirectorId, role);
       const breakdown = recalcGovernanceBreakdown(afterReplacement);
       afterReplacement.governanceHealthBreakdown = rescaleBreakdown(breakdown, afterReplacement.governanceHealth);
+      // Mark replacement confirmed so the modal doesn't re-show while state propagates
+      replacementConfirmed.current = true;
       setGameState(afterReplacement);
     },
     [gameState]
@@ -419,6 +423,13 @@ function PlayPageInner() {
     setPhase('company_select');
   }, []);
 
+  // ── Reset replacementConfirmed when a new forcedChange arrives ──
+  useEffect(() => {
+    if (gameState?.forcedChange) {
+      replacementConfirmed.current = false;
+    }
+  }, [gameState?.forcedChange?.directorId]);
+
   // ── Derived values ──
   const svHistory = useMemo(() => {
     if (!gameState) return [];
@@ -474,6 +485,7 @@ function PlayPageInner() {
         onClearRegen={() => setRegenDirectorIds([])}
         onForcedDismissAndReplace={handleForcedDismissAndReplace}
         onForcedRetain={handleForcedRetain}
+        showForcedModal={!!gameState.forcedChange && !replacementConfirmed.current}
       />
     );
   }
@@ -487,6 +499,7 @@ function PlayPageInner() {
 import { directors as allDirectors } from '@/data/directors';
 import { computeFeeWithPremium, checkCompliance } from '@/engine/compliance';
 import CompliancePanel from '@/components/CompliancePanel';
+import BoardGuideModal from '@/components/BoardGuideModal';
 import BoardroomTable, {
   TABLE_POSITIONS,
   deriveTablePositions,
@@ -586,6 +599,7 @@ function BoardConstructionWrapper({
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [showLockConfirm, setShowLockConfirm] = useState(false);
   const [showStrength, setShowStrength] = useState(false);
+  const [showBoardGuide, setShowBoardGuide] = useState(false);
   const [hintsShown, setHintsShown] = useState<number>(() => {
     if (typeof window === 'undefined') return -1;
     return localStorage.getItem('boardcraft_hints_seen') ? -1 : 0;
@@ -1052,6 +1066,13 @@ function BoardConstructionWrapper({
                   </p>
                 </div>
                 <CompliancePanel errors={complianceErrors} />
+                {/* Board Guide button */}
+                <button
+                  onClick={() => setShowBoardGuide(true)}
+                  className="w-full py-2 rounded-lg border border-gold/30 text-gold/70 text-xs font-medium hover:border-gold/60 hover:text-gold transition-colors text-center cursor-pointer"
+                >
+                  &#x2197; Board Guide — {company.jurisdiction} Governance Rules
+                </button>
                 {/* ET Toggle - only show if company has ET committee definition */}
                 {hasETCommittee && (
                   <div className={`rounded-lg border p-4 cursor-pointer transition-all ${hasEnergyTransition ? 'border-gold bg-gold/5' : 'border-card-border hover:border-gold/50'}`} onClick={handleToggleET}>
@@ -1385,6 +1406,9 @@ function BoardConstructionWrapper({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Board Guide Modal */}
+      <BoardGuideModal isOpen={showBoardGuide} onClose={() => setShowBoardGuide(false)} company={company} />
 
       {/* Lock modal */}
       <AnimatePresence>

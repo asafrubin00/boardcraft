@@ -37,6 +37,8 @@ interface GameBoardScreenProps {
   /** Atomic: dismiss departing director + appoint replacement in a single state update */
   onForcedDismissAndReplace?: (dismissedDirectorId: string, newDirectorId: string, role: BoardRole) => void;
   onForcedRetain?: () => void;
+  /** Controls whether the forced change modal is visible (allows parent to suppress after confirm) */
+  showForcedModal?: boolean;
 }
 
 // Volume level indicator bars component
@@ -69,6 +71,7 @@ export default function GameBoardScreen({
   onClearRegen,
   onForcedDismissAndReplace,
   onForcedRetain,
+  showForcedModal = true,
 }: GameBoardScreenProps) {
   const [showDashboard, setShowDashboard] = useState(false);
   const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
@@ -533,7 +536,7 @@ export default function GameBoardScreen({
       </AnimatePresence>
 
       {/* Forced Change Modal */}
-      {gameState.forcedChange && onForcedDismissAndReplace && (
+      {showForcedModal && gameState.forcedChange && onForcedDismissAndReplace && (
         <ForcedChangeModal
           forcedChange={gameState.forcedChange}
           directors={gameState.directors}
