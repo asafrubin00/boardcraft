@@ -38,6 +38,7 @@ import {
   tickForcedChangeTimer,
 } from '@/engine/forcedChanges';
 import { playBoardSeatDrop, playBoardSeatRemove, playBoardConfirm, playDirectorSelect, ensureAudioContext } from '@/engine/soundEngine';
+import HintModal from '@/components/HintModal';
 
 // ── Dev-only pre-built boards ──
 const DEV_BOARD_HARWICK: { id: string; role: _DevBoardRole }[] = [
@@ -604,6 +605,7 @@ function BoardConstructionWrapper({
     if (typeof window === 'undefined') return -1;
     return localStorage.getItem('boardcraft_hints_seen') ? -1 : 0;
   });
+  const [activeCommitteeHint, setActiveCommitteeHint] = useState<{ title: string; body: string } | null>(null);
   const [showRestartBanner, setShowRestartBanner] = useState(isRestart);
 
   // ── Interaction state ──
@@ -675,6 +677,15 @@ function BoardConstructionWrapper({
       }
       return next;
     });
+  }, []);
+
+  /** Fire a committee hint once per company+committee (keyed by `storageKey`). */
+  const showCommitteeHint = useCallback((title: string, body: string, storageKey: string) => {
+    if (typeof window === 'undefined') return;
+    const seen: string[] = JSON.parse(localStorage.getItem('boardcraft_committee_hints') ?? '[]');
+    if (seen.includes(storageKey)) return;
+    localStorage.setItem('boardcraft_committee_hints', JSON.stringify([...seen, storageKey]));
+    setActiveCommitteeHint({ title, body });
   }, []);
 
   // ── Derived ──
@@ -809,27 +820,54 @@ function BoardConstructionWrapper({
     if (hasEnergyTransition) {
       pushAndSetSeats((p) => p.map((s) => s.role === 'energyTransitionChair'
         ? { ...s, role: 'ned', feeWithPremium: computeFeeWithPremium(directorMap.get(s.directorId)?.annualFee ?? 0, 'ned') } : s));
+    } else {
+      // First activation — fire company-specific committee hint
+      if (company.id === 'company_harwick') {
+        showCommitteeHint(
+          'Energy Transition Chair',
+          'Your Energy Transition Chair should have strong ESG credentials — look for a score of 70 or above. They will lead Harwick\'s response to net-zero pressure from institutional shareholders.',
+          `${company.id}_et`,
+        );
+      } else if (company.id === 'company_vantage') {
+        showCommitteeHint(
+          'CA&R Chair',
+          'Your Consumer Affairs and Regulatory Chair needs strong Regulatory expertise — score of 65 or above. They will handle FDA scrutiny, UPF regulation, and FTC inquiries.',
+          `${company.id}_et`,
+        );
+      }
     }
     setHasEnergyTransition((p) => !p);
-  }, [hasEnergyTransition, pushAndSetSeats, directorMap]);
+  }, [hasEnergyTransition, pushAndSetSeats, directorMap, company.id, showCommitteeHint]);
 
   const handleToggleCsrd = useCallback(() => {
     // If toggling off, demote any csrdChair seat back to NED
     if (hasCsrd) {
       pushAndSetSeats((p) => p.map((s) => s.role === 'csrdChair'
         ? { ...s, role: 'ned', feeWithPremium: computeFeeWithPremium(directorMap.get(s.directorId)?.annualFee ?? 0, 'ned') } : s));
+    } else {
+      showCommitteeHint(
+        'CSRD Committee Chair',
+        'Your CSRD Chair needs deep ESG expertise — score of 75 or above. CSRD compliance is existential for Rheinfeld. This is one of the most important appointments you will make.',
+        `${company.id}_csrd`,
+      );
     }
     setHasCsrd((p) => !p);
-  }, [hasCsrd, pushAndSetSeats, directorMap]);
+  }, [hasCsrd, pushAndSetSeats, directorMap, company.id, showCommitteeHint]);
 
   const handleToggleStrategy = useCallback(() => {
     // If toggling off, demote any strategyChair seat back to NED
     if (hasStrategy) {
       pushAndSetSeats((p) => p.map((s) => s.role === 'strategyChair'
         ? { ...s, role: 'ned', feeWithPremium: computeFeeWithPremium(directorMap.get(s.directorId)?.annualFee ?? 0, 'ned') } : s));
+    } else {
+      showCommitteeHint(
+        'Strategy Chair',
+        'Your Strategy Chair should have strong Strategy and Markets credentials — score of 65 or above. They will guide the Supervisory Board\'s response to the China pivot and US tariff crisis.',
+        `${company.id}_strategy`,
+      );
     }
     setHasStrategy((p) => !p);
-  }, [hasStrategy, pushAndSetSeats, directorMap]);
+  }, [hasStrategy, pushAndSetSeats, directorMap, company.id, showCommitteeHint]);
 
   // ── New interaction handlers ──
   const handleAssignToSeat = useCallback((directorId: string, posIdx: number) => {
@@ -1350,62 +1388,36 @@ function BoardConstructionWrapper({
         </div>
       </div>
 
-      {/* First-time hints */}
-      <AnimatePresence>
-        {hintsShown === 0 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-8 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
-            <p className="text-xs text-foreground/80 mb-2">Browse directors and drag them onto the board seats &rarr;</p>
-            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
-          </motion.div>
-        )}
-        {hintsShown === 1 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
-            <p className="text-xs text-foreground/80 mb-2">Resolve all errors before starting &mdash; red means blocked, amber means warning</p>
-            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
-          </motion.div>
-        )}
-        {hintsShown === 2 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
-            <p className="text-xs text-foreground/80 mb-2">Happy with your board? Lock it in &mdash; your picks are permanent until the AGM</p>
-            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
-          </motion.div>
-        )}
-        {hintsShown === 3 && hint3Ready && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
-            <p className="text-[11px] text-gold font-semibold mb-1">Now appoint your Audit Chair</p>
-            <p className="text-xs text-foreground/80 mb-2">Your Audit Chair needs strong Financial Oversight &mdash; look for a score of 75 or above. Click &lsquo;Financial&rsquo; in the filter bar to find the best candidates. Drag them into the Audit Chair seat.</p>
-            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
-          </motion.div>
-        )}
-        {hintsShown === 4 && hint4Ready && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
-            <p className="text-[11px] text-gold font-semibold mb-1">Remuneration Committee Chair</p>
-            <p className="text-xs text-foreground/80 mb-2">Your Rem Chair oversees executive pay. They need strong People &amp; Culture credentials. A vacant Rem Chair will hurt your governance health score.</p>
-            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
-          </motion.div>
-        )}
-        {hintsShown === 5 && showStrength && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
-            <p className="text-[11px] text-gold font-semibold mb-1">Your board&rsquo;s combined strength</p>
-            <p className="text-xs text-foreground/80 mb-2">This shows your team&rsquo;s average score across all eight domains. Events will test specific domains &mdash; a balanced board handles more situations effectively.</p>
-            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
-          </motion.div>
-        )}
-        {hintsShown === 6 && hint6Ready && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
-            <p className="text-[11px] text-gold font-semibold mb-1">Independence matters</p>
-            <p className="text-xs text-foreground/80 mb-2">Most committee chairs must be independent directors. Directors with the &lsquo;Questionable&rsquo; badge may not qualify &mdash; check before assigning them to key roles.</p>
-            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
-          </motion.div>
-        )}
-        {hintsShown === 7 && hint7Ready && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-navy-light border border-gold/40 rounded-lg p-3 shadow-xl max-w-xs">
-            <p className="text-[11px] text-gold font-semibold mb-1">Watch your budget</p>
-            <p className="text-xs text-foreground/80 mb-2">You&rsquo;re running low on board budget. Remember you can remove directors and replace them with lower-cost alternatives &mdash; or leave seats empty and accept the governance health penalty.</p>
-            <button onClick={dismissHint} className="text-[10px] text-gold font-semibold hover:text-gold-light cursor-pointer">Got it</button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Committee hints — take priority over sequential hints when present */}
+      {activeCommitteeHint && (
+        <HintModal
+          title={activeCommitteeHint.title}
+          body={activeCommitteeHint.body}
+          onDismiss={() => setActiveCommitteeHint(null)}
+        />
+      )}
+
+      {/* Sequential first-time hints — shown only when no committee hint is active */}
+      {!activeCommitteeHint && (() => {
+        if (hintsShown === -1) return null;
+        if (hintsShown === 0)
+          return <HintModal body="Browse directors and drag them onto the board seats. Each seat shows a suggested role — you can reassign roles after placing a director." onDismiss={dismissHint} />;
+        if (hintsShown === 1)
+          return <HintModal body="Resolve all compliance errors before starting — red means blocked, amber means a warning. The Compliance panel on the right shows what needs fixing." onDismiss={dismissHint} />;
+        if (hintsShown === 2)
+          return <HintModal body="Happy with your board? Lock it in — your picks are permanent until the AGM. You can still adjust roles and committee assignments before locking." onDismiss={dismissHint} />;
+        if (hintsShown === 3 && hint3Ready)
+          return <HintModal title="Now appoint your Audit Chair" body="Your Audit Chair needs strong Financial Oversight — look for a score of 75 or above. Click 'Financial' in the filter bar to find the best candidates. Drag them into the Audit Chair seat." onDismiss={dismissHint} />;
+        if (hintsShown === 4 && hint4Ready)
+          return <HintModal title="Remuneration Committee Chair" body="Your Rem Chair oversees executive pay. They need strong People & Culture credentials. A vacant Rem Chair will hurt your governance health score." onDismiss={dismissHint} />;
+        if (hintsShown === 5 && showStrength)
+          return <HintModal title="Your board's combined strength" body="This shows your team's average score across all eight domains. Events will test specific domains — a balanced board handles more situations effectively." onDismiss={dismissHint} />;
+        if (hintsShown === 6 && hint6Ready)
+          return <HintModal title="Independence matters" body="Most committee chairs must be independent directors. Directors with the 'Questionable' badge may not qualify — check before assigning them to key roles." onDismiss={dismissHint} />;
+        if (hintsShown === 7 && hint7Ready)
+          return <HintModal title="Watch your budget" body="You're running low on board budget. Remember you can remove directors and replace them with lower-cost alternatives — or leave seats empty and accept the governance health penalty." onDismiss={dismissHint} />;
+        return null;
+      })()}
 
       {/* Board Guide Modal */}
       <BoardGuideModal isOpen={showBoardGuide} onClose={() => setShowBoardGuide(false)} company={company} />

@@ -14,6 +14,8 @@ export interface TablePosition {
   leftPct: number;
   topPct: number;
   isChair: boolean;
+  /** If true, label renders above the portrait; if false (default), below */
+  labelAbove?: boolean;
 }
 
 // Rounded-rectangle layout: Chair top, 3 per long side, RemChair bottom
@@ -29,27 +31,53 @@ export const TABLE_POSITIONS: TablePosition[] = [
   { defaultRole: 'ned', label: 'NED', leftPct: 19.4, topPct: 28.75, isChair: false },
 ];
 
-// ── Dynamic ellipse seat positions for medium (9-10) and large (11-12) boards ──
+// ── Rectangular grid layout for large boards (9–12 seats) ──
+//
+// SVG viewBox is 400×300. Table rect: x=110, y=58, w=180, h=170.
+// Portrait centres are placed outside the table on a perimeter grid:
+//   Top row   (y≈16):  Chair (centre) + 2 flanking seats
+//   Right col (x≈340): 2 seats (Audit Chair top, NED bottom)
+//   Bottom row(y≈274): 3 seats (N=9) or 4 seats (N≥10)
+//   Left col  (x≈60):  overflow seats for N=10–12
+//
+// labelAbove=false → label renders between portrait and table (below for top row, above for bottom row uses true)
 
-function computeEllipsePositions(N: number): TablePosition[] {
-  const cx = 200, cy = 150;
-  const rx = N >= 11 ? 165 : 155;
-  const ry = N >= 11 ? 122 : 115;
-  const positions: TablePosition[] = [];
-  for (let i = 0; i < N; i++) {
-    const angleDeg = (270 + (360 / N) * i) % 360;
-    const angleRad = (angleDeg * Math.PI) / 180;
-    const leftPct = ((cx + rx * Math.cos(angleRad)) / 400) * 100;
-    const topPct = ((cy + ry * Math.sin(angleRad)) / 300) * 100;
-    positions.push({
-      defaultRole: i === 0 ? 'chair' : 'ned',
-      label: i === 0 ? 'Chair' : 'NED',
-      leftPct,
-      topPct,
-      isChair: i === 0,
-    });
-  }
-  return positions;
+function computeGridPositions(N: number): TablePosition[] {
+  const top: TablePosition[] = [
+    { defaultRole: 'chair',      label: 'Chair',      leftPct: 50.0,  topPct:  5.3, isChair: true,  labelAbove: false },
+    { defaultRole: 'ned',        label: 'SB Member',  leftPct: 30.0,  topPct:  5.3, isChair: false, labelAbove: false },
+    { defaultRole: 'ned',        label: 'SB Member',  leftPct: 70.0,  topPct:  5.3, isChair: false, labelAbove: false },
+  ];
+  const right: TablePosition[] = [
+    { defaultRole: 'auditChair', label: 'Audit Chair', leftPct: 85.0, topPct: 38.3, isChair: false, labelAbove: false },
+    { defaultRole: 'ned',        label: 'SB Member',   leftPct: 85.0, topPct: 65.0, isChair: false, labelAbove: false },
+  ];
+  // 3 bottom seats for N=9, 4 bottom seats for N≥10 (72 SVG-unit spacing → 20 px gap on screen)
+  const bottom3: TablePosition[] = [
+    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 29.75, topPct: 91.3, isChair: false, labelAbove: true },
+    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 50.0,  topPct: 91.3, isChair: false, labelAbove: true },
+    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 70.25, topPct: 91.3, isChair: false, labelAbove: true },
+  ];
+  const bottom4: TablePosition[] = [
+    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 23.0, topPct: 91.3, isChair: false, labelAbove: true },
+    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 41.0, topPct: 91.3, isChair: false, labelAbove: true },
+    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 59.0, topPct: 91.3, isChair: false, labelAbove: true },
+    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 77.0, topPct: 91.3, isChair: false, labelAbove: true },
+  ];
+  const leftCol: TablePosition[] = [
+    { defaultRole: 'ned', label: 'SB Member', leftPct: 15.0, topPct: 51.7, isChair: false, labelAbove: false },
+    { defaultRole: 'ned', label: 'SB Member', leftPct: 15.0, topPct: 32.3, isChair: false, labelAbove: false },
+    { defaultRole: 'ned', label: 'SB Member', leftPct: 15.0, topPct: 71.0, isChair: false, labelAbove: false },
+  ];
+
+  const bottomRow = N <= 9 ? bottom3 : bottom4;
+  const all = [...top, ...right, ...bottomRow, ...leftCol];
+  return all.slice(0, N);
+  // Slot assignment by N:
+  //  N=9:  3 top + 2 right + 3 bottom + 1 left-ctr  = 9
+  //  N=10: 3 top + 2 right + 4 bottom + 1 left-ctr  = 10
+  //  N=11: 3 top + 2 right + 4 bottom + 2 left       = 11
+  //  N=12: 3 top + 2 right + 4 bottom + 3 left       = 12
 }
 
 // ── Derivation: map seats → table positions ──
@@ -63,52 +91,45 @@ export function deriveTablePositions(
   const seatCount = seats.length;
   const optSlots = (hasEnergyTransition ? 1 : 0) + (hasCsrd ? 1 : 0) + (hasStrategy ? 1 : 0);
 
-  // For 9+ base seats, use ellipse layout (without optional committee slots in the ellipse itself)
+  // For 9+ base seats, use the grid layout slot assignment.
+  // Named roles are pinned to fixed grid slots that match computeGridPositions defaultRoles.
   if (seatCount >= 9) {
     const totalSlots = seatCount + optSlots;
     const positions: (string | null)[] = Array(totalSlots).fill(null);
     const placed = new Set<string>();
 
-    // Named roles placed at specific ellipse positions (chair=0, then clockwise)
-    const namedRolePriority: BoardRole[] = ['chair', 'sid', 'auditChair', 'remChair', 'nomChair'];
-    let nextSlot = 0;
-
-    // Chair always at slot 0
-    const chairSeat = seats.find((s) => s.role === 'chair');
-    if (chairSeat) {
-      positions[0] = chairSeat.directorId;
-      placed.add(chairSeat.directorId);
-      nextSlot = 1;
-    } else {
-      nextSlot = 0;
-    }
-
-    // Place other named roles in subsequent slots
-    for (const role of namedRolePriority.slice(1)) {
-      const seat = seats.find((s) => s.role === role && !placed.has(s.directorId));
-      if (seat) {
-        while (positions[nextSlot] !== null) nextSlot++;
-        if (nextSlot < seatCount) {
-          positions[nextSlot] = seat.directorId;
-          placed.add(seat.directorId);
-          nextSlot++;
-        }
+    // Pin named roles to their designated grid slots (matches computeGridPositions slot order)
+    // Slot 0: chair (top-centre), Slot 3: auditChair (right-top),
+    // Slot 1: sid (top-left),     Slot 2: remChair (top-right), Slot 9: nomChair (left-ctr, N≥10)
+    const gridRoleToSlot: Partial<Record<BoardRole, number>> = {
+      chair: 0,
+      auditChair: 3,
+      sid: 1,
+      remChair: 2,
+      nomChair: 9,
+    };
+    for (const seat of seats) {
+      const slotIdx = gridRoleToSlot[seat.role];
+      if (slotIdx !== undefined && slotIdx < seatCount && positions[slotIdx] === null && !placed.has(seat.directorId)) {
+        positions[slotIdx] = seat.directorId;
+        placed.add(seat.directorId);
       }
     }
 
-    // Fill remaining slots with NEDs/worker reps
+    // Fill remaining slots with NEDs / worker reps in seats-array order
+    let nextFill = 0;
     for (const seat of seats) {
       if (!placed.has(seat.directorId)) {
-        while (nextSlot < seatCount && positions[nextSlot] !== null) nextSlot++;
-        if (nextSlot < seatCount) {
-          positions[nextSlot] = seat.directorId;
+        while (nextFill < seatCount && positions[nextFill] !== null) nextFill++;
+        if (nextFill < seatCount) {
+          positions[nextFill] = seat.directorId;
           placed.add(seat.directorId);
-          nextSlot++;
+          nextFill++;
         }
       }
     }
 
-    // Optional committee chair slots after the main ellipse seats
+    // Optional committee chair slots appended after the base grid slots
     let optSlotIdx = seatCount;
     const roleToOptSlot: Record<string, number> = {};
     if (hasEnergyTransition) roleToOptSlot['energyTransitionChair'] = optSlotIdx++;
@@ -233,8 +254,7 @@ interface BoardroomTableProps {
   conflictDirectorIds?: string[];
 }
 
-// ETC Chair position (appears at bottom-left when ET committee is active)
-// ETC/CA&R Chair position also scaled 0.85× inward from centre (50,50)
+// ETC Chair position (8-seat circular layout — appears at bottom-left when ET committee is active)
 const ETC_POSITION: TablePosition = {
   defaultRole: 'energyTransitionChair',
   label: 'ETC Chair',
@@ -243,7 +263,7 @@ const ETC_POSITION: TablePosition = {
   isChair: false,
 };
 
-// CSRD Committee Chair position (appears at bottom-right when CSRD committee is active)
+// CSRD / Strategy positions for 8-seat circular layout
 const CSRD_POSITION: TablePosition = {
   defaultRole: 'csrdChair',
   label: 'CSRD Chair',
@@ -251,14 +271,30 @@ const CSRD_POSITION: TablePosition = {
   topPct: 79.4,
   isChair: false,
 };
-
-// Strategy Committee Chair position (appears below bottom-centre when Strategy committee is active)
 const STRATEGY_POSITION: TablePosition = {
   defaultRole: 'strategyChair',
   label: 'Strategy Chair',
   leftPct: 50,
   topPct: 94,
   isChair: false,
+};
+
+// CSRD / Strategy overflow positions for GRID layout (below bottom row, labels above)
+const GRID_CSRD_POSITION: TablePosition = {
+  defaultRole: 'csrdChair',
+  label: 'CSRD Chair',
+  leftPct: 38.0,
+  topPct: 97.0,
+  isChair: false,
+  labelAbove: true,
+};
+const GRID_STRATEGY_POSITION: TablePosition = {
+  defaultRole: 'strategyChair',
+  label: 'Strategy Chair',
+  leftPct: 62.0,
+  topPct: 97.0,
+  isChair: false,
+  labelAbove: true,
 };
 
 export default function BoardroomTable({
@@ -287,26 +323,25 @@ export default function BoardroomTable({
   const useDynamicLayout = seatCount >= 9;
   const seatPxNormal = (_idx: number, isChairPos: boolean) =>
     isChairPos ? 68 : 58;
-  const seatPxLarge = (_idx: number, isChairPos: boolean) =>
-    isChairPos ? 68 : seatCount >= 11 ? 52 : 58;
+  // Grid layout: smaller portraits so seats fit cleanly around the perimeter
+  const seatPxGrid = (_idx: number, isChairPos: boolean) =>
+    isChairPos ? 64 : 52;
 
-  // Determine effective table SVG rect dimensions for dynamic layout
+  // Determine effective table SVG rect dimensions
   const tableRect = useDynamicLayout
-    ? seatCount >= 11
-      ? { x: 90, y: 30, w: 220, h: 240, rx: 42 }
-      : { x: 100, y: 38, w: 200, h: 224, rx: 40 }
+    ? { x: 110, y: 58, w: 180, h: 170, rx: 30 }
     : { x: 120, y: 55, w: 160, h: 190, rx: 35 };
 
-  // Build effective positions: base (static or dynamic) + optional committee chair seats
+  // Build effective positions: base (static or grid) + optional committee chair seats
   const basePositions: TablePosition[] = useDynamicLayout
-    ? computeEllipsePositions(seatCount)
+    ? computeGridPositions(seatCount)
     : TABLE_POSITIONS;
 
   const effectivePositions: TablePosition[] = [
     ...basePositions,
     ...(hasEnergyTransition ? [ETC_POSITION] : []),
-    ...(hasCsrd ? [CSRD_POSITION] : []),
-    ...(hasStrategy ? [STRATEGY_POSITION] : []),
+    ...(hasCsrd ? [useDynamicLayout ? GRID_CSRD_POSITION : CSRD_POSITION] : []),
+    ...(hasStrategy ? [useDynamicLayout ? GRID_STRATEGY_POSITION : STRATEGY_POSITION] : []),
   ];
 
   const positions = deriveTablePositions(seats, hasEnergyTransition, hasCsrd, hasStrategy);
@@ -392,7 +427,7 @@ export default function BoardroomTable({
         const directorId = positions[index];
         const director = directorId ? getDirector(directorId) : null;
         const isActive = activeSeatIndex === index;
-        const seatPx = useDynamicLayout ? seatPxLarge(index, pos.isChair) : seatPxNormal(index, pos.isChair);
+        const seatPx = useDynamicLayout ? seatPxGrid(index, pos.isChair) : seatPxNormal(index, pos.isChair);
         const isLockedChairCeo = combinedChairCeo && pos.isChair;
         const isWorkerRep = directorId ? workerRepSet.has(directorId) : false;
         const isLockedSeat = directorId ? lockedSet.has(directorId) : false;
@@ -491,7 +526,7 @@ export default function BoardroomTable({
         const directorId = positions[index];
         const director = directorId ? getDirector(directorId) : null;
         const seat = directorId ? getSeat(directorId) : null;
-        const seatPx = useDynamicLayout ? seatPxLarge(index, pos.isChair) : seatPxNormal(index, pos.isChair);
+        const seatPx = useDynamicLayout ? seatPxGrid(index, pos.isChair) : seatPxNormal(index, pos.isChair);
         const isLockedChairCeo = combinedChairCeo && pos.isChair;
 
         const actualLabel = isLockedChairCeo
@@ -500,11 +535,14 @@ export default function BoardroomTable({
             ? shortRoleLabel(seat.role, jurisdiction, directorId, workerRepSet)
             : shortRoleLabel(pos.defaultRole, jurisdiction, directorId, workerRepSet);
 
-        // For the Chair (top seat, index 0), labels go ABOVE the portrait to avoid overlapping the table
-        const isTopSeat = index === 0;
-        const labelOffset = isTopSeat
-          ? -(seatPx / 2 + 30) // above: portrait radius + label height gap
-          : (seatPx / 2 + 4);  // below: portrait radius + small gap
+        // Grid layout: each position specifies labelAbove.
+        // Circular layout: only the Chair (index 0) has its label above.
+        const isLabelAbove = useDynamicLayout
+          ? (pos.labelAbove ?? false)
+          : index === 0;
+        const labelOffset = isLabelAbove
+          ? -(seatPx / 2 + 28) // above portrait
+          : (seatPx / 2 + 4);  // below portrait
 
         return (
           <div
