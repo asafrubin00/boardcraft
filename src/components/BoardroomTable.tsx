@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { BoardSeat, Director, BoardRole } from '@/types/game';
 import { ROLE_LABELS, getRoleLabel } from '@/engine/boardConstants';
 import type { Jurisdiction } from '@/types/game';
@@ -20,6 +19,7 @@ export interface TablePosition {
 }
 
 // Rounded-rectangle layout: Chair top, 3 per long side, RemChair bottom
+// Seat positions scaled 0.85× inward from centre (50,50) to prevent edge clipping
 export const TABLE_POSITIONS: TablePosition[] = [
   { defaultRole: 'chair', label: 'Chair', leftPct: 50, topPct: 20.6, isChair: true },
   { defaultRole: 'sid', label: 'SID', leftPct: 80.6, topPct: 28.75, isChair: false },
@@ -31,8 +31,17 @@ export const TABLE_POSITIONS: TablePosition[] = [
   { defaultRole: 'ned', label: 'NED', leftPct: 19.4, topPct: 28.75, isChair: false },
 ];
 
-// ── Grid position layout for large boards (used by deriveTablePositions slot ordering) ──
-// Coordinates unused in the new card layout but kept for deriveTablePositions compatibility.
+// ── Rectangular grid layout for large boards (9–12 seats) ──
+//
+// SVG viewBox is 400×300. Table rect: x=110, y=58, w=180, h=170.
+// Portrait centres are placed outside the table on a perimeter grid:
+//   Top row   (y≈16):  Chair (centre) + 2 flanking seats
+//   Right col (x≈340): 2 seats (Audit Chair top, NED bottom)
+//   Bottom row(y≈274): 3 seats (N=9) or 4 seats (N≥10)
+//   Left col  (x≈60):  overflow seats for N=10–12
+//
+// labelAbove=false → label renders between portrait and table (below for top row, above for bottom row uses true)
+
 function computeGridPositions(N: number): TablePosition[] {
   const top: TablePosition[] = [
     { defaultRole: 'chair',      label: 'Chair',      leftPct: 50.0,  topPct:  5.3, isChair: true,  labelAbove: false },
@@ -43,6 +52,7 @@ function computeGridPositions(N: number): TablePosition[] {
     { defaultRole: 'auditChair', label: 'Audit Chair', leftPct: 85.0, topPct: 38.3, isChair: false, labelAbove: false },
     { defaultRole: 'ned',        label: 'SB Member',   leftPct: 85.0, topPct: 65.0, isChair: false, labelAbove: false },
   ];
+  // 3 bottom seats for N=9, 4 bottom seats for N≥10 (72 SVG-unit spacing → 20 px gap on screen)
   const bottom3: TablePosition[] = [
     { defaultRole: 'ned', label: 'Worker Rep', leftPct: 29.75, topPct: 91.3, isChair: false, labelAbove: true },
     { defaultRole: 'ned', label: 'Worker Rep', leftPct: 50.0,  topPct: 91.3, isChair: false, labelAbove: true },
@@ -63,6 +73,11 @@ function computeGridPositions(N: number): TablePosition[] {
   const bottomRow = N <= 9 ? bottom3 : bottom4;
   const all = [...top, ...right, ...bottomRow, ...leftCol];
   return all.slice(0, N);
+  // Slot assignment by N:
+  //  N=9:  3 top + 2 right + 3 bottom + 1 left-ctr  = 9
+  //  N=10: 3 top + 2 right + 4 bottom + 1 left-ctr  = 10
+  //  N=11: 3 top + 2 right + 4 bottom + 2 left       = 11
+  //  N=12: 3 top + 2 right + 4 bottom + 3 left       = 12
 }
 
 // ── Derivation: map seats → table positions ──
@@ -76,11 +91,16 @@ export function deriveTablePositions(
   const seatCount = seats.length;
   const optSlots = (hasEnergyTransition ? 1 : 0) + (hasCsrd ? 1 : 0) + (hasStrategy ? 1 : 0);
 
+  // For 9+ base seats, use the grid layout slot assignment.
+  // Named roles are pinned to fixed grid slots that match computeGridPositions defaultRoles.
   if (seatCount >= 9) {
     const totalSlots = seatCount + optSlots;
     const positions: (string | null)[] = Array(totalSlots).fill(null);
     const placed = new Set<string>();
 
+    // Pin named roles to their designated grid slots (matches computeGridPositions slot order)
+    // Slot 0: chair (top-centre), Slot 3: auditChair (right-top),
+    // Slot 1: sid (top-left),     Slot 2: remChair (top-right), Slot 9: nomChair (left-ctr, N≥10)
     const gridRoleToSlot: Partial<Record<BoardRole, number>> = {
       chair: 0,
       auditChair: 3,
@@ -96,6 +116,7 @@ export function deriveTablePositions(
       }
     }
 
+    // Fill remaining slots with NEDs / worker reps in seats-array order
     let nextFill = 0;
     for (const seat of seats) {
       if (!placed.has(seat.directorId)) {
@@ -108,6 +129,7 @@ export function deriveTablePositions(
       }
     }
 
+    // Optional committee chair slots appended after the base grid slots
     let optSlotIdx = seatCount;
     const roleToOptSlot: Record<string, number> = {};
     if (hasEnergyTransition) roleToOptSlot['energyTransitionChair'] = optSlotIdx++;
@@ -130,13 +152,21 @@ export function deriveTablePositions(
   const positions: (string | null)[] = Array(totalSlots).fill(null);
   const placed = new Set<string>();
 
+  // Named positions first (match by role)
   const roleToPosition: Record<string, number> = {
     chair: 0, sid: 1, auditChair: 2, remChair: 4, nomChair: 6,
   };
+  // Optional committee chairs get sequential slots after the 8 base
   let nextOptSlot = 8;
-  if (hasEnergyTransition) roleToPosition['energyTransitionChair'] = nextOptSlot++;
-  if (hasCsrd) roleToPosition['csrdChair'] = nextOptSlot++;
-  if (hasStrategy) roleToPosition['strategyChair'] = nextOptSlot++;
+  if (hasEnergyTransition) {
+    roleToPosition['energyTransitionChair'] = nextOptSlot++;
+  }
+  if (hasCsrd) {
+    roleToPosition['csrdChair'] = nextOptSlot++;
+  }
+  if (hasStrategy) {
+    roleToPosition['strategyChair'] = nextOptSlot++;
+  }
 
   for (const seat of seats) {
     const posIdx = roleToPosition[seat.role];
@@ -146,6 +176,7 @@ export function deriveTablePositions(
     }
   }
 
+  // Fill NED slots with remaining directors
   const nedSlots = [3, 5, 7];
   let slotIdx = 0;
   for (const seat of seats) {
@@ -167,7 +198,7 @@ export function getOverflowDirectorIds(
   return seats.filter((s) => !posSet.has(s.directorId)).map((s) => s.directorId);
 }
 
-// ── Short role label ──
+// ── Short role label for display under seat ──
 
 function shortRoleLabel(
   role: BoardRole,
@@ -175,13 +206,17 @@ function shortRoleLabel(
   directorId?: string | null,
   workerRepSet?: Set<string>,
 ): string {
+  // Worker representative override (EU two-tier boards, Rheinfeld)
   if (directorId && workerRepSet && workerRepSet.has(directorId)) {
     return 'Worker Rep';
   }
+
+  // EU-specific Supervisory Board terminology
   if (jurisdiction === 'EU') {
     if (role === 'chair') return 'SB Chair';
     if (role === 'ned' || role === 'sid') return 'SB Member';
   }
+
   const full = getRoleLabel(role, jurisdiction);
   return full
     .replace(' Committee Chair', ' Chair')
@@ -203,15 +238,23 @@ interface BoardroomTableProps {
   hasCsrd?: boolean;
   hasStrategy?: boolean;
   onDropOnSeat?: (directorId: string, seatIndex: number) => void;
+  /** Company short name for table watermark (e.g. "HARWICK") */
   companyShortName?: string;
+  /** Second line for table watermark (e.g. "ENERGY PLC") */
   companyShortNameSuffix?: string;
+  /** Jurisdiction for role labels (UK: SID, US: LID) */
   jurisdiction?: Jurisdiction;
+  /** Whether the Chair seat is locked as Combined Chair/CEO (Vantage) */
   combinedChairCeo?: boolean;
+  /** Director IDs that are worker representatives - steel blue ring, non-interactive */
   workerRepIds?: string[];
+  /** Director IDs of locked seats (e.g. fixed chair) - gold ring, portrait shown, non-interactive */
   lockedDirectorIds?: string[];
+  /** Director IDs with a conflict-of-interest indicator (red badge overlay) */
   conflictDirectorIds?: string[];
 }
 
+// ETC Chair position (8-seat circular layout — appears at bottom-left when ET committee is active)
 const ETC_POSITION: TablePosition = {
   defaultRole: 'energyTransitionChair',
   label: 'ETC Chair',
@@ -219,6 +262,8 @@ const ETC_POSITION: TablePosition = {
   topPct: 79.4,
   isChair: false,
 };
+
+// CSRD / Strategy positions for 8-seat circular layout
 const CSRD_POSITION: TablePosition = {
   defaultRole: 'csrdChair',
   label: 'CSRD Chair',
@@ -233,6 +278,8 @@ const STRATEGY_POSITION: TablePosition = {
   topPct: 94,
   isChair: false,
 };
+
+// CSRD / Strategy overflow positions for GRID layout (below bottom row, labels above)
 const GRID_CSRD_POSITION: TablePosition = {
   defaultRole: 'csrdChair',
   label: 'CSRD Chair',
@@ -249,8 +296,6 @@ const GRID_STRATEGY_POSITION: TablePosition = {
   isChair: false,
   labelAbove: true,
 };
-
-const COMMITTEE_ROLES = new Set<BoardRole>(['energyTransitionChair', 'csrdChair', 'strategyChair']);
 
 export default function BoardroomTable({
   seats,
@@ -273,323 +318,37 @@ export default function BoardroomTable({
   const lockedSet = new Set(lockedDirectorIds);
   const conflictSet = new Set(conflictDirectorIds);
 
+  // ── Dynamic layout for large boards (9+ seats) ──
   const seatCount = seats.length;
-  const useTwoColumnLayout = seatCount >= 9 && workerRepIds.length >= 5;
+  const useDynamicLayout = seatCount >= 9;
+  const seatPxNormal = (_idx: number, isChairPos: boolean) =>
+    isChairPos ? 68 : 58;
+  // Grid layout: smaller portraits so seats fit cleanly around the perimeter
+  const seatPxGrid = (_idx: number, isChairPos: boolean) =>
+    isChairPos ? 64 : 52;
 
-  const getDirector = (id: string) => directors.find((d) => d.id === id);
-  const getSeat = (directorId: string) => seats.find((s) => s.directorId === directorId);
+  // Determine effective table SVG rect dimensions
+  const tableRect = useDynamicLayout
+    ? { x: 110, y: 58, w: 180, h: 170, rx: 30 }
+    : { x: 120, y: 55, w: 160, h: 190, rx: 35 };
+
+  // Build effective positions: base (static or grid) + optional committee chair seats
+  const basePositions: TablePosition[] = useDynamicLayout
+    ? computeGridPositions(seatCount)
+    : TABLE_POSITIONS;
+
+  const effectivePositions: TablePosition[] = [
+    ...basePositions,
+    ...(hasEnergyTransition ? [ETC_POSITION] : []),
+    ...(hasCsrd ? [useDynamicLayout ? GRID_CSRD_POSITION : CSRD_POSITION] : []),
+    ...(hasStrategy ? [useDynamicLayout ? GRID_STRATEGY_POSITION : STRATEGY_POSITION] : []),
+  ];
 
   const positions = deriveTablePositions(seats, hasEnergyTransition, hasCsrd, hasStrategy);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // TWO-COLUMN CARD LAYOUT (Rheinfeld-style, 9+ seats with worker reps)
-  // ─────────────────────────────────────────────────────────────────────────
-  if (useTwoColumnLayout) {
-    // Build effectivePositions list: base seats + optional committee chair slots
-    const basePositions = computeGridPositions(seatCount);
-    const effectivePositions: TablePosition[] = [
-      ...basePositions,
-      ...(hasEnergyTransition ? [ETC_POSITION] : []),
-      ...(hasCsrd ? [GRID_CSRD_POSITION] : []),
-      ...(hasStrategy ? [GRID_STRATEGY_POSITION] : []),
-    ];
-
-    // Partition indices into: workerRep | shareholder | committee
-    const workerRepIndices: number[] = [];
-    const shareholderIndices: number[] = [];
-    const committeeIndices: number[] = [];
-
-    effectivePositions.forEach((pos, idx) => {
-      if (COMMITTEE_ROLES.has(pos.defaultRole)) {
-        committeeIndices.push(idx);
-      } else {
-        const dirId = positions[idx];
-        const isWR = dirId
-          ? workerRepSet.has(dirId)
-          : pos.label === 'Worker Rep';
-        if (isWR) {
-          workerRepIndices.push(idx);
-        } else {
-          shareholderIndices.push(idx);
-        }
-      }
-    });
-
-    // Render a seat card for a given slot index
-    const renderCard = (idx: number, colType: 'workerRep' | 'shareholder' | 'committee') => {
-      const pos = effectivePositions[idx];
-      const dirId = positions[idx] ?? null;
-      const director = dirId ? getDirector(dirId) : null;
-      const isActive = activeSeatIndex === idx;
-      const isWR = colType === 'workerRep';
-      const isLockedSeat = dirId ? lockedSet.has(dirId) : false;
-      const hasConflict = dirId ? conflictSet.has(dirId) : false;
-      const isNonInteractive = isWR || isLockedSeat;
-
-      const seat = dirId ? getSeat(dirId) : null;
-      const roleForLabel: BoardRole = (seat?.role) ?? pos.defaultRole;
-      const actualLabel = isWR
-        ? 'Worker Rep'
-        : shortRoleLabel(roleForLabel, jurisdiction, dirId, workerRepSet);
-
-      const ringColor = isWR ? '#5B9BD5' : '#C8960C';
-      const borderColor = isActive
-        ? '#C8960C'
-        : isWR
-          ? 'rgba(91,155,213,0.30)'
-          : dragOverIdx === idx
-            ? '#C8960C'
-            : 'rgba(200,150,12,0.15)';
-      const bgColor = dirId
-        ? (isWR ? 'rgba(91,155,213,0.07)' : 'rgba(200,150,12,0.04)')
-        : 'transparent';
-
-      // Portrait truncated first name + surname
-      const displayName = director
-        ? (director.name.length > 18 ? director.name.split(' ').slice(0, 2).join(' ') : director.name)
-        : null;
-
-      return (
-        <div
-          key={`card-${idx}`}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            width: '100%',
-            height: 56,
-            padding: '0 8px',
-            background: bgColor,
-            border: `1px ${dirId ? 'solid' : 'dashed'} ${borderColor}`,
-            borderRadius: 7,
-            cursor: isNonInteractive ? 'default' : 'pointer',
-            boxSizing: 'border-box',
-            transition: 'border-color 0.15s, background 0.15s',
-            flexShrink: 0,
-          }}
-          onClick={() => { if (!isNonInteractive) onSeatClick(idx); }}
-          onDragOver={isNonInteractive ? undefined : (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            setDragOverIdx(idx);
-          }}
-          onDragLeave={() => setDragOverIdx(null)}
-          onDrop={isNonInteractive ? undefined : (e) => {
-            e.preventDefault();
-            setDragOverIdx(null);
-            const id = e.dataTransfer.getData('text/plain');
-            if (id && onDropOnSeat) onDropOnSeat(id, idx);
-          }}
-        >
-          {/* Portrait circle */}
-          <div
-            draggable={!!director && !isNonInteractive}
-            onDragStart={director && !isNonInteractive ? (e) => {
-              e.dataTransfer.setData('text/plain', director.id);
-              e.dataTransfer.effectAllowed = 'move';
-              (e.currentTarget as HTMLElement).style.opacity = '0.5';
-            } : undefined}
-            onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              border: `2px ${dirId ? 'solid' : 'dashed'} ${dirId ? ringColor : 'rgba(232,224,208,0.18)'}`,
-              overflow: 'hidden',
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(13,27,42,0.60)',
-            }}
-          >
-            {director ? (
-              <DirectorPortrait directorId={director.id} size={36} className="rounded-full" />
-            ) : (
-              <span style={{ color: 'rgba(232,224,208,0.22)', fontSize: 15, lineHeight: 1 }}>+</span>
-            )}
-          </div>
-
-          {/* Name + role text */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: 12,
-              fontWeight: 600,
-              color: dirId ? '#E8E0D0' : 'rgba(232,224,208,0.35)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              lineHeight: 1.25,
-            }}>
-              {displayName ?? '—'}
-            </div>
-            <div style={{
-              fontSize: 10,
-              color: isWR ? 'rgba(91,155,213,0.75)' : 'rgba(200,150,12,0.60)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              lineHeight: 1.3,
-              marginTop: 1,
-            }}>
-              {actualLabel}
-            </div>
-          </div>
-
-          {/* Conflict badge */}
-          {hasConflict && (
-            <div style={{
-              width: 15,
-              height: 15,
-              borderRadius: '50%',
-              background: '#ef4444',
-              color: 'white',
-              fontSize: 9,
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-              title="Conflict of interest"
-            >
-              !
-            </div>
-          )}
-        </div>
-      );
-    };
-
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
-        {/* ── Main row: worker rep col | mini table | shareholder col ── */}
-        <div style={{ display: 'flex', flex: 1, alignItems: 'center', minHeight: 0, gap: 0 }}>
-
-          {/* Left column — worker representatives */}
-          <div style={{
-            width: 196,
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 5,
-            padding: '0 6px 0 2px',
-            justifyContent: 'center',
-          }}>
-            <div style={{
-              fontSize: 9,
-              fontWeight: 600,
-              color: 'rgba(91,155,213,0.55)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              marginBottom: 3,
-              paddingLeft: 2,
-            }}>
-              Arbeitnehmervertreter
-            </div>
-            {workerRepIndices.map(idx => renderCard(idx, 'workerRep'))}
-          </div>
-
-          {/* Centre — mini SVG table */}
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minWidth: 0,
-          }}>
-            <svg
-              viewBox="0 0 180 140"
-              style={{ width: '100%', maxWidth: 170, height: 'auto' }}
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <defs>
-                <pattern id="wg2" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
-                  <line x1="0" y1="4" x2="8" y2="4" stroke="#2A5580" strokeWidth="0.3" opacity="0.2" />
-                </pattern>
-                <radialGradient id="tg2" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#1A3A5C" stopOpacity="0.35" />
-                  <stop offset="100%" stopColor="#0D1B2A" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-              <rect x="14" y="10" width="152" height="120" rx="22" fill="#0D1B2A" stroke="#C8960C" strokeWidth="2" />
-              <rect x="14" y="10" width="152" height="120" rx="22" fill="url(#wg2)" />
-              <rect x="14" y="10" width="152" height="120" rx="22" fill="url(#tg2)" />
-              <rect x="19" y="15" width="142" height="110" rx="19" fill="none" stroke="#C8960C" strokeWidth="0.5" opacity="0.25" />
-              <text x="90" y="62" textAnchor="middle" fill="#C8960C" fontSize="10" fontFamily="Georgia, serif" fontWeight="bold" opacity="0.5">
-                {companyShortName}
-              </text>
-              <text x="90" y="76" textAnchor="middle" fill="#C8960C" fontSize="7" fontFamily="Georgia, serif" opacity="0.35">
-                {companyShortNameSuffix}
-              </text>
-            </svg>
-          </div>
-
-          {/* Right column — shareholder representatives */}
-          <div style={{
-            width: 196,
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 5,
-            padding: '0 2px 0 6px',
-            justifyContent: 'center',
-          }}>
-            <div style={{
-              fontSize: 9,
-              fontWeight: 600,
-              color: 'rgba(200,150,12,0.50)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              marginBottom: 3,
-              paddingLeft: 2,
-            }}>
-              Anteilseignervertreter
-            </div>
-            {shareholderIndices.map(idx => renderCard(idx, 'shareholder'))}
-          </div>
-        </div>
-
-        {/* ── Bottom row — optional committee chairs ── */}
-        <AnimatePresence>
-          {committeeIndices.length > 0 && (
-            <motion.div
-              key="committee-row"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.22, ease: 'easeInOut' }}
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: 12,
-                paddingBottom: 8,
-                paddingTop: 4,
-                overflow: 'hidden',
-              }}
-            >
-              {committeeIndices.map(idx => renderCard(idx, 'committee'))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // STANDARD CIRCULAR LAYOUT (≤8 seats — Harwick, Vantage, unchanged)
-  // ─────────────────────────────────────────────────────────────────────────
-
-  const tableRect = { x: 120, y: 55, w: 160, h: 190, rx: 35 };
-
-  const effectivePositions: TablePosition[] = [
-    ...TABLE_POSITIONS,
-    ...(hasEnergyTransition ? [ETC_POSITION] : []),
-    ...(hasCsrd ? [CSRD_POSITION] : []),
-    ...(hasStrategy ? [STRATEGY_POSITION] : []),
-  ];
-
-  const seatPxNormal = (_idx: number, isChairPos: boolean) => isChairPos ? 68 : 58;
+  const getDirector = (id: string) => directors.find((d) => d.id === id);
+  const getSeat = (directorId: string) => seats.find((s) => s.directorId === directorId);
 
   return (
     <div className="relative w-full h-full" style={{ maxHeight: '100%', aspectRatio: '4/3' }}>
@@ -601,18 +360,30 @@ export default function BoardroomTable({
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          <pattern id="woodGrain" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+          {/* Wood-grain texture */}
+          <pattern
+            id="woodGrain"
+            width="8"
+            height="8"
+            patternUnits="userSpaceOnUse"
+            patternTransform="rotate(30)"
+          >
             <line x1="0" y1="4" x2="8" y2="4" stroke="#2A5580" strokeWidth="0.3" opacity="0.2" />
           </pattern>
+          {/* Radial gradient - lighter centre */}
           <radialGradient id="tableGrad" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#1A3A5C" stopOpacity="0.35" />
             <stop offset="100%" stopColor="#0D1B2A" stopOpacity="0" />
           </radialGradient>
         </defs>
 
+        {/* Outer table surface - rounded rectangle */}
         <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill="#0D1B2A" stroke="#C8960C" strokeWidth="2" />
+        {/* Wood-grain overlay */}
         <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill="url(#woodGrain)" />
+        {/* Gradient overlay */}
         <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill="url(#tableGrad)" />
+        {/* Inner edge highlight */}
         <rect
           x={tableRect.x + 5}
           y={tableRect.y + 5}
@@ -625,20 +396,38 @@ export default function BoardroomTable({
           opacity="0.25"
         />
 
-        <text x="200" y="146" textAnchor="middle" fill="#C8960C" fontSize="10" fontFamily="Georgia, serif" fontWeight="bold" opacity="0.45">
+        {/* Company name in centre */}
+        <text
+          x="200"
+          y="146"
+          textAnchor="middle"
+          fill="#C8960C"
+          fontSize="10"
+          fontFamily="Georgia, serif"
+          fontWeight="bold"
+          opacity="0.45"
+        >
           {companyShortName}
         </text>
-        <text x="200" y="160" textAnchor="middle" fill="#C8960C" fontSize="7" fontFamily="Georgia, serif" opacity="0.3">
+        <text
+          x="200"
+          y="160"
+          textAnchor="middle"
+          fill="#C8960C"
+          fontSize="7"
+          fontFamily="Georgia, serif"
+          opacity="0.3"
+        >
           {companyShortNameSuffix}
         </text>
       </svg>
 
-      {/* Seat circles */}
+      {/* Seat circles - positioned over SVG */}
       {effectivePositions.map((pos, index) => {
         const directorId = positions[index];
         const director = directorId ? getDirector(directorId) : null;
         const isActive = activeSeatIndex === index;
-        const seatPx = seatPxNormal(index, pos.isChair);
+        const seatPx = useDynamicLayout ? seatPxGrid(index, pos.isChair) : seatPxNormal(index, pos.isChair);
         const isLockedChairCeo = combinedChairCeo && pos.isChair;
         const isWorkerRep = directorId ? workerRepSet.has(directorId) : false;
         const isLockedSeat = directorId ? lockedSet.has(directorId) : false;
@@ -718,11 +507,12 @@ export default function BoardroomTable({
                 <span className="text-foreground/20 text-lg select-none">+</span>
               )}
             </div>
+            {/* Conflict-of-interest indicator badge */}
             {hasConflict && (
               <div
                 className="absolute top-0 right-0 w-4 h-4 rounded-full bg-error flex items-center justify-center"
                 style={{ fontSize: '9px', color: 'white', fontWeight: 'bold', zIndex: 10 }}
-                title="Conflict of interest"
+                title="Conflict of interest - Heinrich's side-deal revealed"
               >
                 !
               </div>
@@ -731,12 +521,12 @@ export default function BoardroomTable({
         );
       })}
 
-      {/* Labels */}
+      {/* Labels - absolutely-positioned HTML elements outside the seat circles */}
       {effectivePositions.map((pos, index) => {
         const directorId = positions[index];
         const director = directorId ? getDirector(directorId) : null;
         const seat = directorId ? getSeat(directorId) : null;
-        const seatPx = seatPxNormal(index, pos.isChair);
+        const seatPx = useDynamicLayout ? seatPxGrid(index, pos.isChair) : seatPxNormal(index, pos.isChair);
         const isLockedChairCeo = combinedChairCeo && pos.isChair;
 
         const actualLabel = isLockedChairCeo
@@ -745,10 +535,14 @@ export default function BoardroomTable({
             ? shortRoleLabel(seat.role, jurisdiction, directorId, workerRepSet)
             : shortRoleLabel(pos.defaultRole, jurisdiction, directorId, workerRepSet);
 
-        const isLabelAbove = index === 0;
+        // Grid layout: each position specifies labelAbove.
+        // Circular layout: only the Chair (index 0) has its label above.
+        const isLabelAbove = useDynamicLayout
+          ? (pos.labelAbove ?? false)
+          : index === 0;
         const labelOffset = isLabelAbove
-          ? -(seatPx / 2 + 28)
-          : (seatPx / 2 + 4);
+          ? -(seatPx / 2 + 28) // above portrait
+          : (seatPx / 2 + 4);  // below portrait
 
         return (
           <div
