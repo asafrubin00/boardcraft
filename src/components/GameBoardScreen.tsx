@@ -278,6 +278,9 @@ export default function GameBoardScreen({
   // Jurisdiction from the game state company
   const jurisdiction = gameState.company.jurisdiction;
   const combinedChairCeo = gameState.company.id === 'company_vantage';
+  const workerRepIds = gameState.company.id === 'company_rheinfeld'
+    ? ['rdir_w_koch', 'rdir_w_alrashid', 'rdir_w_hoffmann', 'rdir_w_mehta', 'rdir_w_gruber']
+    : [];
 
   // Short role label helper (jurisdiction-aware)
   const shortRole = (role: string) => {
@@ -398,6 +401,7 @@ export default function GameBoardScreen({
               companyShortNameSuffix={gameState.company.shortNameSuffix}
               jurisdiction={jurisdiction}
               combinedChairCeo={combinedChairCeo}
+              workerRepIds={workerRepIds}
             />
           </div>
 
