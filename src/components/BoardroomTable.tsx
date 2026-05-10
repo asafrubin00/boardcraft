@@ -327,9 +327,8 @@ export default function BoardroomTable({
   const useDynamicLayout = baseSeatCount >= 9 || workerRepIds.length >= 5;
   const seatPxNormal = (_idx: number, isChairPos: boolean) =>
     isChairPos ? 68 : 58;
-  // Grid layout: smaller portraits so seats fit cleanly around the perimeter
-  const seatPxGrid = (_idx: number, isChairPos: boolean) =>
-    isChairPos ? 64 : 52;
+  // Grid layout: all seats the same size so the perimeter looks uniform
+  const seatPxGrid = (_idx: number, _isChairPos: boolean) => 52;
 
   // Determine effective table SVG rect dimensions
   // Large layout: square table in a 400×400 viewBox
