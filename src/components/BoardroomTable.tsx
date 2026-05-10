@@ -83,19 +83,24 @@ export function deriveTablePositions(
   hasStrategy = false,
   forceGridLayout = false,
 ): (string | null)[] {
-  const seatCount = seats.length;
+  // Committee chairs occupy opt slots only — they must NOT count toward the
+  // base grid size, otherwise assigning a committee chair inflates `baseSeatCount`
+  // which causes computeGridPositions to expand the perimeter grid and creates
+  // extra empty "SB Member" slots next to the committee-chair positions.
+  const committeeChairRoles = new Set<string>(['csrdChair', 'strategyChair', 'energyTransitionChair']);
+  const baseSeatCount = seats.filter(s => !committeeChairRoles.has(s.role)).length;
   const optSlots = (hasEnergyTransition ? 1 : 0) + (hasCsrd ? 1 : 0) + (hasStrategy ? 1 : 0);
 
   // For 9+ base seats OR when the caller explicitly forces grid mode (e.g. Rheinfeld
   // starts with 8 inherited seats but should always use the square perimeter layout).
-  if (seatCount >= 9 || forceGridLayout) {
-    const totalSlots = seatCount + optSlots;
+  if (baseSeatCount >= 9 || forceGridLayout) {
+    const totalSlots = baseSeatCount + optSlots;
     const positions: (string | null)[] = Array(totalSlots).fill(null);
     const placed = new Set<string>();
 
     // Pin named roles to their designated grid slots (matches computeGridPositions slot order)
-    // Slot 0: chair (top-centre), Slot 3: auditChair (right-top),
-    // Slot 1: sid (top-left),     Slot 2: remChair (top-right), Slot 9: nomChair (left-ctr, N≥10)
+    // Slot 0: chair (top-left), Slot 1: SB Member (top-centre), Slot 2: SB Member (top-right),
+    // Slot 3: auditChair (right-top), Slot 9: nomChair (left-centre, N≥10)
     const gridRoleToSlot: Partial<Record<BoardRole, number>> = {
       chair: 0,
       auditChair: 3,
@@ -105,23 +110,19 @@ export function deriveTablePositions(
     };
     for (const seat of seats) {
       const slotIdx = gridRoleToSlot[seat.role];
-      if (slotIdx !== undefined && slotIdx < seatCount && positions[slotIdx] === null && !placed.has(seat.directorId)) {
+      if (slotIdx !== undefined && slotIdx < baseSeatCount && positions[slotIdx] === null && !placed.has(seat.directorId)) {
         positions[slotIdx] = seat.directorId;
         placed.add(seat.directorId);
       }
     }
 
-    // Fill remaining slots with NEDs / worker reps in seats-array order.
-    // IMPORTANT: skip committee-chair roles — they must reach the opt-slot
-    // phase below. Without this guard they land in regular NED slots and
-    // the opt-slot phase finds them already in `placed` and skips them,
-    // leaving those seats permanently empty even after a director is dragged in.
-    const committeeChairRoles = new Set<string>(['csrdChair', 'strategyChair', 'energyTransitionChair']);
+    // Fill remaining base slots with NEDs / worker reps in seats-array order.
+    // Skip committee-chair roles — they are handled by the opt-slot phase below.
     let nextFill = 0;
     for (const seat of seats) {
       if (!placed.has(seat.directorId) && !committeeChairRoles.has(seat.role)) {
-        while (nextFill < seatCount && positions[nextFill] !== null) nextFill++;
-        if (nextFill < seatCount) {
+        while (nextFill < baseSeatCount && positions[nextFill] !== null) nextFill++;
+        if (nextFill < baseSeatCount) {
           positions[nextFill] = seat.directorId;
           placed.add(seat.directorId);
           nextFill++;
@@ -130,7 +131,7 @@ export function deriveTablePositions(
     }
 
     // Optional committee chair slots appended after the base grid slots
-    let optSlotIdx = seatCount;
+    let optSlotIdx = baseSeatCount;
     const roleToOptSlot: Record<string, number> = {};
     if (hasEnergyTransition) roleToOptSlot['energyTransitionChair'] = optSlotIdx++;
     if (hasCsrd) roleToOptSlot['csrdChair'] = optSlotIdx++;
@@ -318,9 +319,12 @@ export default function BoardroomTable({
   const lockedSet = new Set(lockedDirectorIds);
   const conflictSet = new Set(conflictDirectorIds);
 
-  // ── Dynamic layout: 9+ seats OR Rheinfeld (always has 5 worker-rep slots) ──
-  const seatCount = seats.length;
-  const useDynamicLayout = seatCount >= 9 || workerRepIds.length >= 5;
+  // ── Dynamic layout: 9+ base seats OR Rheinfeld (always has 5 worker-rep slots) ──
+  // Use baseSeatCount (excluding committee chairs) so assigning a committee chair
+  // director doesn't inflate the seat count and grow the perimeter grid unexpectedly.
+  const committeeChairRoleSet = new Set<string>(['csrdChair', 'strategyChair', 'energyTransitionChair']);
+  const baseSeatCount = seats.filter(s => !committeeChairRoleSet.has(s.role)).length;
+  const useDynamicLayout = baseSeatCount >= 9 || workerRepIds.length >= 5;
   const seatPxNormal = (_idx: number, isChairPos: boolean) =>
     isChairPos ? 68 : 58;
   // Grid layout: smaller portraits so seats fit cleanly around the perimeter
@@ -336,7 +340,7 @@ export default function BoardroomTable({
 
   // Build effective positions: base (static or grid) + optional committee chair seats
   const basePositions: TablePosition[] = useDynamicLayout
-    ? computeGridPositions(seatCount)
+    ? computeGridPositions(baseSeatCount)
     : TABLE_POSITIONS;
 
   const effectivePositions: TablePosition[] = [
@@ -361,7 +365,7 @@ export default function BoardroomTable({
   const textCy2 = tableRect.y + tableRect.h / 2 + 9;
 
   return (
-    <div className="relative w-full h-full" style={{ maxHeight: '100%', aspectRatio: containerAspectRatio }}>
+    <div className="relative w-full" style={{ aspectRatio: containerAspectRatio }}>
       {/* SVG Table Background */}
       <svg
         viewBox={svgViewBox}

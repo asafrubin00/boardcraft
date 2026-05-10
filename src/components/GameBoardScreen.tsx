@@ -161,10 +161,13 @@ export default function GameBoardScreen({
   const hasCsrd = gameState.committees?.csrd?.active ?? false;
   const hasStrategy = gameState.committees?.strategy?.active ?? false;
 
-  // Derive table positions so we can map seat click → director
+  // Derive table positions so we can map seat click → director.
+  // forceGridLayout must match the BoardroomTable component's useDynamicLayout flag
+  // (Rheinfeld always uses the square grid layout regardless of base seat count).
+  const forceGridLayout = gameState.company.id === 'company_rheinfeld';
   const tablePositions = useMemo(
-    () => deriveTablePositions(gameState.board.seats, hasEnergyTransition, hasCsrd, hasStrategy),
-    [gameState.board.seats, hasEnergyTransition, hasCsrd, hasStrategy]
+    () => deriveTablePositions(gameState.board.seats, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout),
+    [gameState.board.seats, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout]
   );
 
   // Play card deal sound when a new event appears
