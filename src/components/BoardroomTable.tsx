@@ -81,13 +81,14 @@ export function deriveTablePositions(
   hasEnergyTransition = false,
   hasCsrd = false,
   hasStrategy = false,
+  forceGridLayout = false,
 ): (string | null)[] {
   const seatCount = seats.length;
   const optSlots = (hasEnergyTransition ? 1 : 0) + (hasCsrd ? 1 : 0) + (hasStrategy ? 1 : 0);
 
-  // For 9+ base seats, use the grid layout slot assignment.
-  // Named roles are pinned to fixed grid slots that match computeGridPositions defaultRoles.
-  if (seatCount >= 9) {
+  // For 9+ base seats OR when the caller explicitly forces grid mode (e.g. Rheinfeld
+  // starts with 8 inherited seats but should always use the square perimeter layout).
+  if (seatCount >= 9 || forceGridLayout) {
     const totalSlots = seatCount + optSlots;
     const positions: (string | null)[] = Array(totalSlots).fill(null);
     const placed = new Set<string>();
@@ -110,10 +111,15 @@ export function deriveTablePositions(
       }
     }
 
-    // Fill remaining slots with NEDs / worker reps in seats-array order
+    // Fill remaining slots with NEDs / worker reps in seats-array order.
+    // IMPORTANT: skip committee-chair roles — they must reach the opt-slot
+    // phase below. Without this guard they land in regular NED slots and
+    // the opt-slot phase finds them already in `placed` and skips them,
+    // leaving those seats permanently empty even after a director is dragged in.
+    const committeeChairRoles = new Set<string>(['csrdChair', 'strategyChair', 'energyTransitionChair']);
     let nextFill = 0;
     for (const seat of seats) {
-      if (!placed.has(seat.directorId)) {
+      if (!placed.has(seat.directorId) && !committeeChairRoles.has(seat.role)) {
         while (nextFill < seatCount && positions[nextFill] !== null) nextFill++;
         if (nextFill < seatCount) {
           positions[nextFill] = seat.directorId;
@@ -312,9 +318,9 @@ export default function BoardroomTable({
   const lockedSet = new Set(lockedDirectorIds);
   const conflictSet = new Set(conflictDirectorIds);
 
-  // ── Dynamic layout for large boards (9+ seats) ──
+  // ── Dynamic layout: 9+ seats OR Rheinfeld (always has 5 worker-rep slots) ──
   const seatCount = seats.length;
-  const useDynamicLayout = seatCount >= 9;
+  const useDynamicLayout = seatCount >= 9 || workerRepIds.length >= 5;
   const seatPxNormal = (_idx: number, isChairPos: boolean) =>
     isChairPos ? 68 : 58;
   // Grid layout: smaller portraits so seats fit cleanly around the perimeter
@@ -340,7 +346,7 @@ export default function BoardroomTable({
     ...(hasStrategy ? [useDynamicLayout ? GRID_STRATEGY_POSITION : STRATEGY_POSITION] : []),
   ];
 
-  const positions = deriveTablePositions(seats, hasEnergyTransition, hasCsrd, hasStrategy);
+  const positions = deriveTablePositions(seats, hasEnergyTransition, hasCsrd, hasStrategy, useDynamicLayout);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   const getDirector = (id: string) => directors.find((d) => d.id === id);
