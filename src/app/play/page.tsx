@@ -1350,18 +1350,23 @@ function BoardConstructionWrapper({
           </div>
           <p className="text-[10px] text-foreground/30 mt-2 text-center flex-shrink-0">Click a seat to assign · Click a filled seat to view profile</p>
 
-          {/* Board Strength - hover popover */}
+          {/* Board Strength - click popover */}
           {seats.length > 0 && (
-            <div className="mt-3 flex-shrink-0 relative" onMouseLeave={() => setShowStrength(false)}>
+            <div className="mt-3 flex-shrink-0 relative">
               <button
-                onClick={() => setShowStrength(p => !p)}
-                onMouseEnter={() => setShowStrength(true)}
+                onClick={() => {
+                  setShowStrength(p => !p);
+                  if (hintsShown === 5) dismissHint();
+                }}
                 className="w-full py-1.5 px-3 rounded-full border border-gold/40 text-gold text-[11px] font-semibold hover:bg-gold/10 transition-colors cursor-pointer text-center"
               >
                 Board Strength &#8599;
               </button>
               {showStrength && (
-                <div className="absolute bottom-full right-0 mb-2 z-50 rounded-lg border border-gold/30 bg-navy-light shadow-xl p-4" style={{ minWidth: 320 }}>
+                <>
+                  {/* Transparent backdrop — click outside to close */}
+                  <div className="fixed inset-0 z-40" onClick={() => setShowStrength(false)} />
+                  <div className="absolute bottom-full right-0 mb-2 z-50 rounded-lg border border-gold/30 bg-navy-light shadow-xl p-4" style={{ minWidth: 320 }}>
                   <h4 className="text-[10px] text-gold uppercase tracking-wider font-semibold mb-3 text-center">Board Strength Profile</h4>
                   <div className="grid grid-cols-4 gap-3">
                     {ALL_DOMAINS.map((domain, i) => {
@@ -1382,6 +1387,7 @@ function BoardConstructionWrapper({
                     })}
                   </div>
                 </div>
+                </>
               )}
             </div>
           )}
@@ -1410,7 +1416,7 @@ function BoardConstructionWrapper({
           return <HintModal title="Now appoint your Audit Chair" body="Your Audit Chair needs strong Financial Oversight — look for a score of 75 or above. Click 'Financial' in the filter bar to find the best candidates. Drag them into the Audit Chair seat." onDismiss={dismissHint} />;
         if (hintsShown === 4 && hint4Ready)
           return <HintModal title="Remuneration Committee Chair" body="Your Rem Chair oversees executive pay. They need strong People & Culture credentials. A vacant Rem Chair will hurt your governance health score." onDismiss={dismissHint} />;
-        if (hintsShown === 5 && showStrength)
+        if (hintsShown === 5)
           return <HintModal title="Your board's combined strength" body="This shows your team's average score across all eight domains. Events will test specific domains — a balanced board handles more situations effectively." onDismiss={dismissHint} />;
         if (hintsShown === 6 && hint6Ready)
           return <HintModal title="Independence matters" body="Most committee chairs must be independent directors. Directors with the 'Questionable' badge may not qualify — check before assigning them to key roles." onDismiss={dismissHint} />;
