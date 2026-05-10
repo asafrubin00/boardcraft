@@ -31,53 +31,47 @@ export const TABLE_POSITIONS: TablePosition[] = [
   { defaultRole: 'ned', label: 'NED', leftPct: 19.4, topPct: 28.75, isChair: false },
 ];
 
-// ── Rectangular grid layout for large boards (9–12 seats) ──
+// ── Square perimeter layout for large boards (9–12 seats) ──
 //
-// SVG viewBox is 400×300. Table rect: x=110, y=58, w=180, h=170.
-// Portrait centres are placed outside the table on a perimeter grid:
-//   Top row   (y≈16):  Chair (centre) + 2 flanking seats
-//   Right col (x≈340): 2 seats (Audit Chair top, NED bottom)
-//   Bottom row(y≈274): 3 seats (N=9) or 4 seats (N≥10)
-//   Left col  (x≈60):  overflow seats for N=10–12
+// SVG viewBox is 400×400. Square table rect: x=100, y=100, w=200, h=200.
+// 3 seats per side — 12 slots total, use N of them (N=9→10 base + 0–2 committees).
+//   Slot  0–2 : top row    (topPct=9,  leftPct=28/50/72)
+//   Slot  3–5 : right col  (leftPct=90, topPct=27/50/73)
+//   Slot  6–8 : bottom row (topPct=91, leftPct=28/50/72) — labelAbove for bottom
+//   Slot 9–11 : left col   (leftPct=10, topPct=27/50/73)
 //
-// labelAbove=false → label renders between portrait and table (below for top row, above for bottom row uses true)
+// Gap between portrait edge and table edge: ≥30px on all sides.
+// Gap between adjacent portrait edges: ≥10px on rows/cols.
 
 function computeGridPositions(N: number): TablePosition[] {
   const top: TablePosition[] = [
-    { defaultRole: 'chair',      label: 'Chair',      leftPct: 50.0,  topPct:  5.3, isChair: true,  labelAbove: false },
-    { defaultRole: 'ned',        label: 'SB Member',  leftPct: 30.0,  topPct:  5.3, isChair: false, labelAbove: false },
-    { defaultRole: 'ned',        label: 'SB Member',  leftPct: 70.0,  topPct:  5.3, isChair: false, labelAbove: false },
+    { defaultRole: 'chair',      label: 'Chair',      leftPct: 28, topPct:  9, isChair: true,  labelAbove: false },
+    { defaultRole: 'ned',        label: 'SB Member',  leftPct: 50, topPct:  9, isChair: false, labelAbove: false },
+    { defaultRole: 'ned',        label: 'SB Member',  leftPct: 72, topPct:  9, isChair: false, labelAbove: false },
   ];
   const right: TablePosition[] = [
-    { defaultRole: 'auditChair', label: 'Audit Chair', leftPct: 85.0, topPct: 38.3, isChair: false, labelAbove: false },
-    { defaultRole: 'ned',        label: 'SB Member',   leftPct: 85.0, topPct: 65.0, isChair: false, labelAbove: false },
+    { defaultRole: 'auditChair', label: 'Audit Chair', leftPct: 90, topPct: 27, isChair: false, labelAbove: false },
+    { defaultRole: 'ned',        label: 'SB Member',   leftPct: 90, topPct: 50, isChair: false, labelAbove: false },
+    { defaultRole: 'ned',        label: 'SB Member',   leftPct: 90, topPct: 73, isChair: false, labelAbove: false },
   ];
-  // 3 bottom seats for N=9, 4 bottom seats for N≥10 (72 SVG-unit spacing → 20 px gap on screen)
-  const bottom3: TablePosition[] = [
-    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 29.75, topPct: 91.3, isChair: false, labelAbove: true },
-    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 50.0,  topPct: 91.3, isChair: false, labelAbove: true },
-    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 70.25, topPct: 91.3, isChair: false, labelAbove: true },
+  const bottom: TablePosition[] = [
+    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 28, topPct: 91, isChair: false, labelAbove: true },
+    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 50, topPct: 91, isChair: false, labelAbove: true },
+    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 72, topPct: 91, isChair: false, labelAbove: true },
   ];
-  const bottom4: TablePosition[] = [
-    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 23.0, topPct: 91.3, isChair: false, labelAbove: true },
-    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 41.0, topPct: 91.3, isChair: false, labelAbove: true },
-    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 59.0, topPct: 91.3, isChair: false, labelAbove: true },
-    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 77.0, topPct: 91.3, isChair: false, labelAbove: true },
-  ];
-  const leftCol: TablePosition[] = [
-    { defaultRole: 'ned', label: 'SB Member', leftPct: 15.0, topPct: 51.7, isChair: false, labelAbove: false },
-    { defaultRole: 'ned', label: 'SB Member', leftPct: 15.0, topPct: 32.3, isChair: false, labelAbove: false },
-    { defaultRole: 'ned', label: 'SB Member', leftPct: 15.0, topPct: 71.0, isChair: false, labelAbove: false },
+  const left: TablePosition[] = [
+    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 10, topPct: 27, isChair: false, labelAbove: false },
+    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 10, topPct: 50, isChair: false, labelAbove: false },
+    { defaultRole: 'ned', label: 'Worker Rep', leftPct: 10, topPct: 73, isChair: false, labelAbove: false },
   ];
 
-  const bottomRow = N <= 9 ? bottom3 : bottom4;
-  const all = [...top, ...right, ...bottomRow, ...leftCol];
+  const all = [...top, ...right, ...bottom, ...left];
   return all.slice(0, N);
   // Slot assignment by N:
-  //  N=9:  3 top + 2 right + 3 bottom + 1 left-ctr  = 9
-  //  N=10: 3 top + 2 right + 4 bottom + 1 left-ctr  = 10
-  //  N=11: 3 top + 2 right + 4 bottom + 2 left       = 11
-  //  N=12: 3 top + 2 right + 4 bottom + 3 left       = 12
+  //  N= 9: 3 top + 3 right + 3 bottom + 0 left = 9
+  //  N=10: 3 top + 3 right + 3 bottom + 1 left = 10
+  //  N=11: 3 top + 3 right + 3 bottom + 2 left = 11
+  //  N=12: 3 top + 3 right + 3 bottom + 3 left = 12
 }
 
 // ── Derivation: map seats → table positions ──
@@ -279,22 +273,22 @@ const STRATEGY_POSITION: TablePosition = {
   isChair: false,
 };
 
-// CSRD / Strategy overflow positions for GRID layout (below bottom row, labels above)
+// CSRD / Strategy positions for GRID layout — left column slots 10 & 11 (topPct=50/73)
 const GRID_CSRD_POSITION: TablePosition = {
   defaultRole: 'csrdChair',
   label: 'CSRD Chair',
-  leftPct: 38.0,
-  topPct: 97.0,
+  leftPct: 10,
+  topPct: 50,
   isChair: false,
-  labelAbove: true,
+  labelAbove: false,
 };
 const GRID_STRATEGY_POSITION: TablePosition = {
   defaultRole: 'strategyChair',
   label: 'Strategy Chair',
-  leftPct: 62.0,
-  topPct: 97.0,
+  leftPct: 10,
+  topPct: 73,
   isChair: false,
-  labelAbove: true,
+  labelAbove: false,
 };
 
 export default function BoardroomTable({
@@ -328,8 +322,10 @@ export default function BoardroomTable({
     isChairPos ? 64 : 52;
 
   // Determine effective table SVG rect dimensions
+  // Large layout: square table in a 400×400 viewBox
+  // Standard layout: portrait table in a 400×300 viewBox
   const tableRect = useDynamicLayout
-    ? { x: 110, y: 58, w: 180, h: 170, rx: 30 }
+    ? { x: 100, y: 100, w: 200, h: 200, rx: 30 }
     : { x: 120, y: 55, w: 160, h: 190, rx: 35 };
 
   // Build effective positions: base (static or grid) + optional committee chair seats
@@ -350,11 +346,19 @@ export default function BoardroomTable({
   const getDirector = (id: string) => directors.find((d) => d.id === id);
   const getSeat = (directorId: string) => seats.find((s) => s.directorId === directorId);
 
+  // Large layout uses a square canvas; standard uses 4:3
+  const svgViewBox = useDynamicLayout ? '0 0 400 400' : '0 0 400 300';
+  const containerAspectRatio = useDynamicLayout ? '1/1' : '4/3';
+  // Text centred on the table
+  const textCx = tableRect.x + tableRect.w / 2;
+  const textCy1 = tableRect.y + tableRect.h / 2 - 7;
+  const textCy2 = tableRect.y + tableRect.h / 2 + 9;
+
   return (
-    <div className="relative w-full h-full" style={{ maxHeight: '100%', aspectRatio: '4/3' }}>
+    <div className="relative w-full h-full" style={{ maxHeight: '100%', aspectRatio: containerAspectRatio }}>
       {/* SVG Table Background */}
       <svg
-        viewBox="0 0 400 300"
+        viewBox={svgViewBox}
         className="absolute inset-0 w-full h-full"
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"
@@ -398,8 +402,8 @@ export default function BoardroomTable({
 
         {/* Company name in centre */}
         <text
-          x="200"
-          y="146"
+          x={textCx}
+          y={textCy1}
           textAnchor="middle"
           fill="#C8960C"
           fontSize="10"
@@ -410,8 +414,8 @@ export default function BoardroomTable({
           {companyShortName}
         </text>
         <text
-          x="200"
-          y="160"
+          x={textCx}
+          y={textCy2}
           textAnchor="middle"
           fill="#C8960C"
           fontSize="7"
