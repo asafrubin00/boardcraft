@@ -503,6 +503,7 @@ import CompliancePanel from '@/components/CompliancePanel';
 import BoardGuideModal from '@/components/BoardGuideModal';
 import BoardroomTable, {
   TABLE_POSITIONS,
+  computeGridPositions,
   deriveTablePositions,
   getOverflowDirectorIds,
 } from '@/components/BoardroomTable';
@@ -541,8 +542,29 @@ const ALL_BOARD_ROLES: BoardRole[] = ['chair', 'sid', 'auditChair', 'remChair', 
 const ETC_TABLE_POS = { defaultRole: 'energyTransitionChair' as BoardRole, label: 'ETC Chair', leftPct: 32.4, topPct: 79.4, isChair: false };
 const CSRD_TABLE_POS = { defaultRole: 'csrdChair' as BoardRole, label: 'CSRD Chair', leftPct: 67.6, topPct: 79.4, isChair: false };
 const STRATEGY_TABLE_POS = { defaultRole: 'strategyChair' as BoardRole, label: 'Strategy Chair', leftPct: 50, topPct: 94, isChair: false };
+// Grid layout opt-slot positions (Rheinfeld — left column slots 10/11)
+const GRID_CSRD_TABLE_POS = { defaultRole: 'csrdChair' as BoardRole, label: 'CSRD Chair', leftPct: 10, topPct: 50, isChair: false };
+const GRID_STRATEGY_TABLE_POS = { defaultRole: 'strategyChair' as BoardRole, label: 'Strategy Chair', leftPct: 10, topPct: 73, isChair: false };
 
-function getTablePosition(posIdx: number, hasEnergyTransition = false, hasCsrd = false, hasStrategy = false) {
+function getTablePosition(
+  posIdx: number,
+  hasEnergyTransition = false,
+  hasCsrd = false,
+  hasStrategy = false,
+  forceGridLayout = false,
+  effectiveGridSize = 10,
+) {
+  // Grid layout (Rheinfeld): use computeGridPositions so slot 3 = auditChair,
+  // slot 4 = remChair — not the circular TABLE_POSITIONS mapping.
+  if (forceGridLayout) {
+    const gridPositions = computeGridPositions(effectiveGridSize);
+    if (posIdx < gridPositions.length) return gridPositions[posIdx];
+    // Optional slots after the grid (ET is not used for Rheinfeld)
+    let gridOptIdx = gridPositions.length;
+    if (hasCsrd) { if (posIdx === gridOptIdx) return GRID_CSRD_TABLE_POS; gridOptIdx++; }
+    if (hasStrategy) { if (posIdx === gridOptIdx) return GRID_STRATEGY_TABLE_POS; }
+    return gridPositions[0]; // fallback
+  }
   if (posIdx < TABLE_POSITIONS.length) return TABLE_POSITIONS[posIdx];
   // Optional slots: ET is pos 8, CSRD is next, Strategy is after
   let optIdx = TABLE_POSITIONS.length;
@@ -700,9 +722,16 @@ function BoardConstructionWrapper({
   const committed = seatsFee + etCost + csrdCost + strategyCost;
   const remaining = budget - committed;
 
+  const forceGridLayout = company.id === 'company_rheinfeld';
+  const effectiveGridSize = useMemo(() => {
+    if (!forceGridLayout) return 10; // unused for circular layout
+    const committeeChairRoles = new Set(['csrdChair', 'strategyChair', 'energyTransitionChair']);
+    return Math.max(seats.filter(s => !committeeChairRoles.has(s.role)).length, 10);
+  }, [forceGridLayout, seats]);
+
   const boardIds = useMemo(() => seats.map((s) => s.directorId), [seats]);
   const boardIdSet = useMemo(() => new Set(boardIds), [boardIds]);
-  const tablePos = useMemo(() => deriveTablePositions(seats, hasEnergyTransition, hasCsrd, hasStrategy), [seats, hasEnergyTransition, hasCsrd, hasStrategy]);
+  const tablePos = useMemo(() => deriveTablePositions(seats, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout), [seats, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout]);
   const overflowIds = useMemo(() => getOverflowDirectorIds(seats, tablePos), [seats, tablePos]);
   const overflowSet = useMemo(() => new Set(overflowIds), [overflowIds]);
 
@@ -871,7 +900,7 @@ function BoardConstructionWrapper({
 
   // ── New interaction handlers ──
   const handleAssignToSeat = useCallback((directorId: string, posIdx: number) => {
-    const pos = getTablePosition(posIdx, hasEnergyTransition, hasCsrd, hasStrategy);
+    const pos = getTablePosition(posIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize);
     if (boardIdSet.has(directorId)) {
       handleRoleChange(directorId, pos.defaultRole);
     } else {
@@ -890,7 +919,7 @@ function BoardConstructionWrapper({
     }
     setActiveSeatIdx(null); setSelectedDirId(null);
     playBoardSeatDrop();
-  }, [boardIdSet, committed, budget, handleRoleChange, pushAndSetSeats, directorMap]);
+  }, [boardIdSet, committed, budget, handleRoleChange, pushAndSetSeats, directorMap, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize]);
 
   const handleSeatClick = useCallback((idx: number) => {
     if (activeSeatIdx === idx) { setActiveSeatIdx(null); setSelectedDirId(null); return; }
@@ -909,7 +938,7 @@ function BoardConstructionWrapper({
   const handleAssignCandidate = useCallback(() => {
     if (activeSeatIdx === null || !selectedDirId) return;
     const cur = tablePos[activeSeatIdx]; if (!cur) return;
-    const pos = getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy);
+    const pos = getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize);
     const cand = directorMap.get(selectedDirId); if (!cand) return;
     const candOnBoard = boardIdSet.has(selectedDirId);
     pushAndSetSeats((p) => {
@@ -1168,7 +1197,7 @@ function BoardConstructionWrapper({
               <motion.div key="sel" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col items-center justify-center p-5 text-center">
                 <div className="w-20 h-20 rounded-full border-2 border-dashed border-gold/40 flex items-center justify-center mb-4 animate-pulse"><span className="text-gold/40 text-3xl">+</span></div>
                 <h3 className="text-lg font-bold text-gold font-narrative mb-2">Select a Director</h3>
-                <p className="text-xs text-foreground/50 max-w-xs">Choose a director from the pool to fill the <span className="text-gold font-semibold">{activeSeatIdx !== null ? getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy).label : ''}</span> seat.</p>
+                <p className="text-xs text-foreground/50 max-w-xs">Choose a director from the pool to fill the <span className="text-gold font-semibold">{activeSeatIdx !== null ? getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize).label : ''}</span> seat.</p>
                 {/* Cancel handled by sticky Back to Overview button above */}
               </motion.div>
             )}
@@ -1247,7 +1276,7 @@ function BoardConstructionWrapper({
             {mode === 'comparison' && seatOccDir && selDir && (() => {
               const cur = seatOccDir, cand = selDir;
               const curFee = seatRec?.feeWithPremium ?? 0;
-              const candRole = activeSeatIdx !== null ? getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy).defaultRole : 'ned' as BoardRole;
+              const candRole = activeSeatIdx !== null ? getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize).defaultRole : 'ned' as BoardRole;
               const candFee = computeFeeWithPremium(cand.annualFee, candRole);
               const fd = candFee - curFee;
               return (

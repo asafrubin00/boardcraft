@@ -43,7 +43,7 @@ export const TABLE_POSITIONS: TablePosition[] = [
 // Gap between portrait edge and table edge: ≥30px on all sides.
 // Gap between adjacent portrait edges: ≥10px on rows/cols.
 
-function computeGridPositions(N: number): TablePosition[] {
+export function computeGridPositions(N: number): TablePosition[] {
   const top: TablePosition[] = [
     { defaultRole: 'chair',      label: 'Chair',      leftPct: 28, topPct:  9, isChair: true,  labelAbove: false },
     { defaultRole: 'ned',        label: 'SB Member',  leftPct: 50, topPct:  9, isChair: false, labelAbove: false },
