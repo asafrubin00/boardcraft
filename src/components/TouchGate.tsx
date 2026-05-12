@@ -16,10 +16,11 @@ export default function TouchGate({ children }: { children: React.ReactNode }) {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   useEffect(() => {
-    // Use (pointer: coarse) — true for finger-primary devices (phones/tablets),
-    // false on desktops even when navigator.maxTouchPoints > 0 (e.g. Chrome on
-    // Windows, Macs with Force Touch), which prevents false positives.
-    const touch = window.matchMedia('(pointer: coarse)').matches;
+    // Require BOTH coarse pointer AND a small screen (<1024px).
+    // This prevents false positives on touchscreen laptops, Surface devices,
+    // and any desktop browser that reports coarse pointer unexpectedly.
+    // No real desktop/laptop satisfies both conditions simultaneously.
+    const touch = window.matchMedia('(pointer: coarse) and (max-width: 1023px)').matches;
     setIsTouchDevice(touch);
   }, []);
 
