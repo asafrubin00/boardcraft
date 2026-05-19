@@ -211,6 +211,7 @@ function shortRoleLabel(
   jurisdiction: Jurisdiction = 'UK',
   directorId?: string | null,
   workerRepSet?: Set<string>,
+  companyId?: string,
 ): string {
   // Worker representative override (EU two-tier boards, Rheinfeld)
   if (directorId && workerRepSet && workerRepSet.has(directorId)) {
@@ -223,14 +224,15 @@ function shortRoleLabel(
     if (role === 'ned' || role === 'sid') return 'SB Member';
   }
 
-  const full = getRoleLabel(role, jurisdiction);
+  const full = getRoleLabel(role, jurisdiction, companyId);
   return full
     .replace(' Committee Chair', ' Chair')
     .replace('Consumer Affairs & Regulatory', 'CA&R')
     .replace(/^Board /, '')
     .replace('Non-Executive Director', 'NED')
     .replace('Senior Independent Director', 'SID')
-    .replace('Lead Independent Director', 'LID');
+    .replace('Lead Independent Director', 'LID')
+    .replace('Chair of Trustees', 'Chair');
 }
 
 // ── Component ──
@@ -258,6 +260,8 @@ interface BoardroomTableProps {
   lockedDirectorIds?: string[];
   /** Director IDs with a conflict-of-interest indicator (red badge overlay) */
   conflictDirectorIds?: string[];
+  /** Company ID — used for company-specific role label overrides (e.g. Meridian charity labels) */
+  companyId?: string;
 }
 
 // ETC Chair position (8-seat circular layout — appears at bottom-left when ET committee is active)
@@ -319,6 +323,7 @@ export default function BoardroomTable({
   workerRepIds = [],
   lockedDirectorIds = [],
   conflictDirectorIds = [],
+  companyId,
 }: BoardroomTableProps) {
   const workerRepSet = new Set(workerRepIds);
   const lockedSet = new Set(lockedDirectorIds);
@@ -556,8 +561,8 @@ export default function BoardroomTable({
         const actualLabel = isLockedChairCeo
           ? 'Chair/CEO'
           : seat && seat.role !== pos.defaultRole
-            ? shortRoleLabel(seat.role, jurisdiction, directorId, workerRepSet)
-            : shortRoleLabel(pos.defaultRole, jurisdiction, directorId, workerRepSet);
+            ? shortRoleLabel(seat.role, jurisdiction, directorId, workerRepSet, companyId)
+            : shortRoleLabel(pos.defaultRole, jurisdiction, directorId, workerRepSet, companyId);
 
         // Grid layout: each position specifies labelAbove.
         // Circular layout: only the Chair (index 0) has its label above.
@@ -602,7 +607,7 @@ export default function BoardroomTable({
                 className="text-foreground/50 leading-tight"
                 style={{ fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 80 }}
               >
-                {shortRoleLabel(pos.defaultRole, jurisdiction)}
+                {shortRoleLabel(pos.defaultRole, jurisdiction, null, undefined, companyId)}
               </div>
             )}
           </div>

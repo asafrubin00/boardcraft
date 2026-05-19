@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { GovernanceHealthBreakdown, ResolvedEvent } from '@/types/game';
+import type { GovernanceHealthBreakdown, ResolvedEvent, Company } from '@/types/game';
 
 interface SvDashboardModalProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ interface SvDashboardModalProps {
   proxyAdviserRating: string;
   directorEnergySummary: { name: string; energy: number }[];
   resolvedEvents: ResolvedEvent[];
+  company?: Company;
 }
 
 const OUTCOME_TIERS = [
@@ -61,7 +62,12 @@ export default function SvDashboardModal({
   proxyAdviserRating,
   directorEnergySummary,
   resolvedEvents,
+  company,
 }: SvDashboardModalProps) {
+  const isMeridian = company?.id === 'company_meridian';
+  const metricLabel = isMeridian ? 'MIS' : 'SV';
+  const metricFullName = isMeridian ? 'Mission Integrity Score' : 'Shareholder Value Index';
+  const governanceLabels = company?.governanceLabels ?? {};
   // Count outcome tiers
   const tierCounts: Record<string, number> = {};
   for (const tier of OUTCOME_TIERS) {
@@ -97,7 +103,7 @@ export default function SvDashboardModal({
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-narrative font-bold text-gold">
-                SV Dashboard - Current: {svIndex}
+                {metricFullName} Dashboard — Current {metricLabel}: {svIndex}
               </h2>
               <button
                 onClick={onClose}
@@ -147,7 +153,7 @@ export default function SvDashboardModal({
                     (key) => (
                       <div key={key} className="flex items-center gap-2">
                         <span className="text-xs text-foreground/70 w-40 shrink-0">
-                          {BREAKDOWN_LABELS[key]}
+                          {governanceLabels[key] ?? BREAKDOWN_LABELS[key]}
                         </span>
                         <span className="text-xs text-gold font-bold w-8 text-right">
                           {governanceBreakdown[key]}
@@ -165,20 +171,30 @@ export default function SvDashboardModal({
                 </div>
               </Panel>
 
-              {/* 3. AGM Outlook */}
-              <Panel title="AGM Outlook">
+              {/* 3. AGM / AMM Outlook */}
+              <Panel title={isMeridian ? 'Annual Members Meeting Outlook' : 'AGM Outlook'}>
                 <AgmOutlook
                   resolvedEvents={resolvedEvents}
                   svHistory={svHistory}
                   proxyAdviserRating={proxyAdviserRating}
+                  isMeridian={isMeridian}
                 />
               </Panel>
 
-              {/* 4. Proxy Adviser Rating */}
-              <Panel title="Proxy Adviser Rating">
-                <span className={`text-2xl font-bold font-narrative ${getProxyRatingColor(proxyAdviserRating)}`}>
-                  {proxyAdviserRating}
-                </span>
+              {/* 4. Proxy Adviser / Charity Commission Rating */}
+              <Panel title={isMeridian ? 'Governance Assessment' : 'Proxy Adviser Rating'}>
+                {isMeridian ? (
+                  <div className="flex flex-col gap-1">
+                    <span className={`text-2xl font-bold font-narrative ${getProxyRatingColor(proxyAdviserRating)}`}>
+                      {proxyAdviserRating}
+                    </span>
+                    <p className="text-xs text-foreground/50">Charity Governance Code assessor view</p>
+                  </div>
+                ) : (
+                  <span className={`text-2xl font-bold font-narrative ${getProxyRatingColor(proxyAdviserRating)}`}>
+                    {proxyAdviserRating}
+                  </span>
+                )}
               </Panel>
 
               {/* 5. Director Stamina Summary */}
@@ -240,17 +256,20 @@ export default function SvDashboardModal({
   );
 }
 
-/** Helper component for AGM Outlook panel */
+/** Helper component for AGM / AMM Outlook panel */
 function AgmOutlook({
   resolvedEvents,
   svHistory,
   proxyAdviserRating,
+  isMeridian = false,
 }: {
   resolvedEvents: ResolvedEvent[];
   svHistory: { turn: string; sv: number }[];
   proxyAdviserRating: string;
+  isMeridian?: boolean;
 }) {
-  // Check if AGM quarter has been reached
+  const meetingLabel = isMeridian ? 'AMM' : 'AGM';
+  // Check if AGM/AMM quarter has been reached
   const agmResolved = resolvedEvents.some((e) => e.resolvedAtQuarter === 'AGM');
 
   // Estimate turns until AGM based on history length
@@ -262,17 +281,17 @@ function AgmOutlook({
   return (
     <div className="flex flex-col gap-2">
       {agmResolved ? (
-        <span className="text-success font-bold text-lg">AGM: Completed</span>
+        <span className="text-success font-bold text-lg">{meetingLabel}: Completed</span>
       ) : (
         <span className="text-foreground text-lg">
-          Next AGM:{' '}
+          Next {meetingLabel}:{' '}
           <span className="text-gold font-bold">
             {Math.max(agmTurn - currentTurn, 1)} events away
           </span>
         </span>
       )}
       <div className="text-sm">
-        Proxy Adviser:{' '}
+        {isMeridian ? 'Governance Assessor' : 'Proxy Adviser'}:{' '}
         <span className={`font-bold ${getProxyRatingColor(proxyAdviserRating)}`}>
           {proxyAdviserRating}
         </span>

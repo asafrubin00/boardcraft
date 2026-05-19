@@ -120,8 +120,8 @@ export default function ForcedChangeModal({
 
   const remaining = budget - committed;
   const selectedDir = selectedDirId ? directors.find((d) => d.id === selectedDirId) : null;
-  const replacementFee = selectedDir ? computeFeeWithPremium(selectedDir.annualFee, selectedRole) : 0;
-  const canAfford = replacementFee <= remaining;
+  const replacementFee = (budget === 0 || !selectedDir) ? 0 : computeFeeWithPremium(selectedDir.annualFee, selectedRole);
+  const canAfford = budget === 0 || replacementFee <= remaining;
 
   // Board average domain scores (from current board members)
   const boardAvg = useMemo(() => {
@@ -264,7 +264,7 @@ export default function ForcedChangeModal({
                   </div>
                   <div style={{ fontSize: 10, color: '#9BB4CC', marginTop: 4 }}>
                     Annual fee: <span style={{ color: '#C8960C', fontWeight: 600 }}>
-                      {currencySymbol}{Math.round(departingDirector.annualFee / 1000)}k
+                      {budget === 0 ? `${currencySymbol}0` : `${currencySymbol}${Math.round(departingDirector.annualFee / 1000)}k`}
                     </span>
                   </div>
                 </>

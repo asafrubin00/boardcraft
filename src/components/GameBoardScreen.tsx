@@ -334,6 +334,7 @@ export default function GameBoardScreen({
               svIndex={gameState.svIndex}
               svHistory={svHistory}
               onOpenDashboard={() => setShowDashboard(true)}
+              companyId={gameState.company.id}
             />
             {wounds.filter(w => w.type === 'sv').map((_, i) => (
               <span key={`sv-w-${i}`} className="inline-block w-2 h-2 rounded-full bg-error animate-pulse" title="SV wound" />
@@ -525,6 +526,7 @@ export default function GameBoardScreen({
         proxyAdviserRating={proxyAdviserRating}
         directorEnergySummary={directorEnergySummary}
         resolvedEvents={gameState.resolvedEvents}
+        company={gameState.company}
       />
 
       {/* Stamina Regen Toast */}

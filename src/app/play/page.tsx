@@ -509,7 +509,7 @@ import BoardroomTable, {
 } from '@/components/BoardroomTable';
 import DirectorPortrait from '@/components/DirectorPortrait';
 import type { BoardRole, CompetencyDomain, CommitteeState, Director } from '@/types/game';
-import { ALL_DOMAINS, DOMAIN_SHORT, ROLE_LABELS, getRoleLabel } from '@/engine/boardConstants';
+import { ALL_DOMAINS, DOMAIN_SHORT, ROLE_LABELS, getRoleLabel, getShortRoleLabel } from '@/engine/boardConstants';
 import { motion, AnimatePresence } from 'framer-motion';
 import CompanyLogo from '@/components/CompanyLogo';
 
@@ -603,23 +603,29 @@ function BoardConstructionWrapper({
   // Currency-aware fee formatter bound to company jurisdiction
   const fmt = useCallback((v: number) => fmtFee(v, company.jurisdiction), [company.jurisdiction]);
 
-  // ── Build initial seats from inherited board ──
-  const buildInitialSeats = useCallback((): BoardSeat[] => {
-    return company.inheritedBoard.map((ib) => ({
+  // ── Core state ──
+  // Inline initialisation avoids any useCallback closure timing edge cases during HMR.
+  const [seats, setSeats] = useState<BoardSeat[]>(() =>
+    company.inheritedBoard.map((ib) => ({
       directorId: ib.directorId,
       role: ib.role,
-      feeWithPremium: computeFeeWithPremium(ib.baseFee, ib.role),
-    }));
-  }, [company]);
-
-  // ── Core state ──
-  const [seats, setSeats] = useState<BoardSeat[]>(() => buildInitialSeats());
+      feeWithPremium: company.boardBudget === 0 ? 0 : computeFeeWithPremium(ib.baseFee, ib.role),
+    }))
+  );
   const [hasEnergyTransition, setHasEnergyTransition] = useState(false);
-  const [hasCsrd, setHasCsrd] = useState(false);
-  const [hasStrategy, setHasStrategy] = useState(false);
+  // For companies where the CSRD/Programmes committee is always active (e.g. Meridian),
+  // initialise hasCsrd to true so the seat and role are available from the start.
+  const [hasCsrd, setHasCsrd] = useState(
+    () => company.committees.some((c) => c.id === 'csrd' && c.status === 'active')
+  );
+  // Same for Strategy committee
+  const [hasStrategy, setHasStrategy] = useState(
+    () => company.committees.some((c) => c.id === 'strategy' && c.status === 'active')
+  );
   const [filterDomain, setFilterDomain] = useState<CompetencyDomain | null>(null);
-  const [sortBy, setSortBy] = useState<'fee' | 'score'>('fee');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  // Default to score sort for zero-budget companies (e.g. Meridian) where all fees show as £0
+  const [sortBy, setSortBy] = useState<'fee' | 'score'>(company.boardBudget === 0 ? 'score' : 'fee');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(company.boardBudget === 0 ? 'desc' : 'asc');
   const [showLockConfirm, setShowLockConfirm] = useState(false);
   const [showStrength, setShowStrength] = useState(false);
   const [showBoardGuide, setShowBoardGuide] = useState(false);
@@ -712,6 +718,10 @@ function BoardConstructionWrapper({
 
   // ── Derived ──
   const budget = company.boardBudget;
+  // For companies with no board budget (e.g. Meridian — unpaid trustees), all fees are £0
+  // regardless of the director's base annualFee.
+  const effectiveFee = (annualFee: number, role: BoardRole) =>
+    budget === 0 ? 0 : computeFeeWithPremium(annualFee, role);
   const etFormationCost = company.committees.find((c) => c.id === 'energyTransition')?.formationCost ?? 180_000;
   const csrdFormationCost = company.committees.find((c) => c.id === 'csrd')?.formationCost ?? 0;
   const strategyFormationCost = company.committees.find((c) => c.id === 'strategy')?.formationCost ?? 0;
@@ -751,17 +761,19 @@ function BoardConstructionWrapper({
       energyTransition: { active: hasEnergyTransition, chairDirectorId: fc('energyTransitionChair') },
       csrd: {
         active: company.committees.some((c) => c.id === 'csrd' && c.status === 'active') || hasCsrd,
-        chairDirectorId: null,
+        // chairDirectorId is derived solely from the live seat state — no static fallback,
+        // which would cause stale chair references after removing a director from the seat.
+        chairDirectorId: fc('csrdChair'),
       },
       strategy: {
         active: company.committees.some((c) => c.id === 'strategy' && c.status === 'active') || hasStrategy,
-        chairDirectorId: null,
+        chairDirectorId: fc('strategyChair'),
       },
     };
   }, [seats, hasEnergyTransition, hasSafetyEnv, hasCsrd, hasStrategy, company]);
 
   const isCombinedChairCeo = company.id === 'company_vantage';
-  const complianceErrors = useMemo(() => checkCompliance(seats, availableDirectors, committees, company.jurisdiction, isCombinedChairCeo), [seats, availableDirectors, committees, company.jurisdiction, isCombinedChairCeo]);
+  const complianceErrors = useMemo(() => checkCompliance(seats, availableDirectors, committees, company.jurisdiction, isCombinedChairCeo, company.id), [seats, availableDirectors, committees, company.jurisdiction, isCombinedChairCeo, company.id]);
   const hasBlockingErrors = complianceErrors.some((e) => e.severity === 'error');
 
   // Derived seat-role helpers for contextual hints (hints 3-7)
@@ -805,7 +817,7 @@ function BoardConstructionWrapper({
 
   const handleRoleChange = useCallback((directorId: string, newRole: BoardRole) => {
     pushAndSetSeats((prev) => {
-      const uniq: BoardRole[] = ['chair','auditChair','remChair','nomChair','sid','safetyEnvChair','energyTransitionChair'];
+      const uniq: BoardRole[] = ['chair','auditChair','remChair','nomChair','sid','safetyEnvChair','energyTransitionChair','csrdChair','strategyChair'];
       const currentSeat = prev.find((s) => s.directorId === directorId);
       const oldRole = currentSeat?.role ?? 'ned';
 
@@ -822,10 +834,10 @@ function BoardConstructionWrapper({
           return prev.map((s) => {
             if (s.directorId === directorId) {
               const d = directorMap.get(directorId);
-              return { ...s, role: newRole, feeWithPremium: computeFeeWithPremium(d?.annualFee ?? 0, newRole) };
+              return { ...s, role: newRole, feeWithPremium: effectiveFee(d?.annualFee ?? 0, newRole) };
             }
             if (s.directorId === occupant.directorId) {
-              return { ...s, role: oldRole, feeWithPremium: computeFeeWithPremium(occupantDir?.annualFee ?? 0, oldRole) };
+              return { ...s, role: oldRole, feeWithPremium: effectiveFee(occupantDir?.annualFee ?? 0, oldRole) };
             }
             return s;
           });
@@ -839,7 +851,7 @@ function BoardConstructionWrapper({
       return prev.map((s) => {
         if (s.directorId !== directorId) return s;
         const d = directorMap.get(directorId);
-        return { ...s, role: newRole, feeWithPremium: computeFeeWithPremium(d?.annualFee ?? 0, newRole) };
+        return { ...s, role: newRole, feeWithPremium: effectiveFee(d?.annualFee ?? 0, newRole) };
       });
     });
   }, [pushAndSetSeats, directorMap]);
@@ -848,7 +860,7 @@ function BoardConstructionWrapper({
     // Push history before ET toggle since it may change seats
     if (hasEnergyTransition) {
       pushAndSetSeats((p) => p.map((s) => s.role === 'energyTransitionChair'
-        ? { ...s, role: 'ned', feeWithPremium: computeFeeWithPremium(directorMap.get(s.directorId)?.annualFee ?? 0, 'ned') } : s));
+        ? { ...s, role: 'ned', feeWithPremium: effectiveFee(directorMap.get(s.directorId)?.annualFee ?? 0, 'ned') } : s));
     } else {
       // First activation — fire company-specific committee hint
       if (company.id === 'company_harwick') {
@@ -872,7 +884,7 @@ function BoardConstructionWrapper({
     // If toggling off, demote any csrdChair seat back to NED
     if (hasCsrd) {
       pushAndSetSeats((p) => p.map((s) => s.role === 'csrdChair'
-        ? { ...s, role: 'ned', feeWithPremium: computeFeeWithPremium(directorMap.get(s.directorId)?.annualFee ?? 0, 'ned') } : s));
+        ? { ...s, role: 'ned', feeWithPremium: effectiveFee(directorMap.get(s.directorId)?.annualFee ?? 0, 'ned') } : s));
     } else {
       showCommitteeHint(
         'CSRD Committee Chair',
@@ -887,7 +899,7 @@ function BoardConstructionWrapper({
     // If toggling off, demote any strategyChair seat back to NED
     if (hasStrategy) {
       pushAndSetSeats((p) => p.map((s) => s.role === 'strategyChair'
-        ? { ...s, role: 'ned', feeWithPremium: computeFeeWithPremium(directorMap.get(s.directorId)?.annualFee ?? 0, 'ned') } : s));
+        ? { ...s, role: 'ned', feeWithPremium: effectiveFee(directorMap.get(s.directorId)?.annualFee ?? 0, 'ned') } : s));
     } else {
       showCommitteeHint(
         'Strategy Chair',
@@ -902,24 +914,33 @@ function BoardConstructionWrapper({
   const handleAssignToSeat = useCallback((directorId: string, posIdx: number) => {
     const pos = getTablePosition(posIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize);
     if (boardIdSet.has(directorId)) {
+      // Director already on board → just update their role (swap if needed)
       handleRoleChange(directorId, pos.defaultRole);
     } else {
       const d = directorMap.get(directorId);
       if (!d) return;
-      const fee = computeFeeWithPremium(d.annualFee, pos.defaultRole);
-      if (committed + fee > budget) return;
-      // Remove any existing occupant of this unique role to prevent duplicate role entries
+      // For companies with no board budget (e.g. Meridian — unpaid trustees), treat all fees
+      // as £0 so cross-listed directors with their original annualFee can still be appointed.
+      const fee = budget === 0 ? 0 : computeFeeWithPremium(d.annualFee, pos.defaultRole);
+      if (budget > 0 && committed + fee > budget) return;
+      // Who currently occupies this visual slot? (needed to evict NED seat occupants)
+      const currentOccupantId = tablePos[posIdx] ?? null;
       const uniqRoles: BoardRole[] = ['chair','auditChair','remChair','nomChair','sid','safetyEnvChair','energyTransitionChair','csrdChair','strategyChair'];
       pushAndSetSeats((p) => {
-        const filtered = uniqRoles.includes(pos.defaultRole)
-          ? p.filter((s) => s.role !== pos.defaultRole)
-          : p;
+        let filtered: BoardSeat[];
+        if (uniqRoles.includes(pos.defaultRole)) {
+          // Remove any existing holder of this unique role
+          filtered = p.filter((s) => s.role !== pos.defaultRole);
+        } else {
+          // For NED and other non-unique roles, evict whoever is visually in this slot
+          filtered = currentOccupantId ? p.filter((s) => s.directorId !== currentOccupantId) : p;
+        }
         return [...filtered, { directorId, role: pos.defaultRole, feeWithPremium: fee }];
       });
     }
     setActiveSeatIdx(null); setSelectedDirId(null);
     playBoardSeatDrop();
-  }, [boardIdSet, committed, budget, handleRoleChange, pushAndSetSeats, directorMap, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize]);
+  }, [boardIdSet, committed, budget, handleRoleChange, pushAndSetSeats, directorMap, tablePos, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize]);
 
   const handleSeatClick = useCallback((idx: number) => {
     if (activeSeatIdx === idx) { setActiveSeatIdx(null); setSelectedDirId(null); return; }
@@ -943,7 +964,7 @@ function BoardConstructionWrapper({
     const candOnBoard = boardIdSet.has(selectedDirId);
     pushAndSetSeats((p) => {
       const filtered = p.filter((s) => s.directorId !== cur && (candOnBoard ? s.directorId !== selectedDirId : true));
-      return [...filtered, { directorId: selectedDirId, role: pos.defaultRole, feeWithPremium: computeFeeWithPremium(cand.annualFee, pos.defaultRole) }];
+      return [...filtered, { directorId: selectedDirId, role: pos.defaultRole, feeWithPremium: effectiveFee(cand.annualFee, pos.defaultRole) }];
     });
     setSelectedDirId(null);
   }, [activeSeatIdx, selectedDirId, tablePos, boardIdSet, pushAndSetSeats, directorMap]);
@@ -1050,7 +1071,7 @@ function BoardConstructionWrapper({
         {/* ═══ LEFT: Director Pool (35%) ═══ */}
         <div className="w-[35%] border-r border-card-border flex flex-col overflow-hidden">
           <div className="p-3 border-b border-card-border flex-shrink-0 space-y-2">
-            <h2 className="text-sm font-bold text-gold">Director Pool</h2>
+            <h2 className="text-sm font-bold text-gold">{company.id === 'company_meridian' ? 'Trustee Candidates' : 'Director Pool'}</h2>
             {/* Row 1: Filter by highest domain */}
             <div>
               <span className="text-[9px] text-foreground/40 uppercase tracking-wide">Filter by domain (≥60)</span>
@@ -1062,14 +1083,23 @@ function BoardConstructionWrapper({
               </div>
             </div>
             {/* Row 2: Sort with direction toggles */}
-            <div className="flex items-center gap-2 text-[10px]">
-              <span className="text-[9px] text-foreground/40 uppercase tracking-wide">Sort</span>
-              <button onClick={() => { if (sortBy === 'fee') { setSortDir((p) => p === 'asc' ? 'desc' : 'asc'); } else { setSortBy('fee'); setSortDir('asc'); } }} className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 ${sortBy === 'fee' ? 'bg-gold/20 text-gold border border-gold/40' : 'text-foreground/40 hover:text-foreground/60'}`}>
-                Fee {sortBy === 'fee' && (sortDir === 'asc' ? '↑' : '↓')}
-              </button>
-              <button onClick={() => { if (sortBy === 'score') { setSortDir((p) => p === 'asc' ? 'desc' : 'asc'); } else { setSortBy('score'); setSortDir('desc'); } }} className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 ${sortBy === 'score' ? 'bg-gold/20 text-gold border border-gold/40' : 'text-foreground/40 hover:text-foreground/60'}`}>
-                Score {sortBy === 'score' && (sortDir === 'asc' ? '↑' : '↓')}
-              </button>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-[10px]">
+                <span className="text-[9px] text-foreground/40 uppercase tracking-wide">Sort</span>
+                {budget > 0 && (
+                  <button onClick={() => { if (sortBy === 'fee') { setSortDir((p) => p === 'asc' ? 'desc' : 'asc'); } else { setSortBy('fee'); setSortDir('asc'); } }} className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 ${sortBy === 'fee' ? 'bg-gold/20 text-gold border border-gold/40' : 'text-foreground/40 hover:text-foreground/60'}`}>
+                    Fee {sortBy === 'fee' && (sortDir === 'asc' ? '↑' : '↓')}
+                  </button>
+                )}
+                <button onClick={() => { if (sortBy === 'score') { setSortDir((p) => p === 'asc' ? 'desc' : 'asc'); } else { setSortBy('score'); setSortDir('desc'); } }} className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 ${sortBy === 'score' ? 'bg-gold/20 text-gold border border-gold/40' : 'text-foreground/40 hover:text-foreground/60'}`}>
+                  Gov. Score {sortBy === 'score' && (sortDir === 'asc' ? '↑' : '↓')}
+                </button>
+              </div>
+              {sortBy === 'score' && (
+                <p className="text-[9px] text-foreground/30 leading-tight">
+                  {filterDomain ? `Sorted by ${DOMAIN_SHORT[filterDomain]} score` : 'Sorted by highest domain score'}
+                </p>
+              )}
             </div>
           </div>
           <div
@@ -1088,13 +1118,20 @@ function BoardConstructionWrapper({
             }}
           >
             {overflowIds.length > 0 && (
-              <p className="text-[10px] text-warning font-medium mb-2">⚠ Unseated directors - click a table seat to place them</p>
+              <p className="text-[10px] text-warning font-medium mb-2">⚠ Unseated {company.id === 'company_meridian' ? 'trustees' : 'directors'} — click a table seat to place them</p>
             )}
-            <div className="grid grid-cols-4 gap-1.5">
-              {sortedPool.map((d) => (
-                <PoolCard key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} />
-              ))}
-            </div>
+            {sortedPool.length === 0 && filterDomain !== null ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <p className="text-[11px] text-foreground/40 font-narrative italic">No candidates score ≥60 in {DOMAIN_SHORT[filterDomain]}.</p>
+                <button onClick={() => setFilterDomain(null)} className="mt-2 text-[10px] text-gold/60 hover:text-gold transition-colors">Clear filter</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-1.5">
+                {sortedPool.map((d) => (
+                  <PoolCard key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} displayFee={budget === 0 ? 0 : undefined} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -1122,23 +1159,38 @@ function BoardConstructionWrapper({
               <motion.div key="def" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col p-5 space-y-5">
                 <div className="text-center pt-4">
                   <h2 className="text-3xl font-bold text-gold tracking-widest font-narrative">BOARDCRAFT</h2>
-                  <p className="text-xs text-foreground/50 mt-2 font-narrative italic">Build your board. Navigate the crises. Maximise shareholder value.</p>
-                </div>
-                <div>
-                  <div className="w-full h-3 bg-navy-dark rounded-full overflow-hidden">
-                    <div className="h-full bg-gold rounded-full transition-all" style={{ width: `${Math.min((committed / budget) * 100, 100)}%` }} />
-                  </div>
-                  <p className="text-[10px] text-foreground/40 text-center mt-1.5">
-                    {fmt(committed)} committed · {fmt(Math.max(0, remaining))} remaining · {fmt(budget)} total
+                  <p className="text-xs text-foreground/50 mt-2 font-narrative italic">
+                    {company.id === 'company_meridian'
+                      ? 'Appoint your trustees. Protect mission integrity. Defend the charity.'
+                      : 'Build your board. Navigate the crises. Maximise shareholder value.'}
                   </p>
                 </div>
-                <CompliancePanel errors={complianceErrors} />
+                {budget > 0 ? (
+                  <div>
+                    <div className="w-full h-3 bg-navy-dark rounded-full overflow-hidden">
+                      <div className="h-full bg-gold rounded-full transition-all" style={{ width: `${Math.min((committed / budget) * 100, 100)}%` }} />
+                    </div>
+                    <p className="text-[10px] text-foreground/40 text-center mt-1.5">
+                      {fmt(committed)} committed · {fmt(Math.max(0, remaining))} remaining · {fmt(budget)} total
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <p className="text-[10px] text-foreground/40">
+                      {seats.length} trustee{seats.length !== 1 ? 's' : ''} appointed · All roles are voluntary (unpaid)
+                    </p>
+                  </div>
+                )}
+                <CompliancePanel
+                  errors={complianceErrors}
+                  title={company.id === 'company_meridian' ? 'Charity Governance Code' : company.jurisdiction === 'EU' ? 'GCGC / AktG Compliance' : 'FRC Code Compliance'}
+                />
                 {/* Board Guide button */}
                 <button
                   onClick={() => setShowBoardGuide(true)}
                   className="w-full py-2 rounded-lg border border-gold/30 text-gold/70 text-xs font-medium hover:border-gold/60 hover:text-gold transition-colors text-center cursor-pointer"
                 >
-                  &#x2197; Board Guide — {company.jurisdiction} Governance Rules
+                  &#x2197; {company.id === 'company_meridian' ? 'Trustee Guide — Charity Governance Code' : `Board Guide — ${company.jurisdiction} Governance Rules`}
                 </button>
                 {/* ET Toggle - only show if company has ET committee definition */}
                 {hasETCommittee && (
@@ -1183,7 +1235,10 @@ function BoardConstructionWrapper({
                   </div>
                 )}
                 <div className="text-center text-xs text-foreground/40">
-                  {seats.length} director{seats.length !== 1 ? 's' : ''} · {remaining < 0 ? <span className="text-error font-medium">Over budget by {fmt(Math.abs(remaining))}</span> : <span>{fmt(remaining)} remaining</span>}
+                  {budget > 0
+                    ? <>{seats.length} director{seats.length !== 1 ? 's' : ''} · {remaining < 0 ? <span className="text-error font-medium">Over budget by {fmt(Math.abs(remaining))}</span> : <span>{fmt(remaining)} remaining</span>}</>
+                    : <>{seats.length} trustee{seats.length !== 1 ? 's' : ''} · Unpaid voluntary roles</>
+                  }
                 </div>
                 <div className="mt-auto pt-4">
                   <button onClick={() => { if (!hasBlockingErrors) setShowLockConfirm(true); }} disabled={hasBlockingErrors} className={`w-full py-3 rounded-lg text-sm font-semibold transition-all ${hasBlockingErrors ? 'bg-navy-light text-foreground/30 cursor-not-allowed' : 'bg-gold text-navy-dark hover:bg-gold-light active:scale-[0.98]'}`}>
@@ -1196,8 +1251,8 @@ function BoardConstructionWrapper({
             {mode === 'select' && (
               <motion.div key="sel" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col items-center justify-center p-5 text-center">
                 <div className="w-20 h-20 rounded-full border-2 border-dashed border-gold/40 flex items-center justify-center mb-4 animate-pulse"><span className="text-gold/40 text-3xl">+</span></div>
-                <h3 className="text-lg font-bold text-gold font-narrative mb-2">Select a Director</h3>
-                <p className="text-xs text-foreground/50 max-w-xs">Choose a director from the pool to fill the <span className="text-gold font-semibold">{activeSeatIdx !== null ? getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize).label : ''}</span> seat.</p>
+                <h3 className="text-lg font-bold text-gold font-narrative mb-2">{company.id === 'company_meridian' ? 'Select a Trustee' : 'Select a Director'}</h3>
+                <p className="text-xs text-foreground/50 max-w-xs">Choose a director from the pool to fill the <span className="text-gold font-semibold">{activeSeatIdx !== null ? getShortRoleLabel(getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize).defaultRole, company.jurisdiction, company.id) : ''}</span> seat.</p>
                 {/* Cancel handled by sticky Back to Overview button above */}
               </motion.div>
             )}
@@ -1256,7 +1311,7 @@ function BoardConstructionWrapper({
                       <div>
                         <label className="text-[10px] text-foreground/40 uppercase tracking-wide">Role Assignment</label>
                         <select value={seat?.role ?? 'ned'} onChange={(e) => handleRoleChange(dir.id, e.target.value as BoardRole)} className="w-full mt-1 text-xs bg-navy-dark text-foreground border border-card-border rounded px-2 py-1.5 focus:outline-none focus:border-gold">
-                          {availableBoardRoles.map((r) => <option key={r} value={r}>{getRoleLabel(r, company.jurisdiction)}</option>)}
+                          {availableBoardRoles.map((r) => <option key={r} value={r}>{getRoleLabel(r, company.jurisdiction, company.id)}</option>)}
                         </select>
                       </div>
                     )}
@@ -1267,7 +1322,7 @@ function BoardConstructionWrapper({
                         </motion.div>
                       )}
                     </AnimatePresence>
-                    {seated && <button onClick={() => handleRemoveDirector(dir.id)} className="w-full py-2 text-sm bg-error/15 text-error border border-error/30 rounded-lg hover:bg-error/25 transition-colors">Remove from Board</button>}
+                    {seated && <button onClick={() => handleRemoveDirector(dir.id)} className="w-full py-2 text-sm bg-error/15 text-error border border-error/30 rounded-lg hover:bg-error/25 transition-colors">{company.id === 'company_meridian' ? 'Remove Trustee' : 'Remove from Board'}</button>}
                   </div>
                 </motion.div>
               );
@@ -1277,7 +1332,7 @@ function BoardConstructionWrapper({
               const cur = seatOccDir, cand = selDir;
               const curFee = seatRec?.feeWithPremium ?? 0;
               const candRole = activeSeatIdx !== null ? getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize).defaultRole : 'ned' as BoardRole;
-              const candFee = computeFeeWithPremium(cand.annualFee, candRole);
+              const candFee = effectiveFee(cand.annualFee, candRole);
               const fd = candFee - curFee;
               return (
                 <motion.div key="cmp" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col p-4 overflow-y-auto">
@@ -1375,6 +1430,7 @@ function BoardConstructionWrapper({
               combinedChairCeo={company.id === 'company_vantage'}
               workerRepIds={company.id === 'company_rheinfeld' ? ['rdir_w_koch', 'rdir_w_alrashid', 'rdir_w_hoffmann', 'rdir_w_mehta', 'rdir_w_gruber'] : []}
               lockedDirectorIds={company.id === 'company_rheinfeld' ? ['rdir_heinrich'] : []}
+              companyId={company.id}
             />
           </div>
           <p className="text-[10px] text-foreground/30 mt-2 text-center flex-shrink-0">Click a seat to assign · Click a filled seat to view profile</p>
@@ -1442,9 +1498,13 @@ function BoardConstructionWrapper({
         if (hintsShown === 2)
           return <HintModal body="Happy with your board? Lock it in — your picks are permanent until the AGM. You can still adjust roles and committee assignments before locking." onDismiss={dismissHint} />;
         if (hintsShown === 3 && hint3Ready)
-          return <HintModal title="Now appoint your Audit Chair" body="Your Audit Chair needs strong Financial Oversight — look for a score of 75 or above. Click 'Financial' in the filter bar to find the best candidates. Drag them into the Audit Chair seat." onDismiss={dismissHint} />;
+          return company.id === 'company_meridian'
+            ? <HintModal title="Finance & Risk Committee Chair" body="Your Finance & Risk Chair needs strong Financial Oversight — look for a score of 65 or above. They will oversee the charity's financial controls and solvency obligations." onDismiss={dismissHint} />
+            : <HintModal title="Now appoint your Audit Chair" body="Your Audit Chair needs strong Financial Oversight — look for a score of 75 or above. Click 'Financial' in the filter bar to find the best candidates. Drag them into the Audit Chair seat." onDismiss={dismissHint} />;
         if (hintsShown === 4 && hint4Ready)
-          return <HintModal title="Remuneration Committee Chair" body="Your Rem Chair oversees executive pay. They need strong People & Culture credentials. A vacant Rem Chair will hurt your governance health score." onDismiss={dismissHint} />;
+          return company.id === 'company_meridian'
+            ? <HintModal title="People & Culture Committee Chair" body="Your People & Culture Chair oversees trustee wellbeing, diversity, and staff culture. They need strong People & Culture credentials — a vacant seat here weakens your governance score." onDismiss={dismissHint} />
+            : <HintModal title="Remuneration Committee Chair" body="Your Rem Chair oversees executive pay. They need strong People & Culture credentials. A vacant Rem Chair will hurt your governance health score." onDismiss={dismissHint} />;
         if (hintsShown === 5)
           return <HintModal title="Your board's combined strength" body="This shows your team's average score across all eight domains. Events will test specific domains — a balanced board handles more situations effectively." onDismiss={dismissHint} />;
         if (hintsShown === 6 && hint6Ready)
@@ -1477,8 +1537,8 @@ function BoardConstructionWrapper({
 }
 
 // ── Pool Card (compact, for 4-column grid) ──
-function PoolCard({ director, selected, onBoard, overflow, onClick, jurisdiction = 'UK' }: {
-  director: Director; selected: boolean; onBoard: boolean; overflow?: boolean; onClick: () => void; jurisdiction?: string;
+function PoolCard({ director, selected, onBoard, overflow, onClick, jurisdiction = 'UK', displayFee }: {
+  director: Director; selected: boolean; onBoard: boolean; overflow?: boolean; onClick: () => void; jurisdiction?: string; displayFee?: number;
 }) {
   const ind = INDEP_BADGE[director.independence];
   const canDrag = !onBoard || overflow;
@@ -1506,7 +1566,7 @@ function PoolCard({ director, selected, onBoard, overflow, onClick, jurisdiction
         <div className="shrink-0 rounded-full overflow-hidden border border-gold/30"><DirectorPortrait directorId={director.id} size={40} /></div>
         <div className="min-w-0 w-full">
           <h4 className="text-[9px] font-bold text-foreground leading-tight truncate">{director.name}</h4>
-          <span className="text-[9px] font-semibold text-gold">{fmtFee(director.annualFee, jurisdiction)}</span>
+          <span className="text-[9px] font-semibold text-gold">{fmtFee(displayFee ?? director.annualFee, jurisdiction)}</span>
           <div className="flex flex-wrap justify-center gap-0.5 mt-0.5">
             <span className={`text-[7px] px-0.5 py-0 rounded-full font-medium ${ind.cls}`}>{ind.label}</span>
           </div>

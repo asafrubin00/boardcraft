@@ -157,6 +157,8 @@ export interface Company {
   committees: CommitteeDefinition[];
   /** Director IDs to exclude from candidate pool (e.g. outgoing chair) */
   excludeDirectorIds: string[];
+  /** Optional display-name overrides for the governance health breakdown dimensions */
+  governanceLabels?: Partial<Record<keyof Omit<GovernanceHealthBreakdown, 'total'>, string>>;
   /** The inherited board seats at game start */
   inheritedBoard: InheritedBoardSeat[];
   /** Company-specific event schedule */
@@ -222,6 +224,9 @@ export interface GameEvent {
   };
   /** Illustration type for event card visual. Defaults to 'default' if omitted. */
   illustrationType?: string;
+  /** Optional illustration image filename (e.g. 'mevent-conflict-interest.jpg').
+   *  Drop image files into /public/images/events/ — they resolve automatically. */
+  imageFile?: string;
 }
 
 // ── Board Composition ──
@@ -357,4 +362,12 @@ export interface GameState {
   meridianActive: boolean;
   /** Rheinfeld-specific: Meridian Capital activist status */
   meridianStatus: 'watching' | 'escalating' | 'hostile';
+  /** Meridian Foundation-specific: Mission Integrity Score (0–100) — replaces SV Index */
+  missionIntegrityScore: number;
+  /** Meridian Foundation-specific: Founder Syndrome Score (0–100, hidden from player) */
+  founderSyndromeScore: number;
+  /** Meridian Foundation-specific: whether a Charity Commission statutory inquiry is active */
+  charityCommissionInquiryActive: boolean;
+  /** Meridian Foundation-specific: whether the organisation faces a formal solvency concern */
+  solvencyRisk: boolean;
 }

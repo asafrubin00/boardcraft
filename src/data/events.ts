@@ -1,6 +1,7 @@
 import { GameEvent } from '@/types/game';
 import { vantageEvents } from './vantage/events';
 import { rheinfeldEvents } from './rheinfeld/events';
+import { meridianEvents } from './meridian/events';
 
 export const events: GameEvent[] = [
   // ── EVENT 01 - The Remuneration Committee Chair Vacancy ──
@@ -1301,4 +1302,7 @@ export const events: GameEvent[] = [
 
   // ── Rheinfeld AG events ──
   ...rheinfeldEvents,
+
+  // ── Meridian Foundation events ──
+  ...meridianEvents,
 ];

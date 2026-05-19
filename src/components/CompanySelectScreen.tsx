@@ -135,11 +135,34 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
                   </div>
                 </div>
 
+                {/* Mission Integrity Score — Meridian Foundation only */}
+                {company.id === 'company_meridian' && (
+                  <div className="mt-1">
+                    <div className="flex items-center justify-between text-xs text-foreground opacity-70 mb-1">
+                      <span>Mission Integrity Score</span>
+                      <span>{company.startingSvIndex}/100</span>
+                    </div>
+                    <div className="w-full h-2 bg-navy-dark rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-emerald-500/70 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${company.startingSvIndex}%` }}
+                        transition={{ delay: 0.4, duration: 0.8, ease: 'easeOut' }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Difficulty Badge & Event count */}
                 <div className="flex items-center gap-3 mt-1">
                   <span className={`text-xs ${difficultyColor(company.difficultyTier)}`}>
                     Difficulty: {difficultyLabel(company.difficultyTier)}
                   </span>
+                  {company.id === 'company_meridian' && (
+                    <span className="text-xs bg-emerald-900/50 text-emerald-300 border border-emerald-700/40 px-2 py-0.5 rounded">
+                      UK Charity (CIO)
+                    </span>
+                  )}
                   <span className="text-xs text-foreground/40">
                     {company.eventSchedule.length} events
                   </span>

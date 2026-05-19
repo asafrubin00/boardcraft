@@ -5,16 +5,17 @@ import type { ComplianceError } from '@/types/game';
 
 interface CompliancePanelProps {
   errors: ComplianceError[];
+  title?: string;
 }
 
-export default function CompliancePanel({ errors }: CompliancePanelProps) {
+export default function CompliancePanel({ errors, title = 'FRC Code Compliance' }: CompliancePanelProps) {
   const hasErrors = errors.some((e) => e.severity === 'error');
   const hasWarnings = errors.some((e) => e.severity === 'warning');
 
   return (
     <div className="rounded-lg bg-card-bg border border-card-border p-4">
       <h3 className="text-sm font-semibold text-foreground mb-3">
-        FRC Code Compliance
+        {title}
       </h3>
 
       <AnimatePresence mode="wait">

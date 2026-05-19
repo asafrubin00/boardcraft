@@ -1,6 +1,7 @@
 import type { DirectorDynamic } from '@/types/game';
 import { vantageDynamics } from './vantage/dynamics';
 import { rheinfeldDynamics } from './rheinfeld/dynamics';
+import { meridianDynamics } from './meridian/dynamics';
 
 export const directorDynamics: DirectorDynamic[] = [
   {
@@ -52,4 +53,7 @@ export const directorDynamics: DirectorDynamic[] = [
 
   // ── Rheinfeld AG dynamics ──
   ...rheinfeldDynamics,
+
+  // ── Meridian Foundation dynamics ──
+  ...meridianDynamics,
 ];

@@ -136,14 +136,59 @@ const EU_GUIDE = {
   ],
 };
 
-function getGuide(jurisdiction: string) {
+// ── UK Charity (CIO) — Charity Governance Code guidance ──
+const CHARITY_GUIDE = {
+  title: 'Charity Governance Code (UK)',
+  sections: [
+    {
+      heading: 'Board Composition',
+      items: [
+        'Minimum 3 trustees required by law; 5–12 recommended by the Charity Governance Code.',
+        'The Chair leads the board and is elected by fellow trustees — not appointed externally.',
+        'A Deputy Chair may support the Chair and provide continuity during transitions.',
+        'All trustees serve voluntarily; remuneration of trustees is not permitted except in exceptional circumstances with Charity Commission approval.',
+      ],
+    },
+    {
+      heading: 'Key Roles',
+      items: [
+        'Chair of Trustees: leads the board, manages trustee relationships, and acts as ambassador.',
+        'Deputy Chair: supports the Chair and acts when the Chair is unavailable.',
+        'Finance & Risk Committee Chair: oversees financial controls, reserves policy, and solvency obligations — must have strong financial expertise.',
+        'People & Culture Committee Chair: oversees staff wellbeing, safeguarding, and trustee diversity — requires strong People & Culture credentials.',
+        'Programmes & Impact Committee Chair: scrutinises programme delivery and mission alignment — must have relevant sector knowledge.',
+      ],
+    },
+    {
+      heading: 'Committees',
+      items: [
+        'Finance & Risk Committee: reviews management accounts, reserves, investment policy, and risk register.',
+        'People & Culture Committee: oversees HR policy, safeguarding, and trustee recruitment.',
+        'Programmes & Impact Committee: evaluates programme effectiveness and mission alignment.',
+        'All committee chairs should be independent trustees free from executive conflicts.',
+      ],
+    },
+    {
+      heading: 'Independence & Tenure',
+      items: [
+        'Independence: trustees must act in the charity\'s best interests, not as representatives of funders or donors.',
+        'Tenure: the Charity Governance Code recommends no trustee serves more than 9 years without review.',
+        'Founder Syndrome: boards dominated by the founding chair risk poor scrutiny and mission drift.',
+        'The Charity Commission can investigate and intervene where governance is seriously weak.',
+      ],
+    },
+  ],
+};
+
+function getGuide(jurisdiction: string, companyId?: string) {
+  if (companyId === 'company_meridian') return CHARITY_GUIDE;
   if (jurisdiction === 'US') return US_GUIDE;
   if (jurisdiction === 'EU') return EU_GUIDE;
   return UK_GUIDE;
 }
 
 export default function BoardGuideModal({ isOpen, onClose, company }: BoardGuideModalProps) {
-  const guide = getGuide(company.jurisdiction);
+  const guide = getGuide(company.jurisdiction, company.id);
 
   return (
     <AnimatePresence>

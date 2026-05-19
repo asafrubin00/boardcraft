@@ -137,6 +137,11 @@ export function initializeGameState(
     csrdProgress: co.id === 'company_rheinfeld' ? 15 : 0,
     meridianActive: co.id === 'company_rheinfeld',
     meridianStatus: 'watching',
+    // Meridian Foundation-specific fields (neutral defaults for non-Meridian companies)
+    missionIntegrityScore: co.id === 'company_meridian' ? co.startingSvIndex : 0,
+    founderSyndromeScore: co.id === 'company_meridian' ? 55 : 0,
+    charityCommissionInquiryActive: false,
+    solvencyRisk: false,
   };
 }
 
@@ -277,6 +282,45 @@ export function checkEventPrecondition(
       return state.governanceHealth < 45;
     }
 
+    // ── Meridian Foundation-specific preconditions ──
+
+    // M-06: Compliance Review — fires only if Event 02 (Grant or Mission) was partial/fail.
+    // conditionConfig handles the outcome check; precondition just ensures ev02 exists first.
+    case 'mevent_02_partial_or_worse': {
+      const ev02 = state.resolvedEvents.find((r) => r.eventId === 'mevent_02');
+      if (!ev02) return false;
+      return (
+        ev02.outcomeTier === 'PARTIAL_SUCCESS' ||
+        ev02.outcomeTier === 'FAILURE' ||
+        ev02.outcomeTier === 'CRITICAL_FAILURE'
+      );
+    }
+
+    // M-08: Statutory Inquiry — fires only if Event 01 (Undisclosed Conflict) was partial/fail.
+    case 'mevent_01_partial_or_worse': {
+      const ev01 = state.resolvedEvents.find((r) => r.eventId === 'mevent_01');
+      if (!ev01) return false;
+      return (
+        ev01.outcomeTier === 'PARTIAL_SUCCESS' ||
+        ev01.outcomeTier === 'FAILURE' ||
+        ev01.outcomeTier === 'CRITICAL_FAILURE'
+      );
+    }
+
+    // M-09: CEO Ultimatum — auto-fires if Founder Syndrome Score > 60; otherwise requires
+    // Event 03 (Founder's Memo) to have resolved at partial or worse.
+    // checkEventCondition also has a mevent_09 override for the FSS path.
+    case 'mevent_09_fss_or_event03': {
+      if (state.founderSyndromeScore > 60) return true;
+      const ev03 = state.resolvedEvents.find((r) => r.eventId === 'mevent_03');
+      if (!ev03) return false;
+      return (
+        ev03.outcomeTier === 'PARTIAL_SUCCESS' ||
+        ev03.outcomeTier === 'FAILURE' ||
+        ev03.outcomeTier === 'CRITICAL_FAILURE'
+      );
+    }
+
     default:
       return true;
   }
@@ -314,6 +358,10 @@ function replaceEtcStrategies(event: GameEvent): GameEvent | null {
 function checkEventCondition(event: GameEvent, state: GameState): boolean {
   // Generic condition: check the event's conditionConfig if present
   if (event.conditionConfig) {
+    // Meridian: mevent_09 auto-fires when Founder Syndrome Score > 60, bypassing
+    // the requiresOutcome check on mevent_03 (the event fires regardless of event 03 outcome).
+    if (event.id === 'mevent_09' && state.founderSyndromeScore > 60) return true;
+
     const { requiresEventId, requiresOutcome, requiresGhBelow } = event.conditionConfig;
     if (requiresEventId) {
       const prior = state.resolvedEvents.find((r) => r.eventId === requiresEventId);

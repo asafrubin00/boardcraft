@@ -91,7 +91,7 @@ function generateVerdict(gameState: GameState, careerTitle: string, eventNameMap
     const best = [...resolved].sort((a, b) => b.svDelta - a.svDelta)[0];
     if (best.svDelta > 0) {
       const tier = best.outcomeTier.replace('_', ' ').toLowerCase();
-      bestLine = ` Your strongest moment was ${eventNameMap[best.eventId] ?? best.eventId} - a ${tier} that added ${best.svDelta.toFixed(1)}% to shareholder value.`;
+      bestLine = ` Your strongest moment was ${eventNameMap[best.eventId] ?? best.eventId} - a ${tier} that added ${best.svDelta.toFixed(1)}% to ${gameState.company.id === 'company_meridian' ? 'mission integrity' : 'shareholder value'}.`;
     }
   }
 
@@ -100,7 +100,7 @@ function generateVerdict(gameState: GameState, careerTitle: string, eventNameMap
     const worst = [...resolved].sort((a, b) => a.svDelta - b.svDelta)[0];
     if (worst.svDelta < 0) {
       const tier = worst.outcomeTier.replace('_', ' ').toLowerCase();
-      worstLine = ` The low point was ${eventNameMap[worst.eventId] ?? worst.eventId}, where a ${tier} cost ${Math.abs(worst.svDelta).toFixed(1)}% in shareholder value.`;
+      worstLine = ` The low point was ${eventNameMap[worst.eventId] ?? worst.eventId}, where a ${tier} cost ${Math.abs(worst.svDelta).toFixed(1)}% in ${gameState.company.id === 'company_meridian' ? 'mission integrity' : 'shareholder value'}.`;
     }
   }
 
@@ -258,6 +258,9 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
   // Play year-end sound on mount
   useEffect(() => { playYearEnd(gameState.svIndex); }, []);
 
+  const isMeridian = gameState.company.id === 'company_meridian';
+  const metricLabel = isMeridian ? 'MIS' : 'SV Index';
+  const metricFullLabel = isMeridian ? 'Mission Integrity Score' : 'SV Index';
   const svHistory = getSvHistory(gameState);
   const proxyRating = getProxyAdviserRating(gameState.governanceHealth);
   const allEventsData = getAllEvents();
@@ -339,7 +342,7 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
           transition={{ delay: 0.2, duration: 0.5 }}
         >
           <div className="bg-card-bg border border-card-border rounded-lg p-5 text-center">
-            <h3 className="text-xs uppercase tracking-wide text-foreground/50 mb-2">Final SV Index</h3>
+            <h3 className="text-xs uppercase tracking-wide text-foreground/50 mb-2">Final {metricLabel}</h3>
             <span className={`text-5xl font-bold ${getSvColor(gameState.svIndex)}`}>{gameState.svIndex}</span>
             <div className={`text-sm font-medium mt-1 ${svDelta >= 0 ? 'text-success' : 'text-error'}`}>
               {svDelta >= 0 ? '+' : ''}{svDeltaPercent}%
@@ -358,7 +361,7 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
           </div>
 
           <div className="bg-card-bg border border-card-border rounded-lg p-5 text-center">
-            <h3 className="text-xs uppercase tracking-wide text-foreground/50 mb-2">Proxy Adviser Rating</h3>
+            <h3 className="text-xs uppercase tracking-wide text-foreground/50 mb-2">{isMeridian ? 'Governance Assessor Rating' : 'Proxy Adviser Rating'}</h3>
             <span className={`text-lg font-bold font-narrative ${getProxyColor(proxyRating)}`}>{proxyRating}</span>
           </div>
         </motion.div>
@@ -437,7 +440,7 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
         >
-          <h3 className="text-gold font-narrative font-bold text-sm uppercase tracking-wide mb-4">Shareholder Value History</h3>
+          <h3 className="text-gold font-narrative font-bold text-sm uppercase tracking-wide mb-4">{metricFullLabel} History</h3>
           <div className="flex justify-center">
             <SvSparkline data={svHistory} />
           </div>
@@ -457,7 +460,7 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
                 <th className="text-left text-foreground/50 font-medium py-2 pr-4">Event</th>
                 <th className="text-left text-foreground/50 font-medium py-2 pr-4">Quarter</th>
                 <th className="text-left text-foreground/50 font-medium py-2 pr-4">Outcome</th>
-                <th className="text-right text-foreground/50 font-medium py-2">SV Impact</th>
+                <th className="text-right text-foreground/50 font-medium py-2">{isMeridian ? 'MIS Impact' : 'SV Impact'}</th>
               </tr>
             </thead>
             <tbody>

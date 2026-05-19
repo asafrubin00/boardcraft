@@ -6,9 +6,17 @@ interface SvTrackerProps {
   svIndex: number;
   svHistory: { turn: string; sv: number }[];
   onOpenDashboard: () => void;
+  /** Pass company.id to enable company-specific label overrides */
+  companyId?: string;
 }
 
-export default function SvTracker({ svIndex, svHistory, onOpenDashboard }: SvTrackerProps) {
+export default function SvTracker({ svIndex, svHistory, onOpenDashboard, companyId }: SvTrackerProps) {
+  const isMeridian = companyId === 'company_meridian';
+  const metricLabel = isMeridian ? 'MIS' : 'SV Index';
+  const metricFullName = isMeridian ? 'Mission Integrity Score' : 'Shareholder Value Index';
+  const metricDescription = isMeridian
+    ? 'tracks Meridian Foundation\'s mission alignment and charitable purpose. Starting value: 68. Your goal: protect mission integrity and finish above 70.'
+    : 'tracks the percentage change in your company\'s value since game start. Starting value: 100. Your goal: finish as high as possible.';
   const [showTooltip, setShowTooltip] = useState(false);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -58,12 +66,12 @@ export default function SvTracker({ svIndex, svHistory, onOpenDashboard }: SvTra
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <span className="text-sm text-foreground/70 font-narrative cursor-help">SV Index</span>
+        <span className="text-sm text-foreground/70 font-narrative cursor-help">{metricLabel}</span>
         <span className={`text-2xl font-bold ${svColor}`}>{svIndex}</span>
         {showTooltip && (
           <div className="absolute top-full left-0 mt-2 z-50 w-72 bg-navy border border-gold/40 rounded-lg p-3 shadow-lg pointer-events-none">
             <p className="text-xs text-foreground/90 font-narrative leading-relaxed">
-              <span className="text-gold font-bold">Shareholder Value Index</span> - tracks the percentage change in your company&apos;s value since game start. Starting value: 100. Your goal: finish as high as possible.
+              <span className="text-gold font-bold">{metricFullName}</span> &mdash; {metricDescription}
             </p>
           </div>
         )}

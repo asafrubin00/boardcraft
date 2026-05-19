@@ -5,6 +5,7 @@
 import type { Director } from '@/types/game';
 import { vantageDirectors } from './vantage/directors';
 import { rheinfeldDirectors } from './rheinfeld/directors';
+import { meridianTrustees } from './meridian/trustees';
 
 export const directors: Director[] = [
   // ── Dame Helen Forsyth - departing inherited Chair ──
@@ -668,4 +669,7 @@ export const directors: Director[] = [
 
   // ── Rheinfeld AG directors ──
   ...rheinfeldDirectors,
+
+  // ── Meridian Foundation trustees ──
+  ...meridianTrustees,
 ];

@@ -35,7 +35,11 @@ export function checkCompliance(
   committees: Record<CommitteeId, CommitteeState>,
   jurisdiction: Jurisdiction = 'UK',
   combinedChairCeo = false,
+  companyId?: string,
 ): ComplianceError[] {
+  if (companyId === 'company_meridian') {
+    return checkComplianceCharityUK(seats, directors, committees);
+  }
   if (jurisdiction === 'US') {
     return checkComplianceUS(seats, directors, committees, combinedChairCeo);
   }
@@ -559,6 +563,180 @@ function checkComplianceUS(
   checkOptionalChairCompetency(seats, directors, errors, 'safetyEnvChair', 'esgSustainability', 70, 'Brand & Reputation Chair', 'warning');
   // Vantage CA&R Chair requires Regulatory & Legal expertise (not ESG)
   checkOptionalChairCompetency(seats, directors, errors, 'energyTransitionChair', 'regulatoryLegal', 65, 'CA&R Chair', 'error');
+
+  return errors;
+}
+
+// ══════════════════════════════════════════════════════════════
+// UK Charity Commission / Charity Governance Code rules (Meridian Foundation)
+// ══════════════════════════════════════════════════════════════
+
+function checkComplianceCharityUK(
+  seats: BoardSeat[],
+  directors: Director[],
+  committees: Record<CommitteeId, CommitteeState>,
+): ComplianceError[] {
+  const errors: ComplianceError[] = [];
+  const getDirector = (id: string) => directors.find((d) => d.id === id);
+
+  // Rule 1: Minimum 3 trustees (CIO minimum). CGC recommends 5+.
+  if (seats.length < 3) {
+    errors.push({
+      code: 'BOARD_TOO_SMALL',
+      message: `A CIO must have at least 3 trustees. Currently ${seats.length}. The board cannot function.`,
+      severity: 'error',
+    });
+  } else if (seats.length <= 4) {
+    errors.push({
+      code: 'BOARD_BELOW_CGC_MIN',
+      message: `The Charity Governance Code recommends at least 5 trustees for effective challenge and succession resilience. Currently ${seats.length}.`,
+      severity: 'warning',
+    });
+  }
+
+  // Rule 2: Board Chair — must be identified. Warn if non-independent or tenure ≥ 9 years.
+  const chairSeat = seats.find((s) => s.role === 'chair');
+  if (!chairSeat) {
+    errors.push({
+      code: 'NO_CHAIR',
+      message: 'A Board Chair must be appointed before the game can begin.',
+      severity: 'error',
+    });
+  } else {
+    const chairDir = getDirector(chairSeat.directorId);
+    if (chairDir) {
+      if (chairDir.independence === 'non-independent') {
+        errors.push({
+          code: 'CHAIR_NOT_INDEPENDENT',
+          message: `${chairDir.name} is non-independent. The Charity Governance Code strongly recommends the Chair be independent of executive and founder influence.`,
+          severity: 'error',
+        });
+      } else if (chairDir.independence === 'questionable') {
+        errors.push({
+          code: 'CHAIR_INDEPENDENCE_CONCERN',
+          message: `${chairDir.name}'s independence is questionable. Charity Commission scrutiny may follow — review and minute any conflicts.`,
+          severity: 'warning',
+        });
+      }
+      if ((chairDir.tenureYears ?? chairDir.tenure) >= 9) {
+        errors.push({
+          code: 'CHAIR_LONG_TENURE',
+          message: `${chairDir.name} has served ${chairDir.tenureYears ?? chairDir.tenure} years as Chair. The Charity Governance Code recommends a maximum 9-year total tenure — succession planning is overdue.`,
+          severity: 'warning',
+        });
+      }
+      if (chairDir.domainRatings.strategyMarkets < 55) {
+        errors.push({
+          code: 'CHAIR_LOW_STRATEGY',
+          message: `Board Chair requires Strategy & Markets ≥ 55 for effective mission oversight. ${chairDir.name} has ${chairDir.domainRatings.strategyMarkets}.`,
+          severity: 'error',
+        });
+      }
+    }
+  }
+
+  // Rule 3: Finance & Risk Committee (mapped to 'audit') — chair must have financial
+  // competency. Warn if conflicted chair (conflict of interest not declared).
+  const auditChairId = committees.audit.chairDirectorId;
+  if (!auditChairId) {
+    errors.push({
+      code: 'NO_AUDIT_CHAIR',
+      message: 'Finance & Risk Committee Chair must be designated. Financial stewardship is a core trustee duty under charity law.',
+      severity: 'error',
+    });
+  } else {
+    const auditDir = getDirector(auditChairId);
+    if (auditDir) {
+      if (auditDir.domainRatings.financialOversight < 65) {
+        errors.push({
+          code: 'AUDIT_CHAIR_LOW_FIN',
+          message: `Finance & Risk Committee Chair requires Financial Oversight ≥ 65. ${auditDir.name} has ${auditDir.domainRatings.financialOversight}.`,
+          severity: 'error',
+        });
+      }
+      if (auditDir.independence === 'questionable') {
+        errors.push({
+          code: 'AUDIT_CHAIR_CONFLICT_RISK',
+          message: `${auditDir.name}'s independence is questionable. An undisclosed conflict on the Finance & Risk Committee exposes trustees to personal liability under charity law.`,
+          severity: 'error',
+        });
+      }
+    }
+  }
+
+  // Rule 4: People & Culture Committee (mapped to 'remuneration') — chair should have
+  // People & Culture competency.
+  const remChairId = committees.remuneration.chairDirectorId;
+  if (!remChairId) {
+    errors.push({
+      code: 'NO_REM_CHAIR',
+      message: 'People & Culture Committee Chair is not designated. Safeguarding and CEO oversight are at risk.',
+      severity: 'warning',
+    });
+  } else {
+    const remDir = getDirector(remChairId);
+    if (remDir && remDir.domainRatings.peopleCulture < 60) {
+      errors.push({
+        code: 'REM_CHAIR_LOW_PC',
+        message: `People & Culture Committee Chair requires People & Culture ≥ 60. ${remDir.name} has ${remDir.domainRatings.peopleCulture}.`,
+        severity: 'error',
+      });
+    }
+  }
+
+  // Rule 5: Programmes & Impact Committee (mapped to 'csrd') — chair should have
+  // mission-relevant competency (ESG Sustainability or Geopolitical Macro). A founder
+  // chairing this committee with non-independent status is flagged separately.
+  const csrdChairId = committees.csrd.chairDirectorId;
+  if (!csrdChairId) {
+    errors.push({
+      code: 'NO_CSRD_CHAIR',
+      message: 'Programmes & Impact Committee Chair is not designated. Mission oversight has no accountable lead.',
+      severity: 'warning',
+    });
+  } else {
+    const csrdDir = getDirector(csrdChairId);
+    if (csrdDir) {
+      const missionScore = Math.max(
+        csrdDir.domainRatings.esgSustainability,
+        csrdDir.domainRatings.geopoliticalMacro,
+      );
+      if (missionScore < 65) {
+        errors.push({
+          code: 'CSRD_CHAIR_LOW_MISSION',
+          message: `Programmes & Impact Chair should have strong mission-sector knowledge (ESG Sustainability or Geopolitical Macro ≥ 65). ${csrdDir.name} has ${missionScore}.`,
+          severity: 'error',
+        });
+      }
+      if (csrdDir.independence === 'non-independent') {
+        errors.push({
+          code: 'PROGRAMMES_CHAIR_NON_INDEPENDENT',
+          message: `${csrdDir.name} is non-independent and chairs Programmes & Impact. This creates a governance conflict — a non-independent trustee exercising oversight over the programmes they founded distorts mission accountability.`,
+          severity: 'error',
+        });
+      }
+    }
+  }
+
+  // Rule 6: Trustee independence — CGC recommends a majority independent.
+  // Flag if fewer than 50% are independent.
+  const independentCount = seats.filter((s) => {
+    const d = getDirector(s.directorId);
+    return d?.independence === 'independent';
+  }).length;
+  if (seats.length > 0 && independentCount / seats.length < 0.5) {
+    errors.push({
+      code: 'LOW_INDEPENDENCE',
+      message: `The Charity Governance Code recommends a majority of trustees be independent. Currently ${independentCount}/${seats.length} are independent.`,
+      severity: 'error',
+    });
+  }
+
+  // Rule 7: Tenure warnings — CGC 9-year maximum
+  checkTenureWarnings(seats, directors, errors, 'Charity Governance Code (9-year recommended maximum)');
+
+  // Rule 8: No duplicates
+  checkDuplicateDirectors(seats, errors);
 
   return errors;
 }

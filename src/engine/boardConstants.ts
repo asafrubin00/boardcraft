@@ -76,8 +76,37 @@ export const ROLE_LABELS_EU: Partial<Record<BoardRole, string>> = {
   ned: 'Supervisory Board Member',
 };
 
-/** Get role label for a given jurisdiction */
-export function getRoleLabel(role: BoardRole, jurisdiction: Jurisdiction = 'UK'): string {
+/** UK Charity (CIO) role label overrides — Meridian Foundation */
+export const ROLE_LABELS_CHARITY: Partial<Record<BoardRole, string>> = {
+  chair: 'Chair of Trustees',
+  auditChair: 'Finance & Risk Committee Chair',
+  remChair: 'People & Culture Committee Chair',
+  nomChair: 'Nominations Committee Chair',
+  sid: 'Deputy Chair',
+  csrdChair: 'Programmes & Impact Committee Chair',
+  ned: 'Trustee',
+};
+
+/** Short display label for a role (strips "Committee Chair" → "Chair", etc.) */
+export function getShortRoleLabel(role: BoardRole, jurisdiction: Jurisdiction = 'UK', companyId?: string): string {
+  const full = getRoleLabel(role, jurisdiction, companyId);
+  return full
+    .replace(' Committee Chair', ' Chair')
+    .replace('Consumer Affairs & Regulatory', 'CA&R')
+    .replace(/^Board /, '')
+    .replace('Non-Executive Director', 'NED')
+    .replace('Senior Independent Director', 'SID')
+    .replace('Lead Independent Director', 'LID')
+    .replace('Supervisory Board Member', 'SB Member')
+    .replace('Supervisory Board Chair', 'SB Chair')
+    .replace('Chair of Trustees', 'Chair');
+}
+
+/** Get role label for a given jurisdiction, with optional companyId override */
+export function getRoleLabel(role: BoardRole, jurisdiction: Jurisdiction = 'UK', companyId?: string): string {
+  if (companyId === 'company_meridian') {
+    return ROLE_LABELS_CHARITY[role] ?? ROLE_LABELS[role];
+  }
   if (jurisdiction === 'US') {
     return ROLE_LABELS_US[role] ?? ROLE_LABELS[role];
   }

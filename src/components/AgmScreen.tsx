@@ -27,6 +27,8 @@ interface AgmScreenProps {
   onChangeCompany?: () => void;
 }
 
+// ── Harwick / default AGM strategies ──────────────────────────────────────────
+
 const STRATEGIES_WITH_CRANE = [
   {
     id: 'event_09_a',
@@ -81,6 +83,37 @@ const STRATEGIES_WITHOUT_CRANE = [
   },
 ];
 
+// ── Meridian Foundation AMM strategies ────────────────────────────────────────
+
+const STRATEGIES_MERIDIAN = [
+  {
+    id: 'amm_strat_a',
+    label: 'Support all resolutions',
+    description:
+      'Accept all three motions; signal openness to accountability and member oversight.',
+  },
+  {
+    id: 'amm_strat_b',
+    label: 'Defend current programme strategy',
+    description:
+      'Resist the mission alignment review; argue the board has matters in hand and a review would create unnecessary disruption.',
+  },
+  {
+    id: 'amm_strat_c',
+    label: 'Accept audit; resist mission review',
+    description:
+      'Split approach: concede on beneficiary accountability, hold the line on the mission alignment review.',
+  },
+  {
+    id: 'amm_strat_d',
+    label: 'Engage donors directly before the vote',
+    description:
+      'Attempt to negotiate the wording of the accountability motion before it goes to a vote, reducing its scope.',
+  },
+];
+
+// ── Shared components ──────────────────────────────────────────────────────────
+
 function VoteBar({ forPercent, againstPercent }: { forPercent: number; againstPercent: number }) {
   return (
     <div className="mt-2">
@@ -113,6 +146,10 @@ export default function AgmScreen({
   results,
   onChangeCompany,
 }: AgmScreenProps) {
+  const isMeridian = gameState.company.id === 'company_meridian';
+  const meetingName = isMeridian ? 'Annual Members Meeting' : 'AGM';
+  const meetingNameShort = isMeridian ? 'AMM' : 'AGM';
+
   const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
   const [deployedIds, setDeployedIds] = useState<string[]>([]);
   const [revealedCount, setRevealedCount] = useState(0);
@@ -135,7 +172,6 @@ export default function AgmScreen({
     for (let i = 1; i <= 4; i++) {
       timers.push(setTimeout(() => {
         setRevealedCount(i);
-        // Play resolution pass/fail sound for resolutions 1-3
         if (i <= 3) {
           if (resOutcomes[i - 1]) {
             playResolutionPass();
@@ -148,49 +184,69 @@ export default function AgmScreen({
     return () => timers.forEach(clearTimeout);
   }, [results]);
 
-  // Check if Geoffrey Crane is still on the board
-  const craneOnBoard = gameState.board.seats.some(
-    (s) => s.directorId === 'dir_08_crane'
-  );
-  const STRATEGIES = craneOnBoard ? STRATEGIES_WITH_CRANE : STRATEGIES_WITHOUT_CRANE;
+  // ── Harwick-specific state ─────────────────────────────────────────────────
+  const craneOnBoard = gameState.board.seats.some((s) => s.directorId === 'dir_08_crane');
+
+  // ── Strategy list ──────────────────────────────────────────────────────────
+  const STRATEGIES = isMeridian
+    ? STRATEGIES_MERIDIAN
+    : craneOnBoard ? STRATEGIES_WITH_CRANE : STRATEGIES_WITHOUT_CRANE;
 
   const baseVotes = estimateAgmVotes(gameState);
   const proxyRating = getProxyAdviserRating(gameState.governanceHealth);
 
-  // Resolution 1 gets a penalty if Crane's long tenure is still on the board
+  // ── Harwick vote adjustments ───────────────────────────────────────────────
   const res1TenurePenalty = craneOnBoard ? -8 : 0;
 
-  // Resolution 2 adjustments (Say-on-Pay - Event 06)
   const ev06 = gameState.resolvedEvents.find((r) => r.eventId === 'event_06');
   let res2Adjustment = 0;
   if (ev06) {
-    if (ev06.outcomeTier === 'FAILURE' || ev06.outcomeTier === 'CRITICAL_FAILURE') {
-      res2Adjustment = -10;
-    } else if (ev06.outcomeTier === 'SUCCESS' || ev06.outcomeTier === 'CRITICAL_SUCCESS') {
-      res2Adjustment = 5;
-    }
+    if (ev06.outcomeTier === 'FAILURE' || ev06.outcomeTier === 'CRITICAL_FAILURE') res2Adjustment = -10;
+    else if (ev06.outcomeTier === 'SUCCESS' || ev06.outcomeTier === 'CRITICAL_SUCCESS') res2Adjustment = 5;
   }
 
-  // Resolution 3 adjustments (ESG - energyTransition committee + Event 05)
   let res3Adjustment = 0;
-  if (gameState.committees.energyTransition.active) {
-    res3Adjustment += 10;
-  }
+  if (gameState.committees.energyTransition.active) res3Adjustment += 10;
   const ev05 = gameState.resolvedEvents.find((r) => r.eventId === 'event_05');
-  if (ev05 && (ev05.outcomeTier === 'FAILURE' || ev05.outcomeTier === 'CRITICAL_FAILURE')) {
-    res3Adjustment -= 15;
-  }
+  if (ev05 && (ev05.outcomeTier === 'FAILURE' || ev05.outcomeTier === 'CRITICAL_FAILURE')) res3Adjustment -= 15;
 
-  const res1For = Math.max(5, Math.min(95, baseVotes.forPercent + res1TenurePenalty));
+  // ── Meridian vote adjustments ──────────────────────────────────────────────
+  const mevent01 = gameState.resolvedEvents.find((r) => r.eventId === 'mevent_01');
+  const mevent02 = gameState.resolvedEvents.find((r) => r.eventId === 'mevent_02');
+  const mevent03 = gameState.resolvedEvents.find((r) => r.eventId === 'mevent_03');
+
+  // Res1 (Trustee Ratification): conflict of interest scandal reduces member confidence
+  let mRes1Adjustment = 0;
+  if (mevent01 && (mevent01.outcomeTier === 'FAILURE' || mevent01.outcomeTier === 'CRITICAL_FAILURE')) mRes1Adjustment = -10;
+  else if (mevent01 && (mevent01.outcomeTier === 'SUCCESS' || mevent01.outcomeTier === 'CRITICAL_SUCCESS')) mRes1Adjustment = 5;
+
+  // Res2 (Beneficiary Accountability Audit): weak accountability increases donor/member pressure for audit
+  let mRes2Adjustment = 0;
+  if (mevent02 && (mevent02.outcomeTier === 'FAILURE' || mevent02.outcomeTier === 'CRITICAL_FAILURE')) mRes2Adjustment = 12;
+  else if (mevent02 && (mevent02.outcomeTier === 'SUCCESS' || mevent02.outcomeTier === 'CRITICAL_SUCCESS')) mRes2Adjustment = -6;
+
+  // Res3 (Mission Alignment Review): mission drift increases member pressure for independent review
+  let mRes3Adjustment = 0;
+  if (mevent03 && (mevent03.outcomeTier === 'FAILURE' || mevent03.outcomeTier === 'CRITICAL_FAILURE')) mRes3Adjustment = 15;
+  else if (mevent03 && (mevent03.outcomeTier === 'SUCCESS' || mevent03.outcomeTier === 'CRITICAL_SUCCESS')) mRes3Adjustment = -8;
+
+  // ── Vote bar percentages ───────────────────────────────────────────────────
+  const res1For = isMeridian
+    ? Math.max(5, Math.min(95, baseVotes.forPercent + mRes1Adjustment))
+    : Math.max(5, Math.min(95, baseVotes.forPercent + res1TenurePenalty));
   const res1Against = 100 - res1For;
 
-  const res2For = Math.max(5, Math.min(95, baseVotes.forPercent + res2Adjustment));
+  const res2For = isMeridian
+    ? Math.max(5, Math.min(95, baseVotes.forPercent + mRes2Adjustment))
+    : Math.max(5, Math.min(95, baseVotes.forPercent + res2Adjustment));
   const res2Against = 100 - res2For;
 
-  const res3For = Math.max(5, Math.min(95, baseVotes.forPercent + res3Adjustment));
+  const res3For = isMeridian
+    ? Math.max(5, Math.min(95, baseVotes.forPercent + mRes3Adjustment))
+    : Math.max(5, Math.min(95, baseVotes.forPercent + res3Adjustment));
   const res3Against = 100 - res3For;
 
-  // Directors on the board for deployment selection
+  // ── Directors on board for deployment ─────────────────────────────────────
   const boardDirectors: Director[] = gameState.board.seats
     .map((s) => gameState.directors.find((d) => d.id === s.directorId))
     .filter((d): d is Director => d !== undefined);
@@ -205,63 +261,111 @@ export default function AgmScreen({
 
   const canSubmit = selectedStrategy !== null && deployedIds.length > 0;
 
-  // ----------- Results view -----------
+  // ── Results view ───────────────────────────────────────────────────────────
   if (results) {
-    // Generate one-sentence explanations from actual game state factors
     const ghLevel = gameState.governanceHealth >= 70 ? 'strong' : gameState.governanceHealth >= 50 ? 'adequate' : 'weak';
 
+    let res1Label: string;
+    let res2Label: string;
+    let res3Label: string;
     let res1Explanation: string;
-    if (results.resolution1Pass) {
-      res1Explanation = craneOnBoard
-        ? `Passed - ${ghLevel} governance health offset Crane's 12-year tenure concerns.`
-        : `Passed - ${ghLevel} governance health and no tenure flags on the board.`;
-    } else {
-      res1Explanation = craneOnBoard
-        ? `Failed - Geoffrey Crane's 12-year tenure flagged by Meridian Governance, compounded by ${ghLevel} governance health.`
-        : `Failed - ${ghLevel} governance health undermined institutional confidence in the board slate.`;
-    }
-
     let res2Explanation: string;
-    if (results.resolution2Pass) {
-      res2Explanation = ev06
-        ? (ev06.outcomeTier === 'SUCCESS' || ev06.outcomeTier === 'CRITICAL_SUCCESS')
-          ? `Passed - prior remuneration review strengthened the case for Blaine's package.`
-          : `Passed - ${ghLevel} governance health and proxy adviser recommendation carried the vote.`
-        : `Passed - ${ghLevel} governance health and proxy adviser recommendation carried the vote.`;
-    } else {
-      res2Explanation = ev06 && (ev06.outcomeTier === 'FAILURE' || ev06.outcomeTier === 'CRITICAL_FAILURE')
-        ? `Failed - earlier remuneration controversy eroded shareholder support for Blaine's £4.1m package.`
-        : `Failed - ${ghLevel} governance health left shareholders unconvinced on executive pay.`;
-    }
-
     let res3Explanation: string;
-    const etActive = gameState.committees.energyTransition?.active;
-    const ev05Failed = ev05 && (ev05.outcomeTier === 'FAILURE' || ev05.outcomeTier === 'CRITICAL_FAILURE');
-    if (results.resolution3Pass) {
-      res3Explanation = etActive
-        ? `Passed - the Energy Transition Committee demonstrated credible ESG governance.`
-        : `Passed - ${ghLevel} governance health and proxy adviser support swung the vote.`;
-    } else {
-      if (ev05Failed && !etActive) {
-        res3Explanation = `Failed - prior ESG incident and absence of an Energy Transition Committee undermined credibility.`;
-      } else if (ev05Failed) {
-        res3Explanation = `Failed - prior ESG incident damaged the board's environmental credentials despite the ET Committee.`;
-      } else if (!etActive) {
-        res3Explanation = `Failed - no Energy Transition Committee left shareholders sceptical of ESG commitment.`;
+
+    if (isMeridian) {
+      // ── Meridian result labels ─────────────────────────────────────────────
+      res1Label = 'Resolution 1: Trustee Appointment Ratification';
+      res2Label = 'Resolution 2: Beneficiary Accountability Audit';
+      res3Label = 'Resolution 3: Mission Alignment Review';
+
+      // Res1 explanations
+      if (results.resolution1Pass) {
+        res1Explanation = mevent01 && (mevent01.outcomeTier === 'FAILURE' || mevent01.outcomeTier === 'CRITICAL_FAILURE')
+          ? `Passed — members ratified the trustee appointments despite the earlier conflict of interest concerns.`
+          : `Passed — ${ghLevel} governance health gave members confidence in the trustee appointments.`;
       } else {
-        res3Explanation = `Failed - ${ghLevel} governance health eroded shareholder confidence on ESG disclosure.`;
+        res1Explanation = mevent01 && (mevent01.outcomeTier === 'FAILURE' || mevent01.outcomeTier === 'CRITICAL_FAILURE')
+          ? `Failed — the unresolved conflict of interest eroded member confidence in the trustee appointments.`
+          : `Failed — ${ghLevel} governance health undermined member confidence in the current trustee slate.`;
+      }
+
+      // Res2 explanations
+      if (results.resolution2Pass) {
+        res2Explanation = mevent02 && (mevent02.outcomeTier === 'FAILURE' || mevent02.outcomeTier === 'CRITICAL_FAILURE')
+          ? `Passed — prior accountability failings gave donors and members strong grounds for an independent audit.`
+          : `Passed — the motion carried; an independent beneficiary outcomes audit will proceed.`;
+      } else {
+        res2Explanation = mevent02 && (mevent02.outcomeTier === 'SUCCESS' || mevent02.outcomeTier === 'CRITICAL_SUCCESS')
+          ? `Failed — the board's accountability track record persuaded members the motion was unnecessary.`
+          : `Failed — the audit motion did not secure sufficient member support to pass.`;
+      }
+
+      // Res3 explanations
+      if (results.resolution3Pass) {
+        res3Explanation = mevent03 && (mevent03.outcomeTier === 'FAILURE' || mevent03.outcomeTier === 'CRITICAL_FAILURE')
+          ? `Passed — programme drift made a compelling case; members voted for an independent mission alignment review.`
+          : `Passed — members backed the proposal for an independent review of charitable objects alignment.`;
+      } else {
+        res3Explanation = mevent03 && (mevent03.outcomeTier === 'SUCCESS' || mevent03.outcomeTier === 'CRITICAL_SUCCESS')
+          ? `Failed — the board's demonstrated mission discipline persuaded members a formal review was unnecessary.`
+          : `Failed — ${ghLevel} governance health and insufficient member support meant the review motion fell.`;
+      }
+
+    } else {
+      // ── Default (Harwick) result labels ───────────────────────────────────
+      res1Label = 'Resolution 1: Director Re-Elections';
+      res2Label = 'Resolution 2: Say-on-Pay (Advisory)';
+      res3Label = 'Resolution 3: ESG Disclosure';
+
+      if (results.resolution1Pass) {
+        res1Explanation = craneOnBoard
+          ? `Passed - ${ghLevel} governance health offset Crane's 12-year tenure concerns.`
+          : `Passed - ${ghLevel} governance health and no tenure flags on the board.`;
+      } else {
+        res1Explanation = craneOnBoard
+          ? `Failed - Geoffrey Crane's 12-year tenure flagged by Meridian Governance, compounded by ${ghLevel} governance health.`
+          : `Failed - ${ghLevel} governance health undermined institutional confidence in the board slate.`;
+      }
+
+      if (results.resolution2Pass) {
+        res2Explanation = ev06
+          ? (ev06.outcomeTier === 'SUCCESS' || ev06.outcomeTier === 'CRITICAL_SUCCESS')
+            ? `Passed - prior remuneration review strengthened the case for Blaine's package.`
+            : `Passed - ${ghLevel} governance health and proxy adviser recommendation carried the vote.`
+          : `Passed - ${ghLevel} governance health and proxy adviser recommendation carried the vote.`;
+      } else {
+        res2Explanation = ev06 && (ev06.outcomeTier === 'FAILURE' || ev06.outcomeTier === 'CRITICAL_FAILURE')
+          ? `Failed - earlier remuneration controversy eroded shareholder support for Blaine's £4.1m package.`
+          : `Failed - ${ghLevel} governance health left shareholders unconvinced on executive pay.`;
+      }
+
+      const etActive = gameState.committees.energyTransition?.active;
+      const ev05Failed = ev05 && (ev05.outcomeTier === 'FAILURE' || ev05.outcomeTier === 'CRITICAL_FAILURE');
+      if (results.resolution3Pass) {
+        res3Explanation = etActive
+          ? `Passed - the Energy Transition Committee demonstrated credible ESG governance.`
+          : `Passed - ${ghLevel} governance health and proxy adviser support swung the vote.`;
+      } else {
+        if (ev05Failed && !etActive) {
+          res3Explanation = `Failed - prior ESG incident and absence of an Energy Transition Committee undermined credibility.`;
+        } else if (ev05Failed) {
+          res3Explanation = `Failed - prior ESG incident damaged the board's environmental credentials despite the ET Committee.`;
+        } else if (!etActive) {
+          res3Explanation = `Failed - no Energy Transition Committee left shareholders sceptical of ESG commitment.`;
+        } else {
+          res3Explanation = `Failed - ${ghLevel} governance health eroded shareholder confidence on ESG disclosure.`;
+        }
       }
     }
 
     const resolutions = [
-      { label: 'Resolution 1: Director Re-Elections', pass: results.resolution1Pass, explanation: res1Explanation },
-      { label: 'Resolution 2: Say-on-Pay (Advisory)', pass: results.resolution2Pass, explanation: res2Explanation },
-      { label: 'Resolution 3: ESG Disclosure', pass: results.resolution3Pass, explanation: res3Explanation },
+      { label: res1Label, pass: results.resolution1Pass, explanation: res1Explanation },
+      { label: res2Label, pass: results.resolution2Pass, explanation: res2Explanation },
+      { label: res3Label, pass: results.resolution3Pass, explanation: res3Explanation },
     ];
 
     return (
       <div className="min-h-screen bg-navy flex flex-col items-center justify-center px-4 py-12">
-        {/* Change Company - subtle top-left */}
         {onChangeCompany && (
           <button
             onClick={onChangeCompany}
@@ -270,11 +374,10 @@ export default function AgmScreen({
             &larr; Change Company
           </button>
         )}
-        {/* AGM Header Image */}
         <div className="w-full max-w-xl mb-6 relative rounded-lg overflow-hidden" style={{ height: 200 }}>
           <img
             src="/images/agm-hero.jpg"
-            alt="Annual General Meeting"
+            alt={meetingName}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(13,27,42,0.3) 0%, rgba(13,27,42,0.7) 100%)' }} />
@@ -285,7 +388,7 @@ export default function AgmScreen({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          AGM Results - {gameState.company.name}
+          {meetingName} Results — {gameState.company.name}
         </motion.h1>
 
         <div className="flex flex-col gap-4 w-full max-w-xl mt-8">
@@ -300,12 +403,8 @@ export default function AgmScreen({
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-foreground font-medium">{res.label}</span>
-                    <span
-                      className={`text-lg font-bold ${
-                        res.pass ? 'text-success' : 'text-error'
-                      }`}
-                    >
-                      {res.pass ? 'PASSED \u2713' : 'FAILED \u2717'}
+                    <span className={`text-lg font-bold ${res.pass ? 'text-success' : 'text-error'}`}>
+                      {res.pass ? 'PASSED ✓' : 'FAILED ✗'}
                     </span>
                   </div>
                   <p className={`text-xs mt-2 font-narrative italic ${res.pass ? 'text-success/70' : 'text-error/70'}`}>
@@ -343,7 +442,7 @@ export default function AgmScreen({
     );
   }
 
-  // ----------- Pre-resolution view -----------
+  // ── Pre-resolution view ────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-navy px-4 py-8 md:py-12">
       <div className="max-w-6xl mx-auto">
@@ -354,7 +453,7 @@ export default function AgmScreen({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Annual General Meeting - {gameState.company.name}
+          {meetingName} — {gameState.company.name}
         </motion.h1>
 
         <motion.p
@@ -363,15 +462,15 @@ export default function AgmScreen({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          The AGM has arrived. Three resolutions are contested. Institutional shareholder voting will
-          be influenced by Meridian Governance&apos;s recommendations and your governance health
-          score.
+          {isMeridian
+            ? `The Annual Members Meeting has arrived. Meridian Foundation operates a supporter membership structure — registered members hold voting rights on constitutional matters. Three resolutions are contested. The Charity Governance Code assessor's view and your governance health score will influence how members vote.`
+            : `The AGM has arrived. Three resolutions are contested. Institutional shareholder voting will be influenced by Meridian Governance's recommendations and your governance health score.`}
         </motion.p>
 
-        {/* Proxy Adviser Rating badge */}
+        {/* Rating badge */}
         <div className="text-center mb-8">
           <span className="text-xs uppercase tracking-wide text-foreground/50">
-            Proxy Adviser Rating:
+            {isMeridian ? 'Charity Governance Code Assessor:' : 'Proxy Adviser Rating:'}
           </span>{' '}
           <span
             className={`font-bold ${
@@ -388,56 +487,110 @@ export default function AgmScreen({
 
         {/* Three resolution panels */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-          {/* Resolution 1 */}
-          <motion.div
-            className="bg-card-bg border border-card-border rounded-lg p-5"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-              Resolution 1: Director Re-Elections
-            </h3>
-            <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-              {craneOnBoard
-                ? "All NEDs stand for annual re-election. Geoffrey Crane\u2019s 12-year tenure will be scrutinised."
-                : "All NEDs stand for annual re-election. No significant tenure concerns on the current board."}
-            </p>
-            <VoteBar forPercent={res1For} againstPercent={res1Against} />
-          </motion.div>
+          {isMeridian ? (
+            <>
+              {/* Meridian Resolution 1 */}
+              <motion.div
+                className="bg-card-bg border border-card-border rounded-lg p-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
+                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
+                  Resolution 1: Trustee Appointment Ratification
+                </h3>
+                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+                  Members vote to ratify the trustee appointments made during the year. Standard constitutional requirement for a CIO with a supporter membership structure.
+                </p>
+                <VoteBar forPercent={res1For} againstPercent={res1Against} />
+              </motion.div>
 
-          {/* Resolution 2 */}
-          <motion.div
-            className="bg-card-bg border border-card-border rounded-lg p-5"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-          >
-            <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-              Resolution 2: Say-on-Pay (Advisory)
-            </h3>
-            <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-              Marcus Blaine&apos;s &pound;4.1m package will face a shareholder advisory vote.
-            </p>
-            <VoteBar forPercent={res2For} againstPercent={res2Against} />
-          </motion.div>
+              {/* Meridian Resolution 2 */}
+              <motion.div
+                className="bg-card-bg border border-card-border rounded-lg p-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
+                  Resolution 2: Beneficiary Accountability Audit
+                </h3>
+                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+                  A coalition of major donors has tabled a motion requesting an independent audit of beneficiary outcomes and programme impact methodology.
+                </p>
+                <VoteBar forPercent={res2For} againstPercent={res2Against} />
+              </motion.div>
 
-          {/* Resolution 3 */}
-          <motion.div
-            className="bg-card-bg border border-card-border rounded-lg p-5"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-          >
-            <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-              Resolution 3: Shareholder Resolution on ESG Disclosure
-            </h3>
-            <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-              A coalition of institutional shareholders has tabled a binding resolution on net-zero
-              disclosure.
-            </p>
-            <VoteBar forPercent={res3For} againstPercent={res3Against} />
-          </motion.div>
+              {/* Meridian Resolution 3 */}
+              <motion.div
+                className="bg-card-bg border border-card-border rounded-lg p-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+              >
+                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
+                  Resolution 3: Mission Alignment Review
+                </h3>
+                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+                  Members propose a formal independent review of whether Meridian&apos;s current programme portfolio remains consistent with its charitable objects.
+                </p>
+                <VoteBar forPercent={res3For} againstPercent={res3Against} />
+              </motion.div>
+            </>
+          ) : (
+            <>
+              {/* Default Resolution 1 */}
+              <motion.div
+                className="bg-card-bg border border-card-border rounded-lg p-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
+                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
+                  Resolution 1: Director Re-Elections
+                </h3>
+                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+                  {craneOnBoard
+                    ? "All NEDs stand for annual re-election. Geoffrey Crane’s 12-year tenure will be scrutinised."
+                    : "All NEDs stand for annual re-election. No significant tenure concerns on the current board."}
+                </p>
+                <VoteBar forPercent={res1For} againstPercent={res1Against} />
+              </motion.div>
+
+              {/* Default Resolution 2 */}
+              <motion.div
+                className="bg-card-bg border border-card-border rounded-lg p-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
+                  Resolution 2: Say-on-Pay (Advisory)
+                </h3>
+                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+                  Marcus Blaine&apos;s &pound;4.1m package will face a shareholder advisory vote.
+                </p>
+                <VoteBar forPercent={res2For} againstPercent={res2Against} />
+              </motion.div>
+
+              {/* Default Resolution 3 */}
+              <motion.div
+                className="bg-card-bg border border-card-border rounded-lg p-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+              >
+                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
+                  Resolution 3: Shareholder Resolution on ESG Disclosure
+                </h3>
+                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+                  A coalition of institutional shareholders has tabled a binding resolution on net-zero
+                  disclosure.
+                </p>
+                <VoteBar forPercent={res3For} againstPercent={res3Against} />
+              </motion.div>
+            </>
+          )}
         </div>
 
         {/* Strategy Selection */}
@@ -448,7 +601,7 @@ export default function AgmScreen({
           transition={{ delay: 0.6, duration: 0.5 }}
         >
           <h2 className="text-lg font-narrative font-bold text-gold mb-4">
-            Select Your AGM Strategy
+            Select Your {meetingNameShort} Strategy
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {STRATEGIES.map((strat) => (
@@ -470,7 +623,7 @@ export default function AgmScreen({
           </div>
         </motion.div>
 
-        {/* Director Deployment */}
+        {/* Director / Trustee Deployment */}
         <motion.div
           className="mb-10"
           initial={{ opacity: 0 }}
@@ -478,10 +631,12 @@ export default function AgmScreen({
           transition={{ delay: 0.7, duration: 0.5 }}
         >
           <h2 className="text-lg font-narrative font-bold text-gold mb-2">
-            Deploy Directors to the AGM
+            Deploy {isMeridian ? 'Trustees' : 'Directors'} to the {isMeridian ? 'Annual Members Meeting' : meetingNameShort}
           </h2>
           <p className="text-foreground/50 text-sm mb-4">
-            Select up to 3 directors to represent the board at the AGM.
+            {isMeridian
+              ? `Select up to 3 trustees to represent the board at the Annual Members Meeting.`
+              : `Select up to 3 directors to represent the board at the ${meetingNameShort}.`}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {boardDirectors.map((dir) => {
@@ -576,7 +731,7 @@ export default function AgmScreen({
                 : 'bg-foreground/20 text-foreground/40 cursor-not-allowed'
             }`}
           >
-            Confirm AGM Strategy
+            Confirm {meetingNameShort} Strategy
           </button>
         </motion.div>
       </div>
