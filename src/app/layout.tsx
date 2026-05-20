@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 import TouchGate from "@/components/TouchGate";
 
@@ -65,6 +66,13 @@ export default function RootLayout({
         <TouchGate>
           {children}
         </TouchGate>
+        <footer className="fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 text-foreground/25 text-xs whitespace-nowrap pointer-events-none z-10">
+          <span>© 2025 Asaf Rubin. All rights reserved.</span>
+          <span className="text-foreground/15">·</span>
+          <Link href="/terms" className="pointer-events-auto hover:text-foreground/50 transition-colors underline underline-offset-2">
+            Terms of Use
+          </Link>
+        </footer>
       </body>
     </html>
   );

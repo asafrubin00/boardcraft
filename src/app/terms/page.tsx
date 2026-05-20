@@ -45,10 +45,6 @@ export default function TermsPage() {
           </p>
         </div>
 
-        {/* Divider */}
-        <div className="mt-12 pt-6 border-t border-card-border text-foreground/25 text-xs">
-          © 2025 Asaf Rubin. All rights reserved.
-        </div>
       </div>
     </div>
   );
