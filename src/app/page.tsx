@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { getCareerStats, getCareerTitle, getLeaderboard, clearLeaderboard, type LeaderboardEntry } from '@/engine/governanceCapital';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import AboutModal from '@/components/AboutModal';
+import SiteFooter from '@/components/SiteFooter';
 
 function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
@@ -195,6 +196,8 @@ function HomeInner() {
       <div className="absolute bottom-4 right-4 text-foreground/20 text-xs">
         v0.2 beta
       </div>
+
+      <SiteFooter className="fixed bottom-4 left-1/2 -translate-x-1/2 z-10" />
 
 
       {/* CSS animations */}

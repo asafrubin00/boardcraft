@@ -14,6 +14,7 @@ import DeploymentModal from './DeploymentModal';
 import OutcomeDisplay from './OutcomeDisplay';
 import ForcedChangeModal from './ForcedChangeModal';
 import NewsTicker from './NewsTicker';
+import SiteFooter from './SiteFooter';
 import { useNewsTicker } from '@/hooks/useNewsTicker';
 import {
   isSoundEnabled, setSoundEnabled, playCardDeal, playDirectorSelect,
@@ -558,6 +559,9 @@ export default function GameBoardScreen({
           onRetain={gameState.forcedChange.canRetain ? onForcedRetain : undefined}
         />
       )}
+
+      {/* Copyright — sits above the 40px news ticker */}
+      <SiteFooter className="fixed bottom-[52px] left-1/2 -translate-x-1/2 z-[49]" />
 
       {/* Financial News Ticker */}
       <NewsTicker headlines={headlines} />

@@ -6,6 +6,7 @@ import type { ForcedDirectorChange, Director, BoardRole, BoardSeat } from '@/typ
 import { ALL_DOMAINS, DOMAIN_SHORT } from '@/engine/boardConstants';
 import DirectorPortrait from './DirectorPortrait';
 import { computeFeeWithPremium } from '@/engine/compliance';
+import SiteFooter from './SiteFooter';
 
 interface ForcedChangeModalProps {
   forcedChange: ForcedDirectorChange;
@@ -537,6 +538,9 @@ export default function ForcedChangeModal({
               )}
             </div>
           </div>
+        </div>
+        <div style={{ textAlign: 'center', paddingBottom: 10, paddingTop: 4 }}>
+          <SiteFooter />
         </div>
       </motion.div>
     </div>

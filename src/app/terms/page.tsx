@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import SiteFooter from '@/components/SiteFooter';
 
 export const metadata = {
   title: 'Terms of Use — BoardCraft',
@@ -45,6 +46,7 @@ export default function TermsPage() {
           </p>
         </div>
 
+        <SiteFooter className="mt-12 pb-2" />
       </div>
     </div>
   );

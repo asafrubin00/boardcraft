@@ -512,6 +512,7 @@ import type { BoardRole, CompetencyDomain, CommitteeState, Director } from '@/ty
 import { ALL_DOMAINS, DOMAIN_SHORT, ROLE_LABELS, getRoleLabel, getShortRoleLabel } from '@/engine/boardConstants';
 import { motion, AnimatePresence } from 'framer-motion';
 import CompanyLogo from '@/components/CompanyLogo';
+import SiteFooter from '@/components/SiteFooter';
 
 function fmtFee(value: number, jurisdiction: string = 'UK'): string {
   const sym = jurisdiction === 'US' ? '$' : jurisdiction === 'EU' ? '€' : '£';
@@ -1244,6 +1245,7 @@ function BoardConstructionWrapper({
                   <button onClick={() => { if (!hasBlockingErrors) setShowLockConfirm(true); }} disabled={hasBlockingErrors} className={`w-full py-3 rounded-lg text-sm font-semibold transition-all ${hasBlockingErrors ? 'bg-navy-light text-foreground/30 cursor-not-allowed' : 'bg-gold text-navy-dark hover:bg-gold-light active:scale-[0.98]'}`}>
                     {hasBlockingErrors ? 'Resolve Compliance Errors' : 'Lock Board & Start Game'}
                   </button>
+                  <SiteFooter className="mt-3" />
                 </div>
               </motion.div>
             )}

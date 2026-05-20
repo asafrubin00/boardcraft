@@ -6,6 +6,7 @@ import type { GameState, Director, CompetencyDomain } from '@/types/game';
 import { estimateAgmVotes, getProxyAdviserRating } from '@/engine/gameStateManager';
 import { DOMAIN_SHORT } from '@/engine/boardConstants';
 import { playAGMBell, playAGMApplause, playResolutionPass, playResolutionFail } from '@/engine/soundEngine';
+import SiteFooter from './SiteFooter';
 
 const ALL_DOMAINS: CompetencyDomain[] = [
   'financialOversight', 'regulatoryLegal', 'strategyMarkets', 'peopleCulture',
@@ -438,7 +439,8 @@ export default function AgmScreen({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      <SiteFooter className="fixed bottom-4 right-4 z-10" />
+    </div>
     );
   }
 
@@ -735,6 +737,7 @@ export default function AgmScreen({
           </button>
         </motion.div>
       </div>
+      <SiteFooter className="fixed bottom-4 right-4 z-10" />
     </div>
   );
 }

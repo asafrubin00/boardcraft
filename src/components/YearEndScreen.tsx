@@ -16,6 +16,7 @@ import {
   type LeaderboardEntry,
 } from '@/engine/governanceCapital';
 import { playYearEnd } from '@/engine/soundEngine';
+import SiteFooter from './SiteFooter';
 
 interface YearEndScreenProps {
   gameState: GameState;
@@ -561,6 +562,8 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
           />
         )}
       </AnimatePresence>
+
+      <SiteFooter className="fixed bottom-4 right-4 z-10" />
     </div>
   );
 }
