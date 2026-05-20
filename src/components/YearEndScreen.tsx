@@ -563,7 +563,7 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
         )}
       </AnimatePresence>
 
-      <SiteFooter className="fixed bottom-4 right-4 z-10" />
+      <SiteFooter vertical className="fixed bottom-4 right-4 z-10" />
     </div>
   );
 }

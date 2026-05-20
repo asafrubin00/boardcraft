@@ -439,7 +439,7 @@ export default function AgmScreen({
             </motion.div>
           )}
         </AnimatePresence>
-      <SiteFooter className="fixed bottom-4 right-4 z-10" />
+      <SiteFooter vertical className="fixed bottom-4 right-4 z-10" />
     </div>
     );
   }
@@ -737,7 +737,7 @@ export default function AgmScreen({
           </button>
         </motion.div>
       </div>
-      <SiteFooter className="fixed bottom-4 right-4 z-10" />
+      <SiteFooter vertical className="fixed bottom-4 right-4 z-10" />
     </div>
   );
 }

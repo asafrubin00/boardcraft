@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { companies } from '@/data/company';
+import SiteFooter from './SiteFooter';
 import type { Company } from '@/types/game';
 import CompanyLogo from './CompanyLogo';
 
@@ -229,6 +230,8 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
           </div>
         ))}
       </div>
+
+      <SiteFooter className="fixed bottom-4 left-1/2 -translate-x-1/2 z-10" />
     </div>
   );
 }
