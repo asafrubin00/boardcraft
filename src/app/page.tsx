@@ -196,6 +196,15 @@ function HomeInner() {
         v0.2 beta
       </div>
 
+      {/* Footer */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 text-foreground/25 text-xs whitespace-nowrap">
+        <span>© 2025 Asaf Rubin. All rights reserved.</span>
+        <span className="text-foreground/15">·</span>
+        <Link href="/terms" className="hover:text-foreground/50 transition-colors underline underline-offset-2">
+          Terms of Use
+        </Link>
+      </div>
+
       {/* CSS animations */}
       <style>{`
         @keyframes fadeInUp {
