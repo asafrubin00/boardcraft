@@ -539,10 +539,10 @@ const TIER_BADGE: Record<Director['availabilityTier'], { label: string; cls: str
 
 const ALL_BOARD_ROLES: BoardRole[] = ['chair', 'sid', 'auditChair', 'remChair', 'nomChair', 'energyTransitionChair', 'csrdChair', 'strategyChair', 'ned'];
 
-// Optional committee seat positions (must match BoardroomTable's exported constants)
-const ETC_TABLE_POS = { defaultRole: 'energyTransitionChair' as BoardRole, label: 'ETC Chair', leftPct: 32.4, topPct: 79.4, isChair: false };
-const CSRD_TABLE_POS = { defaultRole: 'csrdChair' as BoardRole, label: 'CSRD Chair', leftPct: 67.6, topPct: 79.4, isChair: false };
-const STRATEGY_TABLE_POS = { defaultRole: 'strategyChair' as BoardRole, label: 'Strategy Chair', leftPct: 50, topPct: 94, isChair: false };
+// Optional committee seat positions (must match BoardroomTable's ETC/CSRD/STRATEGY constants)
+const ETC_TABLE_POS = { defaultRole: 'energyTransitionChair' as BoardRole, label: 'ETC Chair', leftPct: 14, topPct: 94, isChair: false, labelAbove: true };
+const CSRD_TABLE_POS = { defaultRole: 'csrdChair' as BoardRole, label: 'CSRD Chair', leftPct: 86, topPct: 94, isChair: false, labelAbove: true };
+const STRATEGY_TABLE_POS = { defaultRole: 'strategyChair' as BoardRole, label: 'Strategy Chair', leftPct: 50, topPct: 96, isChair: false, labelAbove: true };
 // Grid layout opt-slot positions (Rheinfeld — left column slots 10/11)
 const GRID_CSRD_TABLE_POS = { defaultRole: 'csrdChair' as BoardRole, label: 'CSRD Chair', leftPct: 10, topPct: 50, isChair: false };
 const GRID_STRATEGY_TABLE_POS = { defaultRole: 'strategyChair' as BoardRole, label: 'Strategy Chair', leftPct: 10, topPct: 73, isChair: false };
