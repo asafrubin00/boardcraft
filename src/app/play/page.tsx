@@ -502,8 +502,8 @@ import { computeFeeWithPremium, checkCompliance } from '@/engine/compliance';
 import CompliancePanel from '@/components/CompliancePanel';
 import BoardGuideModal from '@/components/BoardGuideModal';
 import BoardroomTable, {
-  TABLE_POSITIONS,
   computeGridPositions,
+  computeStandardGridPositions,
   deriveTablePositions,
   getOverflowDirectorIds,
 } from '@/components/BoardroomTable';
@@ -539,13 +539,12 @@ const TIER_BADGE: Record<Director['availabilityTier'], { label: string; cls: str
 
 const ALL_BOARD_ROLES: BoardRole[] = ['chair', 'sid', 'auditChair', 'remChair', 'nomChair', 'energyTransitionChair', 'csrdChair', 'strategyChair', 'ned'];
 
-// Optional committee seat positions (must match BoardroomTable's ETC/CSRD/STRATEGY constants)
-const ETC_TABLE_POS = { defaultRole: 'energyTransitionChair' as BoardRole, label: 'ETC Chair', leftPct: 14, topPct: 94, isChair: false, labelAbove: true };
-const CSRD_TABLE_POS = { defaultRole: 'csrdChair' as BoardRole, label: 'CSRD Chair', leftPct: 86, topPct: 94, isChair: false, labelAbove: true };
-const STRATEGY_TABLE_POS = { defaultRole: 'strategyChair' as BoardRole, label: 'Strategy Chair', leftPct: 50, topPct: 96, isChair: false, labelAbove: true };
-// Grid layout opt-slot positions (Rheinfeld — left column slots 10/11)
-const GRID_CSRD_TABLE_POS = { defaultRole: 'csrdChair' as BoardRole, label: 'CSRD Chair', leftPct: 10, topPct: 50, isChair: false };
-const GRID_STRATEGY_TABLE_POS = { defaultRole: 'strategyChair' as BoardRole, label: 'Strategy Chair', leftPct: 10, topPct: 73, isChair: false };
+// Optional committee seat positions — all companies use left-column grid positions
+// (leftPct=10). For N=9 companies the left column has no base seats, so these appear
+// in the open left-column area, matching the Rheinfeld visual style.
+const GRID_ETC_TABLE_POS = { defaultRole: 'energyTransitionChair' as BoardRole, label: 'ETC Chair', leftPct: 10, topPct: 27, isChair: false, labelAbove: false };
+const GRID_CSRD_TABLE_POS = { defaultRole: 'csrdChair' as BoardRole, label: 'CSRD Chair', leftPct: 10, topPct: 50, isChair: false, labelAbove: false };
+const GRID_STRATEGY_TABLE_POS = { defaultRole: 'strategyChair' as BoardRole, label: 'Strategy Chair', leftPct: 10, topPct: 73, isChair: false, labelAbove: false };
 
 function getTablePosition(
   posIdx: number,
@@ -553,34 +552,23 @@ function getTablePosition(
   hasCsrd = false,
   hasStrategy = false,
   forceGridLayout = false,
-  effectiveGridSize = 10,
+  effectiveGridSize = 9,
 ) {
-  // Grid layout (Rheinfeld): use computeGridPositions so slot 3 = auditChair,
-  // slot 4 = remChair — not the circular TABLE_POSITIONS mapping.
-  if (forceGridLayout) {
-    const gridPositions = computeGridPositions(effectiveGridSize);
-    if (posIdx < gridPositions.length) return gridPositions[posIdx];
-    // Optional slots after the grid (ET is not used for Rheinfeld)
-    let gridOptIdx = gridPositions.length;
-    if (hasCsrd) { if (posIdx === gridOptIdx) return GRID_CSRD_TABLE_POS; gridOptIdx++; }
-    if (hasStrategy) { if (posIdx === gridOptIdx) return GRID_STRATEGY_TABLE_POS; }
-    return gridPositions[0]; // fallback
-  }
-  if (posIdx < TABLE_POSITIONS.length) return TABLE_POSITIONS[posIdx];
-  // Optional slots: ET is pos 8, CSRD is next, Strategy is after
-  let optIdx = TABLE_POSITIONS.length;
-  if (hasEnergyTransition) {
-    if (posIdx === optIdx) return ETC_TABLE_POS;
-    optIdx++;
-  }
-  if (hasCsrd) {
-    if (posIdx === optIdx) return CSRD_TABLE_POS;
-    optIdx++;
-  }
-  if (hasStrategy) {
-    if (posIdx === optIdx) return STRATEGY_TABLE_POS;
-  }
-  return ETC_TABLE_POS; // fallback
+  // All companies use square-perimeter grid layout.
+  // Rheinfeld (forceGridLayout): computeGridPositions — Worker Rep labels, min 10 slots.
+  // Standard: computeStandardGridPositions — SID/NomChair named slots, min 9 slots.
+  const gridPositions = forceGridLayout
+    ? computeGridPositions(effectiveGridSize)
+    : computeStandardGridPositions(effectiveGridSize);
+
+  if (posIdx < gridPositions.length) return gridPositions[posIdx];
+
+  // Optional committee chair slots appended after the base grid.
+  let optIdx = gridPositions.length;
+  if (hasEnergyTransition) { if (posIdx === optIdx) return GRID_ETC_TABLE_POS; optIdx++; }
+  if (hasCsrd)             { if (posIdx === optIdx) return GRID_CSRD_TABLE_POS; optIdx++; }
+  if (hasStrategy)         { if (posIdx === optIdx) return GRID_STRATEGY_TABLE_POS; }
+  return gridPositions[0]; // fallback
 }
 
 function BoardConstructionWrapper({
@@ -735,9 +723,9 @@ function BoardConstructionWrapper({
 
   const forceGridLayout = company.id === 'company_rheinfeld';
   const effectiveGridSize = useMemo(() => {
-    if (!forceGridLayout) return 10; // unused for circular layout
     const committeeChairRoles = new Set(['csrdChair', 'strategyChair', 'energyTransitionChair']);
-    return Math.max(seats.filter(s => !committeeChairRoles.has(s.role)).length, 10);
+    const baseSeatCount = seats.filter(s => !committeeChairRoles.has(s.role)).length;
+    return forceGridLayout ? Math.max(baseSeatCount, 10) : Math.max(baseSeatCount, 9);
   }, [forceGridLayout, seats]);
 
   const boardIds = useMemo(() => seats.map((s) => s.directorId), [seats]);
