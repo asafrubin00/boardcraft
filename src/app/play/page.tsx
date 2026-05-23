@@ -1159,22 +1159,6 @@ function BoardConstructionWrapper({
           {/* Company card */}
           <div className="flex-shrink-0 mb-2">{companyCardJsx}</div>
 
-          {/* ── Tab buttons row (Compliance | Pool) ── */}
-          <div className="flex-shrink-0 flex gap-2 mb-1">
-            <button
-              onClick={() => { setMobileOverlay('compliance'); advanceMobileHint(); }}
-              className="flex-1 py-1.5 rounded-lg border border-gold/50 bg-gold/10 text-gold text-[11px] font-bold tracking-wide cursor-pointer"
-            >
-              ⚖ Compliance
-            </button>
-            <button
-              onClick={() => { setMobileOverlay('pool'); if (mobileHintsStep === 1) advanceMobileHint(); }}
-              className="flex-1 py-1.5 rounded-lg border border-gold/50 bg-gold/10 text-gold text-[11px] font-bold tracking-wide cursor-pointer"
-            >
-              Directors ▷
-            </button>
-          </div>
-
           {/* ── Mobile first-time hint bubbles ── */}
           <AnimatePresence mode="wait">
             {mobileHintsStep === 0 && (
@@ -1223,6 +1207,26 @@ function BoardConstructionWrapper({
           {/* Board Strength */}
           <div className="flex-shrink-0">{boardStrengthJsx}</div>
         </div>
+
+        {/* ── Golden side-tab buttons (visible on base state only) ── */}
+        {mobileOverlay === null && (
+          <>
+            <button
+              onClick={() => { setMobileOverlay('compliance'); advanceMobileHint(); }}
+              className="absolute left-0 z-10 bg-gold text-navy-dark font-bold tracking-widest py-3 px-2 rounded-r-lg shadow-lg cursor-pointer"
+              style={{ top: '130px', writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '10px' }}
+            >
+              COMPLIANCE
+            </button>
+            <button
+              onClick={() => { setMobileOverlay('pool'); if (mobileHintsStep === 1) advanceMobileHint(); }}
+              className="absolute right-0 z-10 bg-gold text-navy-dark font-bold tracking-widest py-3 px-2 rounded-l-lg shadow-lg cursor-pointer"
+              style={{ top: '130px', writingMode: 'vertical-rl', fontSize: '10px' }}
+            >
+              POOL
+            </button>
+          </>
+        )}
 
         {/* ── Director Pool overlay (slides from right) ── */}
         <AnimatePresence>
