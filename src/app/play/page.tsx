@@ -1056,9 +1056,9 @@ function BoardConstructionWrapper({
       </AnimatePresence>
 
       {/* Three-panel layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-y-auto md:flex-row md:overflow-hidden">
         {/* ═══ LEFT: Director Pool (35%) ═══ */}
-        <div className="w-[35%] border-r border-card-border flex flex-col overflow-hidden">
+        <div className="order-2 md:order-1 w-full md:w-[35%] h-[320px] md:h-auto border-t md:border-t-0 md:border-r border-card-border flex flex-col overflow-hidden">
           <div className="p-3 border-b border-card-border flex-shrink-0 space-y-2">
             <h2 className="text-sm font-bold text-gold">{company.id === 'company_meridian' ? 'Trustee Candidates' : 'Director Pool'}</h2>
             {/* Row 1: Filter by highest domain */}
@@ -1125,7 +1125,7 @@ function BoardConstructionWrapper({
         </div>
 
         {/* ═══ CENTRE (30%) ═══ */}
-        <div className="w-[30%] border-r border-card-border flex flex-col overflow-hidden">
+        <div className="order-3 md:order-2 w-full md:w-[30%] border-t md:border-t-0 md:border-r border-card-border flex flex-col overflow-hidden">
           {/* Sticky header: Back to Overview + Undo/Redo */}
           <div className="flex-shrink-0 p-3 pb-0 space-y-2">
             {mode !== 'default' && (
@@ -1372,7 +1372,7 @@ function BoardConstructionWrapper({
         </div>
 
         {/* ═══ RIGHT: Boardroom Table (35%) ═══ */}
-        <div className="w-[35%] flex flex-col p-4 overflow-y-auto">
+        <div className="order-1 md:order-3 w-full md:w-[35%] h-[380px] md:h-auto flex flex-col p-3 md:p-4 overflow-y-auto">
           {/* Company info box */}
           <div className="mb-3 flex-shrink-0">
             <div
