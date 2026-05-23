@@ -630,6 +630,7 @@ function BoardConstructionWrapper({
   const [selectedDirId, setSelectedDirId] = useState<string | null>(null);
   const [swapMessage, setSwapMessage] = useState<string | null>(null);
   const [showCompanyInfo, setShowCompanyInfo] = useState(false);
+  const [mobileOverlay, setMobileOverlay] = useState<null | 'pool' | 'compliance'>(null);
 
   // ── Undo / Redo history ──
   const MAX_HISTORY = 20;
@@ -932,15 +933,19 @@ function BoardConstructionWrapper({
   }, [boardIdSet, committed, budget, handleRoleChange, pushAndSetSeats, directorMap, tablePos, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize]);
 
   const handleSeatClick = useCallback((idx: number) => {
-    if (activeSeatIdx === idx) { setActiveSeatIdx(null); setSelectedDirId(null); return; }
+    if (activeSeatIdx === idx) { setActiveSeatIdx(null); setSelectedDirId(null); setMobileOverlay(null); return; }
     setActiveSeatIdx(idx); setSelectedDirId(null);
+    setMobileOverlay('pool'); // mobile: open pool overlay on any seat tap
   }, [activeSeatIdx]);
 
   const handlePoolClick = useCallback((dirId: string) => {
     if (boardIdSet.has(dirId) && !overflowSet.has(dirId)) return;
     if (activeSeatIdx !== null) {
       const occupant = tablePos[activeSeatIdx];
-      if (occupant === null) { handleAssignToSeat(dirId, activeSeatIdx); }
+      if (occupant === null) {
+        handleAssignToSeat(dirId, activeSeatIdx);
+        setMobileOverlay(null); // close mobile pool overlay after assignment
+      }
       else { setSelectedDirId(dirId); playDirectorSelect(); }
     } else { setSelectedDirId(dirId); playDirectorSelect(); }
   }, [activeSeatIdx, tablePos, boardIdSet, overflowSet, handleAssignToSeat]);
@@ -1026,6 +1031,74 @@ function BoardConstructionWrapper({
     });
   }, [hasEnergyTransition, hasSafetyEnv, hasCsrd, hasStrategy]);
 
+  // ── Render helpers (shared between mobile overlays and desktop panels) ──
+
+  const companyCardJsx = (
+    <div
+      className="rounded-lg border border-gold/40 bg-navy cursor-pointer"
+      onClick={() => setShowCompanyInfo((p) => !p)}
+    >
+      <div className="flex items-center justify-between px-3 py-2">
+        <div className="flex items-center gap-2">
+          <CompanyLogo companyId={company.id} size={24} />
+          <span className="text-xs font-semibold text-foreground">{company.name}</span>
+        </div>
+        <span className="text-xs text-gold">{showCompanyInfo ? '−' : 'ℹ'}</span>
+      </div>
+      {showCompanyInfo && (
+        <div className="px-3 pb-3 border-t border-gold/20 mt-0">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-[10px]">
+            <div><span className="text-foreground/40">Market Cap:</span> <span className="text-foreground/70">{company.marketCap}</span></div>
+            <div><span className="text-foreground/40">Revenue:</span> <span className="text-foreground/70">{company.annualRevenue}</span></div>
+            <div><span className="text-foreground/40">Employees:</span> <span className="text-foreground/70">{company.employees.toLocaleString()}</span></div>
+            <div><span className="text-foreground/40">Industry:</span> <span className="text-foreground/70">{company.industry}</span></div>
+            <div className="col-span-2"><span className="text-foreground/40">HQ:</span> <span className="text-foreground/70">{company.headquarters}</span></div>
+          </div>
+          <p className="text-[10px] text-foreground/60 font-narrative italic leading-relaxed mt-2">
+            {company.narrative.split('.').slice(0, 2).join('.') + '.'}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
+  const boardStrengthJsx = seats.length > 0 ? (
+    <div className="relative">
+      <button
+        onClick={() => { setShowStrength(p => !p); if (hintsShown === 5) dismissHint(); }}
+        className="w-full py-1.5 px-3 rounded-full border border-gold/40 text-gold text-[11px] font-semibold hover:bg-gold/10 transition-colors cursor-pointer text-center"
+      >
+        Board Strength &#8599;
+      </button>
+      {showStrength && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowStrength(false)} />
+          <div className="absolute bottom-full right-0 mb-2 z-50 rounded-lg border border-gold/30 bg-navy-light shadow-xl p-4" style={{ minWidth: 300 }}>
+            <h4 className="text-[10px] text-gold uppercase tracking-wider font-semibold mb-3 text-center">Board Strength Profile</h4>
+            <div className="grid grid-cols-4 gap-3">
+              {ALL_DOMAINS.map((domain, i) => {
+                const avg = boardAvgDomains[i];
+                const pct = avg / 100;
+                return (
+                  <div key={domain} className="flex flex-col items-center">
+                    <svg width="32" height="32" viewBox="0 0 28 28">
+                      <circle cx="14" cy="14" r="12" fill="none" stroke="#1A3A5C" strokeWidth="2" />
+                      {pct > 0 && (
+                        <circle cx="14" cy="14" r="12" fill="none" stroke="#C8960C" strokeWidth="2" strokeDasharray={`${pct * 75.4} ${75.4}`} strokeDashoffset="0" transform="rotate(-90 14 14)" strokeLinecap="round" />
+                      )}
+                      <text x="14" y="15.5" textAnchor="middle" fill="#C8960C" fontSize="8" fontWeight="bold">{avg}</text>
+                    </svg>
+                    <span className="text-[8px] text-foreground/50 mt-0.5 text-center leading-tight">{DOMAIN_SHORT[domain]}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  ) : null;
+
   return (
     <div className="h-screen bg-navy text-foreground flex flex-col overflow-hidden">
       {/* Header */}
@@ -1055,10 +1128,225 @@ function BoardConstructionWrapper({
         )}
       </AnimatePresence>
 
-      {/* Three-panel layout */}
-      <div className="flex-1 flex flex-col overflow-y-auto md:flex-row md:overflow-hidden">
+      {/* ═══════════════════════════════════════
+          MOBILE LAYOUT — overlay system
+          (hidden at md+ breakpoint)
+          ═══════════════════════════════════════ */}
+      <div className="md:hidden flex-1 relative overflow-hidden">
+
+        {/* ── Base layer: board table ── */}
+        <div className="absolute inset-0 flex flex-col p-3 overflow-hidden">
+          {/* Undo / Redo */}
+          <div className="flex-shrink-0 flex items-center justify-center gap-2 mb-2">
+            <button onClick={handleUndo} disabled={history.length === 0} className={`text-[11px] px-3 py-1.5 rounded border transition-colors ${history.length > 0 ? 'border-foreground/30 text-foreground/70' : 'border-card-border text-foreground/20 cursor-not-allowed'}`}>↩ Undo</button>
+            <button onClick={handleRedo} disabled={future.length === 0} className={`text-[11px] px-3 py-1.5 rounded border transition-colors ${future.length > 0 ? 'border-foreground/30 text-foreground/70' : 'border-card-border text-foreground/20 cursor-not-allowed'}`}>↪ Redo</button>
+          </div>
+          {/* Company card */}
+          <div className="flex-shrink-0 mb-2">{companyCardJsx}</div>
+          {/* Boardroom table */}
+          <div className="flex-1 flex items-center justify-center min-h-0">
+            <BoardroomTable seats={seats} directors={availableDirectors} activeSeatIndex={activeSeatIdx} onSeatClick={handleSeatClick} hasEnergyTransition={hasEnergyTransition} hasCsrd={hasCsrd} hasStrategy={hasStrategy} onDropOnSeat={handleAssignToSeat} companyShortName={company.shortName} companyShortNameSuffix={company.shortNameSuffix} jurisdiction={company.jurisdiction} combinedChairCeo={company.id === 'company_vantage'} workerRepIds={company.id === 'company_rheinfeld' ? ['rdir_w_koch', 'rdir_w_alrashid', 'rdir_w_hoffmann', 'rdir_w_mehta', 'rdir_w_gruber'] : []} lockedDirectorIds={company.id === 'company_rheinfeld' ? ['rdir_heinrich'] : []} companyId={company.id} />
+          </div>
+          <p className="text-[10px] text-foreground/30 mt-1 text-center flex-shrink-0 mb-2">Tap a seat · tap filled seat to view profile</p>
+          {/* Board Strength */}
+          <div className="flex-shrink-0">{boardStrengthJsx}</div>
+        </div>
+
+        {/* ── Side tab: Compliance (left edge) ── */}
+        <button
+          onClick={() => setMobileOverlay('compliance')}
+          className="absolute left-0 top-1/2 z-10 bg-gold text-navy-dark font-bold tracking-widest shadow-lg rounded-r-lg cursor-pointer px-1.5 py-3"
+          style={{ writingMode: 'vertical-lr', transform: 'translateY(-50%) rotate(180deg)', fontSize: 9 }}
+          aria-label="Open Compliance panel"
+        >COMPLIANCE</button>
+
+        {/* ── Side tab: Director Pool (right edge) ── */}
+        <button
+          onClick={() => setMobileOverlay('pool')}
+          className="absolute right-0 top-1/2 z-10 bg-gold text-navy-dark font-bold tracking-widest shadow-lg rounded-l-lg cursor-pointer px-1.5 py-3"
+          style={{ writingMode: 'vertical-rl', transform: 'translateY(-50%)', fontSize: 9 }}
+          aria-label="Open Director Pool"
+        >POOL</button>
+
+        {/* ── Director Pool overlay (slides from right) ── */}
+        <AnimatePresence>
+          {mobileOverlay === 'pool' && (
+            <motion.div key="mobile-pool-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="absolute inset-0 z-20">
+              <div className="absolute inset-0 bg-black/60" onClick={() => { setMobileOverlay(null); setActiveSeatIdx(null); setSelectedDirId(null); }} />
+              <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ duration: 0.25, ease: 'easeOut' }} className="absolute right-0 top-0 bottom-0 w-[95%] bg-navy flex flex-col shadow-2xl border-l border-card-border">
+                {/* Header */}
+                <div className="flex-shrink-0 px-3 py-2.5 border-b border-card-border bg-navy-dark/30">
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => { setMobileOverlay(null); setActiveSeatIdx(null); setSelectedDirId(null); }} className="text-gold text-sm font-semibold shrink-0">← Return</button>
+                    {activeSeatIdx !== null && mode !== 'profile-seated' && (
+                      <span className="text-gold text-xs font-medium truncate">Selecting for: <span className="font-bold">{getShortRoleLabel(getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize).defaultRole, company.jurisdiction, company.id)}</span></span>
+                    )}
+                    {mode === 'profile-seated' && seatOccDir && (
+                      <span className="text-foreground/60 text-xs truncate">{seatOccDir.name}</span>
+                    )}
+                  </div>
+                </div>
+                {/* Content: profile-seated or pool */}
+                {mode === 'profile-seated' && seatOccDir ? (
+                  <div className="flex-1 overflow-y-auto p-4">
+                    <div className="space-y-4">
+                      <div className="flex flex-col items-center text-center">
+                        <div className="rounded-full border-2 border-gold overflow-hidden"><DirectorPortrait directorId={seatOccDir.id} size={72} /></div>
+                        <h2 className="text-base font-bold font-narrative text-foreground mt-2">{seatOccDir.name}</h2>
+                        <div className="flex flex-wrap justify-center gap-1.5 mt-1.5">
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${INDEP_BADGE[seatOccDir.independence].cls}`}>{INDEP_BADGE[seatOccDir.independence].label}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${TIER_BADGE[seatOccDir.availabilityTier].cls}`}>{TIER_BADGE[seatOccDir.availabilityTier].label}</span>
+                          {seatOccDir.inherited && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-warning/10 text-warning border border-warning/30">Inherited</span>}
+                        </div>
+                        <span className="text-gold font-semibold text-sm mt-1.5">{fmt(seatOccDir.annualFee)} p.a.</span>
+                        {seatRec && seatRec.role !== 'ned' && <span className="text-[10px] text-foreground/40 mt-1">Role premium: {fmt(seatRec.feeWithPremium)} total</span>}
+                      </div>
+                      <div className="space-y-1.5">
+                        <h4 className="text-[10px] text-foreground/40 uppercase tracking-wide">Competency Profile</h4>
+                        {ALL_DOMAINS.map((domain) => { const sc = seatOccDir.domainRatings[domain]; return (
+                          <div key={domain} className="flex items-center gap-2 text-[11px]">
+                            <span className="w-16 text-foreground/60 truncate">{DOMAIN_SHORT[domain]}</span>
+                            <div className="flex-1 h-1.5 bg-navy-dark rounded-full overflow-hidden"><div className="h-full bg-gold rounded-full" style={{ width: `${sc}%` }} /></div>
+                            <span className="w-6 text-right text-foreground/50">{sc}</span>
+                          </div>
+                        ); })}
+                      </div>
+                      <div><h4 className="text-[10px] text-foreground/40 uppercase tracking-wide mb-1">Background</h4><p className="text-xs text-foreground/70 font-narrative leading-relaxed">{seatOccDir.background}</p></div>
+                      <div>
+                        <label className="text-[10px] text-foreground/40 uppercase tracking-wide">Role Assignment</label>
+                        <select value={seatRec?.role ?? 'ned'} onChange={(e) => handleRoleChange(seatOccDir.id, e.target.value as BoardRole)} className="w-full mt-1 text-xs bg-navy-dark text-foreground border border-card-border rounded px-2 py-1.5 focus:outline-none focus:border-gold">
+                          {availableBoardRoles.map((r) => <option key={r} value={r}>{getRoleLabel(r, company.jurisdiction, company.id)}</option>)}
+                        </select>
+                      </div>
+                      <button onClick={() => { handleRemoveDirector(seatOccDir.id); setMobileOverlay(null); }} className="w-full py-2 text-sm bg-error/15 text-error border border-error/30 rounded-lg">
+                        {company.id === 'company_meridian' ? 'Remove Trustee' : 'Remove from Board'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex-shrink-0 p-3 border-b border-card-border space-y-2">
+                      <div>
+                        <span className="text-[9px] text-foreground/40 uppercase tracking-wide">Filter by domain (≥60)</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <button onClick={() => setFilterDomain(null)} className={`text-[10px] px-1.5 py-0.5 rounded font-medium transition-colors ${filterDomain === null ? 'bg-gold text-navy-dark' : 'bg-navy-dark text-foreground/50 hover:text-foreground'}`}>All</button>
+                          {ALL_DOMAINS.map((d) => (
+                            <button key={d} onClick={() => setFilterDomain(d)} className={`text-[10px] px-1.5 py-0.5 rounded font-medium transition-colors ${filterDomain === d ? 'bg-gold text-navy-dark' : 'bg-navy-dark text-foreground/50 hover:text-foreground'}`}>{DOMAIN_SHORT[d]}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px]">
+                        <span className="text-[9px] text-foreground/40 uppercase tracking-wide">Sort</span>
+                        {budget > 0 && (
+                          <button onClick={() => { if (sortBy === 'fee') { setSortDir((p) => p === 'asc' ? 'desc' : 'asc'); } else { setSortBy('fee'); setSortDir('asc'); } }} className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 ${sortBy === 'fee' ? 'bg-gold/20 text-gold border border-gold/40' : 'text-foreground/40 hover:text-foreground/60'}`}>Fee {sortBy === 'fee' && (sortDir === 'asc' ? '↑' : '↓')}</button>
+                        )}
+                        <button onClick={() => { if (sortBy === 'score') { setSortDir((p) => p === 'asc' ? 'desc' : 'asc'); } else { setSortBy('score'); setSortDir('desc'); } }} className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 ${sortBy === 'score' ? 'bg-gold/20 text-gold border border-gold/40' : 'text-foreground/40 hover:text-foreground/60'}`}>Gov. Score {sortBy === 'score' && (sortDir === 'asc' ? '↑' : '↓')}</button>
+                      </div>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-3">
+                      {overflowIds.length > 0 && <p className="text-[10px] text-warning font-medium mb-2">⚠ Unseated {company.id === 'company_meridian' ? 'trustees' : 'directors'} — tap a seat to place them</p>}
+                      {sortedPool.length === 0 && filterDomain !== null ? (
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                          <p className="text-[11px] text-foreground/40 font-narrative italic">No candidates score ≥60 in {DOMAIN_SHORT[filterDomain]}.</p>
+                          <button onClick={() => setFilterDomain(null)} className="mt-2 text-[10px] text-gold/60 hover:text-gold transition-colors">Clear filter</button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {sortedPool.map((d) => (
+                            <PoolCard key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} displayFee={budget === 0 ? 0 : undefined} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+                {/* Board Strength pinned to bottom */}
+                <div className="flex-shrink-0 p-3 border-t border-card-border">{boardStrengthJsx}</div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Compliance overlay (slides from left) ── */}
+        <AnimatePresence>
+          {mobileOverlay === 'compliance' && (
+            <motion.div key="mobile-compliance-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="absolute inset-0 z-20">
+              <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOverlay(null)} />
+              <motion.div initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ duration: 0.25, ease: 'easeOut' }} className="absolute left-0 top-0 bottom-0 w-[95%] bg-navy flex flex-col shadow-2xl border-r border-card-border">
+                {/* Header */}
+                <div className="flex-shrink-0 px-3 py-2.5 border-b border-card-border bg-navy-dark/30 flex items-center justify-between">
+                  <h2 className="text-sm font-bold text-gold">Compliance</h2>
+                  <button onClick={() => setMobileOverlay(null)} className="text-gold text-sm font-semibold">Return ➜</button>
+                </div>
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {budget > 0 ? (
+                    <div>
+                      <div className="w-full h-3 bg-navy-dark rounded-full overflow-hidden"><div className="h-full bg-gold rounded-full transition-all" style={{ width: `${Math.min((committed / budget) * 100, 100)}%` }} /></div>
+                      <p className="text-[10px] text-foreground/40 text-center mt-1.5">{fmt(committed)} committed · {fmt(Math.max(0, remaining))} remaining · {fmt(budget)} total</p>
+                    </div>
+                  ) : (
+                    <div className="text-center"><p className="text-[10px] text-foreground/40">{seats.length} trustee{seats.length !== 1 ? 's' : ''} appointed · All roles are voluntary (unpaid)</p></div>
+                  )}
+                  <div className="flex items-center justify-center gap-2">
+                    <button onClick={handleUndo} disabled={history.length === 0} className={`text-[11px] px-2.5 py-1 rounded border transition-colors ${history.length > 0 ? 'border-foreground/30 text-foreground/70 hover:border-gold hover:text-gold' : 'border-card-border text-foreground/20 cursor-not-allowed'}`}>↩ Undo</button>
+                    <button onClick={handleRedo} disabled={future.length === 0} className={`text-[11px] px-2.5 py-1 rounded border transition-colors ${future.length > 0 ? 'border-foreground/30 text-foreground/70 hover:border-gold hover:text-gold' : 'border-card-border text-foreground/20 cursor-not-allowed'}`}>↪ Redo</button>
+                  </div>
+                  <CompliancePanel errors={complianceErrors} title={company.id === 'company_meridian' ? 'Charity Governance Code' : company.jurisdiction === 'EU' ? 'GCGC / AktG Compliance' : 'FRC Code Compliance'} />
+                  <button onClick={() => setShowBoardGuide(true)} className="w-full py-2 rounded-lg border border-gold/30 text-gold/70 text-xs font-medium hover:border-gold/60 hover:text-gold transition-colors text-center cursor-pointer">
+                    &#x2197; {company.id === 'company_meridian' ? 'Trustee Guide — Charity Governance Code' : `Board Guide — ${company.jurisdiction} Governance Rules`}
+                  </button>
+                  {hasETCommittee && (
+                    <div className={`rounded-lg border p-4 cursor-pointer transition-all ${hasEnergyTransition ? 'border-gold bg-gold/5' : 'border-card-border hover:border-gold/50'}`} onClick={handleToggleET}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1"><h3 className="text-sm font-semibold text-gold">Establish {company.committees.find((c) => c.id === 'energyTransition')?.name ?? 'Energy Transition Committee'}</h3><p className="text-[10px] text-foreground/50 mt-1">{fmt(etFormationCost)} p.a. · Grants +10 bonus on {company.jurisdiction === 'US' ? 'regulatory and brand events' : 'ESG events'}</p></div>
+                        <div className={`w-11 h-6 rounded-full relative transition-colors ${hasEnergyTransition ? 'bg-gold' : 'bg-navy-dark border border-foreground/30'}`}><div className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${hasEnergyTransition ? 'left-[22px] bg-navy-dark' : 'left-0.5 bg-foreground/50'}`} /></div>
+                      </div>
+                    </div>
+                  )}
+                  {csrdFormationCost > 0 && (
+                    <div className={`rounded-lg border p-4 cursor-pointer transition-all ${hasCsrd ? 'border-gold bg-gold/5' : 'border-card-border hover:border-gold/50'}`} onClick={handleToggleCsrd}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1"><h3 className="text-sm font-semibold text-gold">{company.committees.find((c) => c.id === 'csrd')?.name ?? 'CSRD / Sustainability Committee'}</h3><p className="text-[10px] text-foreground/50 mt-1">{fmt(csrdFormationCost)} p.a. · Grants +10 bonus on CSRD and ESG events</p></div>
+                        <div className={`w-11 h-6 rounded-full relative transition-colors ${hasCsrd ? 'bg-gold' : 'bg-navy-dark border border-foreground/30'}`}><div className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${hasCsrd ? 'left-[22px] bg-navy-dark' : 'left-0.5 bg-foreground/50'}`} /></div>
+                      </div>
+                    </div>
+                  )}
+                  {strategyFormationCost > 0 && (
+                    <div className={`rounded-lg border p-4 cursor-pointer transition-all ${hasStrategy ? 'border-gold bg-gold/5' : 'border-card-border hover:border-gold/50'}`} onClick={handleToggleStrategy}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1"><h3 className="text-sm font-semibold text-gold">{company.committees.find((c) => c.id === 'strategy')?.name ?? 'Strategy Committee'}</h3><p className="text-[10px] text-foreground/50 mt-1">{fmt(strategyFormationCost)} p.a. · Grants +10 bonus on strategic review and M&A events</p></div>
+                        <div className={`w-11 h-6 rounded-full relative transition-colors ${hasStrategy ? 'bg-gold' : 'bg-navy-dark border border-foreground/30'}`}><div className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${hasStrategy ? 'left-[22px] bg-navy-dark' : 'left-0.5 bg-foreground/50'}`} /></div>
+                      </div>
+                    </div>
+                  )}
+                  <div className="text-center text-xs text-foreground/40">
+                    {budget > 0
+                      ? <>{seats.length} director{seats.length !== 1 ? 's' : ''} · {remaining < 0 ? <span className="text-error font-medium">Over budget by {fmt(Math.abs(remaining))}</span> : <span>{fmt(remaining)} remaining</span>}</>
+                      : <>{seats.length} trustee{seats.length !== 1 ? 's' : ''} · Unpaid voluntary roles</>
+                    }
+                  </div>
+                  <button onClick={() => { if (!hasBlockingErrors) { setMobileOverlay(null); setShowLockConfirm(true); } }} disabled={hasBlockingErrors} className={`w-full py-3 rounded-lg text-sm font-semibold transition-all ${hasBlockingErrors ? 'bg-navy-light text-foreground/30 cursor-not-allowed' : 'bg-gold text-navy-dark hover:bg-gold-light active:scale-[0.98]'}`}>
+                    {hasBlockingErrors ? 'Resolve Compliance Errors' : 'Lock Board & Start Game'}
+                  </button>
+                  <SiteFooter className="mt-3" />
+                </div>
+                {/* Board Strength pinned to bottom */}
+                <div className="flex-shrink-0 p-3 border-t border-card-border">{boardStrengthJsx}</div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      </div>
+
+      {/* ═══════════════════════════════════════
+          DESKTOP LAYOUT — three-panel
+          (hidden below md breakpoint)
+          ═══════════════════════════════════════ */}
+      <div className="hidden md:flex flex-1 overflow-hidden">
         {/* ═══ LEFT: Director Pool (35%) ═══ */}
-        <div className="order-2 md:order-1 w-full md:w-[35%] h-[320px] md:h-auto border-t md:border-t-0 md:border-r border-card-border flex flex-col overflow-hidden">
+        <div className="w-[35%] border-r border-card-border flex flex-col overflow-hidden">
           <div className="p-3 border-b border-card-border flex-shrink-0 space-y-2">
             <h2 className="text-sm font-bold text-gold">{company.id === 'company_meridian' ? 'Trustee Candidates' : 'Director Pool'}</h2>
             {/* Row 1: Filter by highest domain */}
@@ -1125,7 +1413,7 @@ function BoardConstructionWrapper({
         </div>
 
         {/* ═══ CENTRE (30%) ═══ */}
-        <div className="order-3 md:order-2 w-full md:w-[30%] border-t md:border-t-0 md:border-r border-card-border flex flex-col md:overflow-hidden">
+        <div className="w-[30%] border-r border-card-border flex flex-col overflow-hidden">
           {/* Sticky header: Back to Overview + Undo/Redo */}
           <div className="flex-shrink-0 p-3 pb-0 space-y-2">
             {mode !== 'default' && (
@@ -1146,7 +1434,7 @@ function BoardConstructionWrapper({
           <AnimatePresence mode="wait">
             {mode === 'default' && (
               <motion.div key="def" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col p-5 space-y-5">
-                <div className="hidden md:block text-center pt-4">
+                <div className="text-center pt-4">
                   <h2 className="text-3xl font-bold text-gold tracking-widest font-narrative">BOARDCRAFT</h2>
                   <p className="text-xs text-foreground/50 mt-2 font-narrative italic">
                     {company.id === 'company_meridian'
@@ -1372,36 +1660,9 @@ function BoardConstructionWrapper({
         </div>
 
         {/* ═══ RIGHT: Boardroom Table (35%) ═══ */}
-        <div className="order-1 md:order-3 w-full md:w-[35%] h-[440px] md:h-auto flex flex-col p-3 md:p-4 overflow-y-auto">
+        <div className="w-[35%] flex flex-col p-4 overflow-y-auto">
           {/* Company info box */}
-          <div className="mb-3 flex-shrink-0">
-            <div
-              className="rounded-lg border border-gold/40 bg-navy cursor-pointer"
-              onClick={() => setShowCompanyInfo((p) => !p)}
-            >
-              <div className="flex items-center justify-between px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <CompanyLogo companyId={company.id} size={24} />
-                  <span className="text-xs font-semibold text-foreground">{company.name}</span>
-                </div>
-                <span className="text-xs text-gold">{showCompanyInfo ? '−' : 'ℹ'}</span>
-              </div>
-              {showCompanyInfo && (
-                <div className="px-3 pb-3 border-t border-gold/20 mt-0">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-[10px]">
-                    <div><span className="text-foreground/40">Market Cap:</span> <span className="text-foreground/70">{company.marketCap}</span></div>
-                    <div><span className="text-foreground/40">Revenue:</span> <span className="text-foreground/70">{company.annualRevenue}</span></div>
-                    <div><span className="text-foreground/40">Employees:</span> <span className="text-foreground/70">{company.employees.toLocaleString()}</span></div>
-                    <div><span className="text-foreground/40">Industry:</span> <span className="text-foreground/70">{company.industry}</span></div>
-                    <div className="col-span-2"><span className="text-foreground/40">HQ:</span> <span className="text-foreground/70">{company.headquarters}</span></div>
-                  </div>
-                  <p className="text-[10px] text-foreground/60 font-narrative italic leading-relaxed mt-2">
-                    {company.narrative.split('.').slice(0, 2).join('.') + '.'}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+          <div className="mb-3 flex-shrink-0">{companyCardJsx}</div>
 
           {/* Boardroom table */}
           <div className="flex-1 flex items-center justify-center">
@@ -1425,47 +1686,8 @@ function BoardConstructionWrapper({
           </div>
           <p className="text-[10px] text-foreground/30 mt-2 text-center flex-shrink-0">Click a seat to assign · Click a filled seat to view profile</p>
 
-          {/* Board Strength - click popover */}
-          {seats.length > 0 && (
-            <div className="mt-3 flex-shrink-0 relative">
-              <button
-                onClick={() => {
-                  setShowStrength(p => !p);
-                  if (hintsShown === 5) dismissHint();
-                }}
-                className="w-full py-1.5 px-3 rounded-full border border-gold/40 text-gold text-[11px] font-semibold hover:bg-gold/10 transition-colors cursor-pointer text-center"
-              >
-                Board Strength &#8599;
-              </button>
-              {showStrength && (
-                <>
-                  {/* Transparent backdrop — click outside to close */}
-                  <div className="fixed inset-0 z-40" onClick={() => setShowStrength(false)} />
-                  <div className="absolute bottom-full right-0 mb-2 z-50 rounded-lg border border-gold/30 bg-navy-light shadow-xl p-4" style={{ minWidth: 320 }}>
-                  <h4 className="text-[10px] text-gold uppercase tracking-wider font-semibold mb-3 text-center">Board Strength Profile</h4>
-                  <div className="grid grid-cols-4 gap-3">
-                    {ALL_DOMAINS.map((domain, i) => {
-                      const avg = boardAvgDomains[i];
-                      const pct = avg / 100;
-                      return (
-                        <div key={domain} className="flex flex-col items-center">
-                          <svg width="32" height="32" viewBox="0 0 28 28">
-                            <circle cx="14" cy="14" r="12" fill="none" stroke="#1A3A5C" strokeWidth="2" />
-                            {pct > 0 && (
-                              <circle cx="14" cy="14" r="12" fill="none" stroke="#C8960C" strokeWidth="2" strokeDasharray={`${pct * 75.4} ${75.4}`} strokeDashoffset="0" transform="rotate(-90 14 14)" strokeLinecap="round" />
-                            )}
-                            <text x="14" y="15.5" textAnchor="middle" fill="#C8960C" fontSize="8" fontWeight="bold">{avg}</text>
-                          </svg>
-                          <span className="text-[8px] text-foreground/50 mt-0.5 text-center leading-tight">{DOMAIN_SHORT[domain]}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                </>
-              )}
-            </div>
-          )}
+          {/* Board Strength */}
+          <div className="mt-3 flex-shrink-0">{boardStrengthJsx}</div>
         </div>
       </div>
 
