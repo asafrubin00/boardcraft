@@ -499,7 +499,7 @@ export default function BoardroomTable({
               left: `${pos.leftPct}%`,
               top: `${pos.topPct}%`,
               transform: `translate(-50%, ${labelOffset}px)`,
-              maxWidth: 80,
+              maxWidth: 88,
               textAlign: 'center',
             }}
           >
@@ -507,14 +507,14 @@ export default function BoardroomTable({
               <>
                 <div
                   className="font-semibold text-foreground leading-tight"
-                  style={{ fontSize: '11px', maxWidth: 80, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  style={{ fontSize: '9px', maxWidth: 88, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                   title={director.name}
                 >
                   {director.name}
                 </div>
                 <div
                   className="text-foreground/50 leading-tight"
-                  style={{ fontSize: '11px', maxWidth: 80, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  style={{ fontSize: '9px', maxWidth: 88, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                   title={actualLabel}
                 >
                   {actualLabel}
@@ -523,7 +523,7 @@ export default function BoardroomTable({
             ) : (
               <div
                 className="text-foreground/50 leading-tight"
-                style={{ fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 80 }}
+                style={{ fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 88 }}
               >
                 {shortRoleLabel(pos.defaultRole, jurisdiction, null, undefined, companyId)}
               </div>
