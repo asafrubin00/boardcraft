@@ -631,6 +631,10 @@ function BoardConstructionWrapper({
   const [swapMessage, setSwapMessage] = useState<string | null>(null);
   const [showCompanyInfo, setShowCompanyInfo] = useState(false);
   const [mobileOverlay, setMobileOverlay] = useState<null | 'pool' | 'compliance'>(null);
+  const [mobileHintsStep, setMobileHintsStep] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0;
+    return localStorage.getItem('boardcraft_mobile_hints_seen') ? -1 : 0;
+  });
 
   // ── Undo / Redo history ──
   const MAX_HISTORY = 20;
@@ -691,6 +695,17 @@ function BoardConstructionWrapper({
       const next = prev + 1;
       if (next > 7) {
         if (typeof window !== 'undefined') localStorage.setItem('boardcraft_hints_seen', 'true');
+        return -1;
+      }
+      return next;
+    });
+  }, []);
+
+  const advanceMobileHint = useCallback(() => {
+    setMobileHintsStep((prev) => {
+      const next = prev + 1;
+      if (next >= 2) {
+        if (typeof window !== 'undefined') localStorage.setItem('boardcraft_mobile_hints_seen', 'true');
         return -1;
       }
       return next;
@@ -1143,30 +1158,71 @@ function BoardConstructionWrapper({
           </div>
           {/* Company card */}
           <div className="flex-shrink-0 mb-2">{companyCardJsx}</div>
+
+          {/* ── Tab buttons row (Compliance | Pool) ── */}
+          <div className="flex-shrink-0 flex gap-2 mb-1">
+            <button
+              onClick={() => { setMobileOverlay('compliance'); advanceMobileHint(); }}
+              className="flex-1 py-1.5 rounded-lg border border-gold/50 bg-gold/10 text-gold text-[11px] font-bold tracking-wide cursor-pointer"
+            >
+              ⚖ Compliance
+            </button>
+            <button
+              onClick={() => { setMobileOverlay('pool'); if (mobileHintsStep === 1) advanceMobileHint(); }}
+              className="flex-1 py-1.5 rounded-lg border border-gold/50 bg-gold/10 text-gold text-[11px] font-bold tracking-wide cursor-pointer"
+            >
+              Directors ▷
+            </button>
+          </div>
+
+          {/* ── Mobile first-time hint bubbles ── */}
+          <AnimatePresence mode="wait">
+            {mobileHintsStep === 0 && (
+              <motion.div key="mhint-0" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }} className="flex-shrink-0 mb-1 relative">
+                {/* Arrow pointing to left (Compliance) button */}
+                <div className="absolute -top-1.5 left-[22%] w-0 h-0" style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '6px solid rgba(200,150,12,0.5)' }} />
+                <div className="bg-navy-dark border border-gold/40 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+                  <p className="text-[11px] text-foreground/80 font-narrative leading-snug">Check compliance &amp; lock your board here</p>
+                  <button onClick={advanceMobileHint} className="shrink-0 text-gold text-[10px] font-bold">Got it →</button>
+                </div>
+              </motion.div>
+            )}
+            {mobileHintsStep === 1 && (
+              <motion.div key="mhint-1" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }} className="flex-shrink-0 mb-1 relative">
+                {/* Arrow pointing to right (Pool) button */}
+                <div className="absolute -top-1.5 right-[22%] w-0 h-0" style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '6px solid rgba(200,150,12,0.5)' }} />
+                <div className="bg-navy-dark border border-gold/40 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+                  <p className="text-[11px] text-foreground/80 font-narrative leading-snug">Browse &amp; assign director candidates here</p>
+                  <button onClick={advanceMobileHint} className="shrink-0 text-gold text-[10px] font-bold">Got it</button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Boardroom table */}
           <div className="flex-1 flex items-center justify-center min-h-0">
             <BoardroomTable seats={seats} directors={availableDirectors} activeSeatIndex={activeSeatIdx} onSeatClick={handleSeatClick} hasEnergyTransition={hasEnergyTransition} hasCsrd={hasCsrd} hasStrategy={hasStrategy} onDropOnSeat={handleAssignToSeat} companyShortName={company.shortName} companyShortNameSuffix={company.shortNameSuffix} jurisdiction={company.jurisdiction} combinedChairCeo={company.id === 'company_vantage'} workerRepIds={company.id === 'company_rheinfeld' ? ['rdir_w_koch', 'rdir_w_alrashid', 'rdir_w_hoffmann', 'rdir_w_mehta', 'rdir_w_gruber'] : []} lockedDirectorIds={company.id === 'company_rheinfeld' ? ['rdir_heinrich'] : []} companyId={company.id} />
           </div>
-          <p className="text-[10px] text-foreground/30 mt-1 text-center flex-shrink-0 mb-2">Tap a seat · tap filled seat to view profile</p>
+          <p className="text-[10px] text-foreground/30 mt-1 text-center flex-shrink-0 mb-1">Tap a seat · tap filled seat to view profile</p>
+
+          {/* ── Compliance notification (shown when board is valid) ── */}
+          <AnimatePresence>
+            {!hasBlockingErrors && seats.length > 0 && (
+              <motion.div key="compliant-banner" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.25 }} className="flex-shrink-0 mb-1 rounded-lg bg-success/10 border border-success/30 px-3 py-2">
+                <p className="text-success text-xs font-bold text-center mb-1.5">✓ Board compliant</p>
+                <button
+                  onClick={() => setShowLockConfirm(true)}
+                  className="w-full py-1.5 rounded-lg bg-gold text-navy-dark text-xs font-bold cursor-pointer"
+                >
+                  Lock Board &amp; Start Game
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Board Strength */}
           <div className="flex-shrink-0">{boardStrengthJsx}</div>
         </div>
-
-        {/* ── Side tab: Compliance (left edge) ── */}
-        <button
-          onClick={() => setMobileOverlay('compliance')}
-          className="absolute left-0 top-1/2 z-10 bg-gold text-navy-dark font-bold tracking-widest shadow-lg rounded-r-lg cursor-pointer px-1.5 py-3"
-          style={{ writingMode: 'vertical-lr', transform: 'translateY(-50%) rotate(180deg)', fontSize: 9 }}
-          aria-label="Open Compliance panel"
-        >COMPLIANCE</button>
-
-        {/* ── Side tab: Director Pool (right edge) ── */}
-        <button
-          onClick={() => setMobileOverlay('pool')}
-          className="absolute right-0 top-1/2 z-10 bg-gold text-navy-dark font-bold tracking-widest shadow-lg rounded-l-lg cursor-pointer px-1.5 py-3"
-          style={{ writingMode: 'vertical-rl', transform: 'translateY(-50%)', fontSize: 9 }}
-          aria-label="Open Director Pool"
-        >POOL</button>
 
         {/* ── Director Pool overlay (slides from right) ── */}
         <AnimatePresence>
