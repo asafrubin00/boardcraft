@@ -1141,8 +1141,8 @@ function BoardConstructionWrapper({
             <button onClick={handleUndo} disabled={history.length === 0} className={`text-[11px] px-3 py-1.5 rounded border transition-colors ${history.length > 0 ? 'border-foreground/30 text-foreground/70' : 'border-card-border text-foreground/20 cursor-not-allowed'}`}>↩ Undo</button>
             <button onClick={handleRedo} disabled={future.length === 0} className={`text-[11px] px-3 py-1.5 rounded border transition-colors ${future.length > 0 ? 'border-foreground/30 text-foreground/70' : 'border-card-border text-foreground/20 cursor-not-allowed'}`}>↪ Redo</button>
           </div>
-          {/* Company card */}
-          <div className="flex-shrink-0 mb-2">{companyCardJsx}</div>
+          {/* Company card — elevated above gold tabs when expanded */}
+          <div className={`flex-shrink-0 mb-2 relative${showCompanyInfo ? ' z-20' : ''}`}>{companyCardJsx}</div>
 
           {/* Boardroom table */}
           <div className="flex-1 flex items-center justify-center min-h-0">
