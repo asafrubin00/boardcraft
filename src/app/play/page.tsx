@@ -631,10 +631,6 @@ function BoardConstructionWrapper({
   const [swapMessage, setSwapMessage] = useState<string | null>(null);
   const [showCompanyInfo, setShowCompanyInfo] = useState(false);
   const [mobileOverlay, setMobileOverlay] = useState<null | 'pool' | 'compliance'>(null);
-  const [mobileHintsStep, setMobileHintsStep] = useState<number>(() => {
-    if (typeof window === 'undefined') return 0;
-    return localStorage.getItem('boardcraft_mobile_hints_seen') ? -1 : 0;
-  });
 
   // ── Undo / Redo history ──
   const MAX_HISTORY = 20;
@@ -695,17 +691,6 @@ function BoardConstructionWrapper({
       const next = prev + 1;
       if (next > 7) {
         if (typeof window !== 'undefined') localStorage.setItem('boardcraft_hints_seen', 'true');
-        return -1;
-      }
-      return next;
-    });
-  }, []);
-
-  const advanceMobileHint = useCallback(() => {
-    setMobileHintsStep((prev) => {
-      const next = prev + 1;
-      if (next >= 2) {
-        if (typeof window !== 'undefined') localStorage.setItem('boardcraft_mobile_hints_seen', 'true');
         return -1;
       }
       return next;
@@ -1159,30 +1144,6 @@ function BoardConstructionWrapper({
           {/* Company card */}
           <div className="flex-shrink-0 mb-2">{companyCardJsx}</div>
 
-          {/* ── Mobile first-time hint bubbles ── */}
-          <AnimatePresence mode="wait">
-            {mobileHintsStep === 0 && (
-              <motion.div key="mhint-0" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }} className="flex-shrink-0 mb-1 relative">
-                {/* Arrow pointing to left (Compliance) button */}
-                <div className="absolute -top-1.5 left-[22%] w-0 h-0" style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '6px solid rgba(200,150,12,0.5)' }} />
-                <div className="bg-navy-dark border border-gold/40 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
-                  <p className="text-[11px] text-foreground/80 font-narrative leading-snug">Check compliance &amp; lock your board here</p>
-                  <button onClick={advanceMobileHint} className="shrink-0 text-gold text-[10px] font-bold">Got it →</button>
-                </div>
-              </motion.div>
-            )}
-            {mobileHintsStep === 1 && (
-              <motion.div key="mhint-1" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }} className="flex-shrink-0 mb-1 relative">
-                {/* Arrow pointing to right (Pool) button */}
-                <div className="absolute -top-1.5 right-[22%] w-0 h-0" style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '6px solid rgba(200,150,12,0.5)' }} />
-                <div className="bg-navy-dark border border-gold/40 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
-                  <p className="text-[11px] text-foreground/80 font-narrative leading-snug">Browse &amp; assign director candidates here</p>
-                  <button onClick={advanceMobileHint} className="shrink-0 text-gold text-[10px] font-bold">Got it</button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           {/* Boardroom table */}
           <div className="flex-1 flex items-center justify-center min-h-0">
             <BoardroomTable seats={seats} directors={availableDirectors} activeSeatIndex={activeSeatIdx} onSeatClick={handleSeatClick} hasEnergyTransition={hasEnergyTransition} hasCsrd={hasCsrd} hasStrategy={hasStrategy} onDropOnSeat={handleAssignToSeat} companyShortName={company.shortName} companyShortNameSuffix={company.shortNameSuffix} jurisdiction={company.jurisdiction} combinedChairCeo={company.id === 'company_vantage'} workerRepIds={company.id === 'company_rheinfeld' ? ['rdir_w_koch', 'rdir_w_alrashid', 'rdir_w_hoffmann', 'rdir_w_mehta', 'rdir_w_gruber'] : []} lockedDirectorIds={company.id === 'company_rheinfeld' ? ['rdir_heinrich'] : []} companyId={company.id} />
@@ -1211,20 +1172,24 @@ function BoardConstructionWrapper({
         {/* ── Golden side-tab buttons (visible on base state only) ── */}
         {mobileOverlay === null && (
           <>
-            <button
-              onClick={() => { setMobileOverlay('compliance'); advanceMobileHint(); }}
+            <motion.button
+              onClick={() => setMobileOverlay('compliance')}
               className="absolute left-0 z-10 bg-gold text-navy-dark font-bold tracking-widest py-3 px-2 rounded-r-lg shadow-lg cursor-pointer"
               style={{ top: '130px', writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '10px' }}
+              animate={{ x: [0, 6, -3, 5, 0] }}
+              transition={{ duration: 0.6, delay: 0.9, ease: 'easeInOut' }}
             >
               COMPLIANCE
-            </button>
-            <button
-              onClick={() => { setMobileOverlay('pool'); if (mobileHintsStep === 1) advanceMobileHint(); }}
+            </motion.button>
+            <motion.button
+              onClick={() => setMobileOverlay('pool')}
               className="absolute right-0 z-10 bg-gold text-navy-dark font-bold tracking-widest py-3 px-2 rounded-l-lg shadow-lg cursor-pointer"
               style={{ top: '130px', writingMode: 'vertical-rl', fontSize: '10px' }}
+              animate={{ x: [0, -6, 3, -5, 0] }}
+              transition={{ duration: 0.6, delay: 0.9, ease: 'easeInOut' }}
             >
               POOL
-            </button>
+            </motion.button>
           </>
         )}
 

@@ -510,7 +510,7 @@ export default function BoardroomTable({
                   style={{ fontSize: '9px', maxWidth: 88, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                   title={director.name}
                 >
-                  {director.name}
+                  {director.name.split(' ').pop()}
                 </div>
                 <div
                   className="text-foreground/50 leading-tight"
