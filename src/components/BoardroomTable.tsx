@@ -291,8 +291,8 @@ export default function BoardroomTable({
   const getDirector = (id: string) => directors.find((d) => d.id === id);
   const getSeat = (directorId: string) => seats.find((s) => s.directorId === directorId);
 
-  // All layouts: square 1:1 canvas, 400×400 viewBox, 200×200 centred table
-  const tableRect = { x: 100, y: 100, w: 200, h: 200, rx: 30 };
+  // All layouts: square 1:1 canvas, 400×400 viewBox, 168×168 centred table
+  const tableRect = { x: 116, y: 116, w: 168, h: 168, rx: 26 };
   const svgViewBox = '0 0 400 400';
   const containerAspectRatio = '1/1';
   // Text centred on the table
