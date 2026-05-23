@@ -309,40 +309,79 @@ export default function GameBoardScreen({
   // Governance health colours
   const healthColor = gameState.governanceHealth >= 70 ? 'text-success' : gameState.governanceHealth >= 50 ? 'text-warning' : 'text-error';
   const healthDotColor = gameState.governanceHealth >= 70 ? 'bg-success' : gameState.governanceHealth >= 50 ? 'bg-warning' : 'bg-error';
+  // SV colour — used by the mobile compact display (SvTracker handles it internally on desktop)
+  const svColor = gameState.svIndex >= 100 ? 'text-success' : gameState.svIndex >= 80 ? 'text-gold' : 'text-error';
+  // Short metric label (MIS for Meridian, SV for all others) — for mobile header
+  const metricLabel = gameState.company.id === 'company_meridian' ? 'MIS' : 'SV';
 
   return (
     <div className="h-screen bg-navy text-foreground flex flex-col overflow-hidden">
-      {/* Top Bar - all game info merged here */}
-      <header className="border-b border-card-border px-4 py-2 flex items-center justify-between bg-navy-dark/50 shrink-0">
-        {/* Left: Logo */}
-        <h1 className="text-lg font-bold text-gold tracking-wide shrink-0">BOARDCRAFT</h1>
+      {/* Top Bar
+          Mobile:  two rows — Row1: logo + company + volume | Row2: quarter + metrics
+          Desktop: single row — logo | quarter/turn | SvTracker + GH + AGM | company + volume */}
+      <header className="border-b border-card-border px-3 md:px-4 py-1.5 md:py-2 bg-navy-dark/50 shrink-0 flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-0">
 
-        {/* Centre: Quarter + Turn */}
-        <div className="flex items-center gap-3">
-          <div className="border border-gold/60 rounded px-2.5 py-0.5">
-            <span className="text-gold font-narrative font-bold text-base">{gameState.currentQuarter}</span>
+        {/* ── Row 1 (mobile) / Left (desktop): Logo + mobile company name + mobile volume ── */}
+        <div className="flex items-center justify-between md:justify-start">
+          <h1 className="text-base md:text-lg font-bold text-gold tracking-wide shrink-0">BOARDCRAFT</h1>
+          {/* Company name + volume — mobile only */}
+          <div className="flex items-center gap-2 md:hidden">
+            <span className="text-sm text-foreground/50 truncate max-w-[160px]">
+              {gameState.company.shortName ?? gameState.company.name}
+            </span>
+            <button
+              onClick={handleCycleVolume}
+              className="flex items-center text-foreground/40 hover:text-foreground/70 transition-colors text-base cursor-pointer"
+              title={`Volume: ${volumeLevel}`}
+            >
+              {volumeLevel === 'muted' ? '🔇' : volumeLevel === 'quiet' ? '🔈' : volumeLevel === 'normal' ? '🔉' : '🔊'}
+              <VolumeBars level={volumeLevel} />
+            </button>
           </div>
-          <span className="text-foreground text-sm">
-            Turn <span className="text-gold font-bold">{gameState.currentTurn}</span>
-            {' / '}<span className="text-foreground/60">{maxTurns}</span>
-          </span>
         </div>
 
-        {/* Centre-right: SV + GH + AGM */}
-        <div className="flex items-center gap-4">
+        {/* ── Row 2 (mobile) / Centre (desktop): Quarter + Turn + Metrics ── */}
+        <div className="flex items-center gap-2 md:gap-4">
+
+          {/* Quarter badge + turn counter */}
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="border border-gold/60 rounded px-2 md:px-2.5 py-0.5">
+              <span className="text-gold font-narrative font-bold text-sm md:text-base">{gameState.currentQuarter}</span>
+            </div>
+            <span className="text-foreground text-xs md:text-sm whitespace-nowrap">
+              <span className="hidden md:inline">Turn </span>
+              <span className="text-gold font-bold">{gameState.currentTurn}</span>
+              <span className="text-foreground/60"> / {maxTurns}</span>
+            </span>
+          </div>
+
+          {/* SV metric
+              Mobile:  compact tappable badge (no sparkline)
+              Desktop: full SvTracker widget with sparkline */}
           <div className="flex items-center gap-1">
-            <SvTracker
-              svIndex={gameState.svIndex}
-              svHistory={svHistory}
-              onOpenDashboard={() => setShowDashboard(true)}
-              companyId={gameState.company.id}
-            />
+            <button
+              onClick={() => setShowDashboard(true)}
+              className="md:hidden flex items-center gap-1 rounded border border-card-border px-2 py-0.5 cursor-pointer"
+              title="Open SV Dashboard"
+            >
+              <span className="text-xs text-foreground/60">{metricLabel}</span>
+              <span className={`font-bold text-sm ${svColor}`}>{gameState.svIndex}</span>
+            </button>
+            <div className="hidden md:flex items-center gap-1">
+              <SvTracker
+                svIndex={gameState.svIndex}
+                svHistory={svHistory}
+                onOpenDashboard={() => setShowDashboard(true)}
+                companyId={gameState.company.id}
+              />
+            </div>
             {wounds.filter(w => w.type === 'sv').map((_, i) => (
               <span key={`sv-w-${i}`} className="inline-block w-2 h-2 rounded-full bg-error animate-pulse" title="SV wound" />
             ))}
           </div>
 
-          <div className="flex items-center gap-1.5 border-l border-card-border pl-3">
+          {/* Governance Health */}
+          <div className="flex items-center gap-1 md:gap-1.5 border-l border-card-border pl-2 md:pl-3">
             <span className={`w-2 h-2 rounded-full ${healthDotColor}`} />
             <span className="text-foreground/60 text-xs">GH</span>
             <span className={`font-bold text-sm ${healthColor}`}>{gameState.governanceHealth}</span>
@@ -351,7 +390,8 @@ export default function GameBoardScreen({
             ))}
           </div>
 
-          <div className="text-xs text-foreground/50 border-l border-card-border pl-3">
+          {/* AGM countdown */}
+          <div className="text-xs text-foreground/50 border-l border-card-border pl-2 md:pl-3 whitespace-nowrap">
             AGM:{' '}
             {isAfterAgm ? (
               <span className="text-success font-bold">Done</span>
@@ -363,8 +403,8 @@ export default function GameBoardScreen({
           </div>
         </div>
 
-        {/* Right: Company + sound */}
-        <div className="flex items-center gap-3 shrink-0">
+        {/* ── Desktop Right: Company name + volume ── */}
+        <div className="hidden md:flex items-center gap-3 shrink-0">
           <span className="text-sm text-foreground/50">{gameState.company.name}</span>
           <button
             onClick={handleCycleVolume}
@@ -375,6 +415,7 @@ export default function GameBoardScreen({
             <VolumeBars level={volumeLevel} />
           </button>
         </div>
+
       </header>
 
       {/* Forced Change Urgent Banner */}
@@ -388,12 +429,12 @@ export default function GameBoardScreen({
         </div>
       )}
 
-      {/* Main Content - 40/60 split */}
-      <div className="flex-1 flex overflow-hidden" style={{ height: 'calc(100vh - 90px)' }}>
-        {/* Left 40% - Boardroom Table + Director Detail */}
-        <div className="flex flex-col border-r border-card-border" style={{ width: '40%' }}>
-          {/* Boardroom Table */}
-          <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center p-3" style={{ paddingTop: '8px' }}>
+      {/* Main Content — stacks vertically on mobile, 40/60 side-by-side on md+ */}
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        {/* Left panel — Boardroom Table + Director Detail */}
+        <div className="flex flex-col border-b md:border-b-0 md:border-r border-card-border md:w-[40%]">
+          {/* Boardroom Table — fixed height on mobile, flex-1 on desktop */}
+          <div className="overflow-hidden flex items-center justify-center p-3 h-[min(56vw,260px)] md:h-auto md:flex-1 md:min-h-0" style={{ paddingTop: '8px' }}>
             <BoardroomTable
               seats={gameState.board.seats}
               directors={gameState.directors}
@@ -410,39 +451,45 @@ export default function GameBoardScreen({
             />
           </div>
 
-          {/* Director Detail Box - fixed 180px, scrolls internally, margin-bottom clears ticker */}
-          <div className="flex-none border-t border-card-border bg-navy-dark/30 px-4 py-3 overflow-y-auto" style={{ height: '180px', marginBottom: '44px' }}>
+          {/* Director Detail Box
+              Mobile:  auto height (max 180px), scrollable, no bottom margin
+              Desktop: fixed 180px, margin-bottom clears the news ticker */}
+          <div className="flex-none border-t border-card-border bg-navy-dark/30 px-3 md:px-4 py-2 md:py-3 overflow-y-auto max-h-[180px] md:max-h-none md:h-[180px] md:mb-[44px]">
             {selectedDir ? (
-              <div className="flex gap-4">
-                {/* Portrait + name + role */}
-                <div className="flex flex-col items-center shrink-0">
-                  <div className="rounded-full overflow-hidden border-2 border-gold/40">
+              /* Mobile: portrait row at top, domain bars below
+                 Desktop: portrait column on left, domain bars on right */
+              <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+                {/* Portrait + name + role + stamina */}
+                <div className="flex flex-row md:flex-col items-center gap-3 md:gap-0 shrink-0">
+                  <div className="rounded-full overflow-hidden border-2 border-gold/40 shrink-0">
                     <DirectorPortrait directorId={selectedDir.id} size={52} />
                   </div>
-                  <span className="font-bold text-foreground text-center mt-1.5 leading-tight" style={{ fontSize: '13px', maxWidth: '120px' }}>
-                    {selectedDir.name}
-                  </span>
-                  <span className="inline-block text-[10px] px-1.5 py-px rounded-full bg-gold/15 text-gold border border-gold/25 font-medium mt-1 leading-none">
-                    {shortRole(selectedDir.seatRole)}
-                  </span>
-                  {/* Stamina */}
-                  <div className="flex items-center gap-1.5 mt-2 w-full">
-                    <span className="text-[11px] text-foreground/50 shrink-0">Stamina</span>
-                    <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${flashingIds.has(selectedDir.id) ? 'bg-success/30' : 'bg-navy-dark'}`}>
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${
-                          flashingIds.has(selectedDir.id)
-                            ? 'bg-green-400'
-                            : selectedDir.currentEnergy >= 60
-                            ? 'bg-success'
-                            : selectedDir.currentEnergy >= 20
-                            ? 'bg-warning'
-                            : 'bg-error'
-                        }`}
-                        style={{ width: `${selectedDir.currentEnergy}%` }}
-                      />
+                  <div className="flex flex-col md:items-center flex-1 md:flex-none min-w-0">
+                    <span className="font-bold text-foreground leading-tight md:text-center md:mt-1.5 truncate" style={{ fontSize: '13px', maxWidth: '160px' }}>
+                      {selectedDir.name}
+                    </span>
+                    <span className="inline-block text-[10px] px-1.5 py-px rounded-full bg-gold/15 text-gold border border-gold/25 font-medium mt-1 leading-none self-start md:self-auto">
+                      {shortRole(selectedDir.seatRole)}
+                    </span>
+                    {/* Stamina */}
+                    <div className="flex items-center gap-1.5 mt-1.5 md:mt-2 w-full min-w-[100px]">
+                      <span className="text-[11px] text-foreground/50 shrink-0">Stamina</span>
+                      <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${flashingIds.has(selectedDir.id) ? 'bg-success/30' : 'bg-navy-dark'}`}>
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${
+                            flashingIds.has(selectedDir.id)
+                              ? 'bg-green-400'
+                              : selectedDir.currentEnergy >= 60
+                              ? 'bg-success'
+                              : selectedDir.currentEnergy >= 20
+                              ? 'bg-warning'
+                              : 'bg-error'
+                          }`}
+                          style={{ width: `${selectedDir.currentEnergy}%` }}
+                        />
+                      </div>
+                      <span className="text-[11px] text-foreground/50 shrink-0">{selectedDir.currentEnergy}%</span>
                     </div>
-                    <span className="text-[11px] text-foreground/50 shrink-0">{selectedDir.currentEnergy}%</span>
                   </div>
                 </div>
                 {/* Domain scores */}
@@ -465,15 +512,15 @@ export default function GameBoardScreen({
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center py-6">
+              <div className="flex items-center justify-center py-4 md:py-6">
                 <p className="text-foreground/40 italic text-sm font-narrative">Select a director to view their profile</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Right 60% - Event Area: full width, 20px padding, stops above ticker */}
-        <main className="flex-1 overflow-y-auto py-6" style={{ height: 'calc(100vh - 100px)', paddingLeft: '20px', paddingRight: '20px' }}>
+        {/* Right panel — Event Area */}
+        <main className="flex-1 min-h-0 overflow-y-auto py-4 md:py-6 px-4 md:px-5 pb-[84px] md:pb-6">
           <div className="w-full">
             <AnimatePresence mode="wait">
               {currentEvent ? (

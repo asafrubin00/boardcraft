@@ -166,6 +166,7 @@ export default function ForcedChangeModal({
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
+        className="flex flex-col"
         style={{
           background: '#0D2237',
           border: '2px solid rgba(220,60,60,0.45)',
@@ -174,8 +175,6 @@ export default function ForcedChangeModal({
           maxWidth: 940,
           maxHeight: '92vh',
           overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
           margin: '0 12px',
         }}
       >
@@ -206,19 +205,20 @@ export default function ForcedChangeModal({
           {forcedChange.narrative}
         </div>
 
-        {/* Three-column body */}
-        <div style={{
-          display: 'flex', flex: 1, overflow: 'hidden', padding: '12px 16px 16px', gap: 12,
-          minHeight: 0,
-        }}>
-          {/* ── Left: Departing Director ── */}
-          <div style={{
-            width: '28%', flexShrink: 0,
-            background: 'rgba(220,60,60,0.06)',
-            border: '1px solid rgba(220,60,60,0.2)',
-            borderRadius: 10, padding: '14px 12px',
-            overflowY: 'auto',
-          }}>
+        {/* Body — single column (mobile) / three columns (desktop) */}
+        <div
+          className="flex flex-col md:flex-row flex-1 min-h-0 overflow-y-auto md:overflow-hidden"
+          style={{ padding: '12px 16px 16px', gap: 12 }}
+        >
+          {/* ── Left: Departing Director (order-1 on both breakpoints) ── */}
+          <div
+            className="order-1 md:w-[28%] md:flex-none md:overflow-y-auto"
+            style={{
+              background: 'rgba(220,60,60,0.06)',
+              border: '1px solid rgba(220,60,60,0.2)',
+              borderRadius: 10, padding: '14px 12px',
+            }}
+          >
             <div style={{ fontSize: 10, color: '#B08A30', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, fontWeight: 600 }}>
               Departing Director
             </div>
@@ -273,14 +273,15 @@ export default function ForcedChangeModal({
             </div>
           </div>
 
-          {/* ── Centre: Board State ── */}
-          <div style={{
-            flex: '0 0 32%',
-            background: 'rgba(26,58,92,0.25)',
-            border: '1px solid rgba(200,150,12,0.2)',
-            borderRadius: 10, padding: '14px 12px',
-            overflowY: 'auto',
-          }}>
+          {/* ── Centre: Board State — shown last on mobile (below replacement pool) ── */}
+          <div
+            className="order-3 md:order-2 md:w-[32%] md:flex-none md:overflow-y-auto"
+            style={{
+              background: 'rgba(26,58,92,0.25)',
+              border: '1px solid rgba(200,150,12,0.2)',
+              borderRadius: 10, padding: '14px 12px',
+            }}
+          >
             <div style={{ fontSize: 10, color: '#B08A30', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, fontWeight: 600 }}>
               {hoverDir ? `Candidate: ${hoverDir.name}` : 'Your Board'}
             </div>
@@ -344,14 +345,15 @@ export default function ForcedChangeModal({
             </div>
           </div>
 
-          {/* ── Right: Replacement Pool ── */}
-          <div style={{
-            flex: 1, minWidth: 0,
-            display: 'flex', flexDirection: 'column',
-            background: 'rgba(13,27,42,0.6)',
-            border: '1px solid rgba(200,150,12,0.2)',
-            borderRadius: 10, overflow: 'hidden',
-          }}>
+          {/* ── Right: Replacement Pool — shown second on mobile ── */}
+          <div
+            className="order-2 md:order-3 flex flex-col md:flex-1 md:min-w-0"
+            style={{
+              background: 'rgba(13,27,42,0.6)',
+              border: '1px solid rgba(200,150,12,0.2)',
+              borderRadius: 10, overflow: 'hidden',
+            }}
+          >
             <div style={{ padding: '12px 12px 8px', borderBottom: '1px solid rgba(200,150,12,0.15)', flexShrink: 0 }}>
               <div style={{ fontSize: 10, color: '#B08A30', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 8 }}>
                 Replacement Pool
@@ -376,7 +378,7 @@ export default function ForcedChangeModal({
             </div>
 
             {/* Candidate cards */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
+            <div className="overflow-y-auto max-h-[280px] md:max-h-none md:flex-1" style={{ padding: '8px 10px' }}>
               {availableDirectors.length === 0 ? (
                 <p style={{ fontSize: 12, color: 'rgba(232,228,220,0.4)', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>
                   No available directors in the pool.

@@ -459,7 +459,7 @@ export default function AgmScreen({
         </motion.h1>
 
         <motion.p
-          className="font-narrative italic text-foreground/70 text-center max-w-3xl mx-auto mb-8 leading-relaxed"
+          className="font-narrative italic text-foreground/70 text-center max-w-3xl mx-auto mb-6 md:mb-8 leading-relaxed text-sm md:text-base"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}

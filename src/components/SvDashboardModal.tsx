@@ -152,7 +152,7 @@ export default function SvDashboardModal({
                   {(Object.keys(BREAKDOWN_LABELS) as Array<keyof Omit<GovernanceHealthBreakdown, 'total'>>).map(
                     (key) => (
                       <div key={key} className="flex items-center gap-2">
-                        <span className="text-xs text-foreground/70 w-40 shrink-0">
+                        <span className="text-xs text-foreground/70 w-28 md:w-40 shrink-0">
                           {governanceLabels[key] ?? BREAKDOWN_LABELS[key]}
                         </span>
                         <span className="text-xs text-gold font-bold w-8 text-right">

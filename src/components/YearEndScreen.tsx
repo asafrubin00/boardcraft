@@ -395,7 +395,7 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
               </div>
 
               {/* Career Total */}
-              <div className="text-center border-l border-r border-card-border px-4">
+              <div className="text-center border-t border-b md:border-t-0 md:border-b-0 md:border-l md:border-r border-card-border py-4 md:py-0 px-4">
                 <div className="text-xs text-foreground/50 uppercase tracking-wide mb-1">Career Total</div>
                 <div className="text-4xl font-bold text-gold">{careerStats.totalGc}</div>
                 <div className="text-xs text-foreground/50 mt-1">GC</div>

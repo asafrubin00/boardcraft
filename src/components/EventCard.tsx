@@ -103,7 +103,7 @@ export default function EventCard({
       initial={{ x: 300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="rounded-xl bg-card-bg border border-card-border p-6 w-full"
+      className="rounded-xl bg-card-bg border border-card-border p-4 md:p-6 w-full"
       style={{ borderLeftWidth: '4px', borderLeftColor: tierLeftBorderHex(event.tier) }}
     >
       {/* Header: name */}
@@ -138,7 +138,7 @@ export default function EventCard({
       <div className="mb-6 px-1">
         <EventIllustration
           type={event.illustrationType ?? 'default'}
-          className="float-right ml-4 mb-2"
+          className="hidden md:block float-right ml-4 mb-2"
         />
         <p className="font-narrative italic text-foreground/80 leading-relaxed">
           {event.narrativeCard}

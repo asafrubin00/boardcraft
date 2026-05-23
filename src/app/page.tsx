@@ -147,7 +147,7 @@ function HomeInner() {
       <div className="relative z-10 flex flex-col items-center">
         {/* Logo */}
         <h1
-          className="text-6xl md:text-7xl font-bold text-gold tracking-[0.3em] mb-6 opacity-0"
+          className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gold tracking-[0.08em] sm:tracking-[0.2em] md:tracking-[0.3em] mb-6 opacity-0"
           style={{
             fontFamily: 'Georgia, serif',
             animation: 'fadeInUp 1s ease-out 0.3s forwards',

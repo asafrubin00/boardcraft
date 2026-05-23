@@ -96,7 +96,7 @@ export default function DeploymentModal({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className="bg-navy rounded-xl border border-card-border max-w-4xl w-full max-h-[90vh] overflow-hidden p-5 flex flex-col"
+            className="bg-navy rounded-xl border border-card-border max-w-4xl w-full max-h-[90vh] overflow-hidden p-3 md:p-5 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
