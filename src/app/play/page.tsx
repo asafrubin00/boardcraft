@@ -1125,7 +1125,7 @@ function BoardConstructionWrapper({
         </div>
 
         {/* ═══ CENTRE (30%) ═══ */}
-        <div className="order-3 md:order-2 w-full md:w-[30%] border-t md:border-t-0 md:border-r border-card-border flex flex-col overflow-hidden">
+        <div className="order-3 md:order-2 w-full md:w-[30%] border-t md:border-t-0 md:border-r border-card-border flex flex-col md:overflow-hidden">
           {/* Sticky header: Back to Overview + Undo/Redo */}
           <div className="flex-shrink-0 p-3 pb-0 space-y-2">
             {mode !== 'default' && (
@@ -1146,7 +1146,7 @@ function BoardConstructionWrapper({
           <AnimatePresence mode="wait">
             {mode === 'default' && (
               <motion.div key="def" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col p-5 space-y-5">
-                <div className="text-center pt-4">
+                <div className="hidden md:block text-center pt-4">
                   <h2 className="text-3xl font-bold text-gold tracking-widest font-narrative">BOARDCRAFT</h2>
                   <p className="text-xs text-foreground/50 mt-2 font-narrative italic">
                     {company.id === 'company_meridian'
@@ -1372,7 +1372,7 @@ function BoardConstructionWrapper({
         </div>
 
         {/* ═══ RIGHT: Boardroom Table (35%) ═══ */}
-        <div className="order-1 md:order-3 w-full md:w-[35%] h-[380px] md:h-auto flex flex-col p-3 md:p-4 overflow-y-auto">
+        <div className="order-1 md:order-3 w-full md:w-[35%] h-[440px] md:h-auto flex flex-col p-3 md:p-4 overflow-y-auto">
           {/* Company info box */}
           <div className="mb-3 flex-shrink-0">
             <div
