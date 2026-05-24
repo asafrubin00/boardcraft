@@ -632,6 +632,11 @@ function BoardConstructionWrapper({
   const [showCompanyInfo, setShowCompanyInfo] = useState(false);
   const [mobileOverlay, setMobileOverlay] = useState<null | 'pool' | 'compliance'>(null);
 
+  // ── Touch drag state (mobile/tablet DnD) ──
+  const touchDragRef = useRef<{ dirId: string; startX: number; startY: number; active: boolean } | null>(null);
+  const [touchGhost, setTouchGhost] = useState<{ dirId: string; x: number; y: number } | null>(null);
+  const touchGhostRef = useRef<HTMLDivElement | null>(null);
+
   // ── Undo / Redo history ──
   const MAX_HISTORY = 20;
   const [history, setHistory] = useState<{ seats: BoardSeat[]; et: boolean }[]>([]);
@@ -950,6 +955,59 @@ function BoardConstructionWrapper({
     } else { setSelectedDirId(dirId); playDirectorSelect(); }
   }, [activeSeatIdx, tablePos, boardIdSet, overflowSet, handleAssignToSeat]);
 
+  // ── Touch drag handlers (mobile/tablet DnD) ──
+  const startTouchDrag = useCallback((dirId: string, x: number, y: number) => {
+    touchDragRef.current = { dirId, startX: x, startY: y, active: false };
+  }, []);
+
+  // Keep a stable ref to handleAssignToSeat so the global touch effect doesn't re-register on every render
+  const handleAssignToSeatRef = useRef(handleAssignToSeat);
+  useEffect(() => { handleAssignToSeatRef.current = handleAssignToSeat; }, [handleAssignToSeat]);
+
+  useEffect(() => {
+    const handleTouchMove = (e: TouchEvent) => {
+      const ref = touchDragRef.current;
+      if (!ref) return;
+      const touch = e.touches[0];
+      const dx = touch.clientX - ref.startX;
+      const dy = touch.clientY - ref.startY;
+      if (!ref.active && Math.sqrt(dx * dx + dy * dy) > 8) {
+        ref.active = true;
+        setMobileOverlay(null); // close pool overlay to reveal the board
+      }
+      if (ref.active) {
+        e.preventDefault(); // block page scroll while dragging
+        setTouchGhost({ dirId: ref.dirId, x: touch.clientX, y: touch.clientY });
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      const ref = touchDragRef.current;
+      if (!ref) return;
+      touchDragRef.current = null;
+      if (!ref.active) return; // tap — let normal click handler fire
+      setTouchGhost(null);
+
+      const touch = e.changedTouches[0];
+      // Temporarily hide ghost so elementFromPoint sees through it
+      if (touchGhostRef.current) touchGhostRef.current.style.display = 'none';
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (touchGhostRef.current) touchGhostRef.current.style.display = '';
+      if (!el) return;
+      const seatEl = (el as HTMLElement).closest('[data-seat-index]');
+      if (!seatEl) return;
+      const idx = parseInt((seatEl as HTMLElement).getAttribute('data-seat-index') ?? '-1', 10);
+      if (idx >= 0) handleAssignToSeatRef.current(ref.dirId, idx);
+    };
+
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd);
+    return () => {
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []); // register once — uses stable refs internally
+
   const handleAssignCandidate = useCallback(() => {
     if (activeSeatIdx === null || !selectedDirId) return;
     const cur = tablePos[activeSeatIdx]; if (!cur) return;
@@ -1146,7 +1204,7 @@ function BoardConstructionWrapper({
 
           {/* Boardroom table */}
           <div className="flex-1 flex items-center justify-center min-h-0">
-            <BoardroomTable seats={seats} directors={availableDirectors} activeSeatIndex={activeSeatIdx} onSeatClick={handleSeatClick} hasEnergyTransition={hasEnergyTransition} hasCsrd={hasCsrd} hasStrategy={hasStrategy} onDropOnSeat={handleAssignToSeat} companyShortName={company.shortName} companyShortNameSuffix={company.shortNameSuffix} jurisdiction={company.jurisdiction} combinedChairCeo={company.id === 'company_vantage'} workerRepIds={company.id === 'company_rheinfeld' ? ['rdir_w_koch', 'rdir_w_alrashid', 'rdir_w_hoffmann', 'rdir_w_mehta', 'rdir_w_gruber'] : []} lockedDirectorIds={company.id === 'company_rheinfeld' ? ['rdir_heinrich'] : []} companyId={company.id} />
+            <BoardroomTable seats={seats} directors={availableDirectors} activeSeatIndex={activeSeatIdx} onSeatClick={handleSeatClick} hasEnergyTransition={hasEnergyTransition} hasCsrd={hasCsrd} hasStrategy={hasStrategy} onDropOnSeat={handleAssignToSeat} companyShortName={company.shortName} companyShortNameSuffix={company.shortNameSuffix} jurisdiction={company.jurisdiction} combinedChairCeo={company.id === 'company_vantage'} workerRepIds={company.id === 'company_rheinfeld' ? ['rdir_w_koch', 'rdir_w_alrashid', 'rdir_w_hoffmann', 'rdir_w_mehta', 'rdir_w_gruber'] : []} lockedDirectorIds={company.id === 'company_rheinfeld' ? ['rdir_heinrich'] : []} companyId={company.id} onTouchDragStart={startTouchDrag} />
           </div>
           <p className="text-[10px] text-foreground/30 mt-1 text-center flex-shrink-0 mb-1">Tap a seat · tap filled seat to view profile</p>
 
@@ -1278,7 +1336,7 @@ function BoardConstructionWrapper({
                       ) : (
                         <div className="grid grid-cols-4 gap-1.5">
                           {sortedPool.map((d) => (
-                            <PoolCard key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} displayFee={budget === 0 ? 0 : undefined} />
+                            <PoolCard key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} displayFee={budget === 0 ? 0 : undefined} onTouchStart={(e) => { const t = e.touches[0]; startTouchDrag(d.id, t.clientX, t.clientY); }} />
                           ))}
                         </div>
                       )}
@@ -1430,7 +1488,7 @@ function BoardConstructionWrapper({
             ) : (
               <div className="grid grid-cols-4 gap-1.5">
                 {sortedPool.map((d) => (
-                  <PoolCard key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} displayFee={budget === 0 ? 0 : undefined} />
+                  <PoolCard key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} displayFee={budget === 0 ? 0 : undefined} onTouchStart={(e) => { const t = e.touches[0]; startTouchDrag(d.id, t.clientX, t.clientY); }} />
                 ))}
               </div>
             )}
@@ -1707,6 +1765,7 @@ function BoardConstructionWrapper({
               workerRepIds={company.id === 'company_rheinfeld' ? ['rdir_w_koch', 'rdir_w_alrashid', 'rdir_w_hoffmann', 'rdir_w_mehta', 'rdir_w_gruber'] : []}
               lockedDirectorIds={company.id === 'company_rheinfeld' ? ['rdir_heinrich'] : []}
               companyId={company.id}
+              onTouchDragStart={startTouchDrag}
             />
           </div>
           <p className="text-[10px] text-foreground/30 mt-2 text-center flex-shrink-0">Click a seat to assign · Click a filled seat to view profile</p>
@@ -1754,6 +1813,29 @@ function BoardConstructionWrapper({
       {/* Board Guide Modal */}
       <BoardGuideModal isOpen={showBoardGuide} onClose={() => setShowBoardGuide(false)} company={company} />
 
+      {/* Touch drag ghost — follows finger position, pointer-events:none, zIndex below modals */}
+      {touchGhost && (
+        <div
+          ref={touchGhostRef}
+          style={{
+            position: 'fixed',
+            left: touchGhost.x - 26,
+            top: touchGhost.y - 26,
+            width: 52,
+            height: 52,
+            zIndex: 9998,
+            pointerEvents: 'none',
+            borderRadius: '50%',
+            border: '2px solid #C8960C',
+            overflow: 'hidden',
+            opacity: 0.85,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+          }}
+        >
+          <DirectorPortrait directorId={touchGhost.dirId} size={52} className="rounded-full" />
+        </div>
+      )}
+
       {/* Lock modal */}
       <AnimatePresence>
         {showLockConfirm && (
@@ -1774,8 +1856,8 @@ function BoardConstructionWrapper({
 }
 
 // ── Pool Card (compact, for 4-column grid) ──
-function PoolCard({ director, selected, onBoard, overflow, onClick, jurisdiction = 'UK', displayFee }: {
-  director: Director; selected: boolean; onBoard: boolean; overflow?: boolean; onClick: () => void; jurisdiction?: string; displayFee?: number;
+function PoolCard({ director, selected, onBoard, overflow, onClick, jurisdiction = 'UK', displayFee, onTouchStart }: {
+  director: Director; selected: boolean; onBoard: boolean; overflow?: boolean; onClick: () => void; jurisdiction?: string; displayFee?: number; onTouchStart?: (e: React.TouchEvent) => void;
 }) {
   const ind = INDEP_BADGE[director.independence];
   const canDrag = !onBoard || overflow;
@@ -1791,6 +1873,7 @@ function PoolCard({ director, selected, onBoard, overflow, onClick, jurisdiction
       onDragEnd={(e) => {
         (e.currentTarget as HTMLElement).style.opacity = '1';
       }}
+      onTouchStart={canDrag ? onTouchStart : undefined}
       onClick={onBoard && !overflow ? undefined : onClick}
       className={`rounded-lg bg-card-bg border p-1.5 transition-all ${
         selected ? 'border-gold ring-1 ring-gold/40 cursor-pointer'

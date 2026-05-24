@@ -213,6 +213,8 @@ interface BoardroomTableProps {
   conflictDirectorIds?: string[];
   /** Company ID — used for company-specific role label overrides (e.g. Meridian charity labels) */
   companyId?: string;
+  /** Callback to start a touch drag from a seated director (mobile/tablet DnD) */
+  onTouchDragStart?: (dirId: string, touchX: number, touchY: number) => void;
 }
 
 // Optional committee chair positions — all in the left column (leftPct=10).
@@ -259,6 +261,7 @@ export default function BoardroomTable({
   lockedDirectorIds = [],
   conflictDirectorIds = [],
   companyId,
+  onTouchDragStart,
 }: BoardroomTableProps) {
   const workerRepSet = new Set(workerRepIds);
   const lockedSet = new Set(lockedDirectorIds);
@@ -387,6 +390,7 @@ export default function BoardroomTable({
         return (
           <div
             key={`seat-${index}`}
+            data-seat-index={index}
             className={`absolute group ${isNonInteractive ? 'cursor-default' : 'cursor-pointer'}`}
             style={{
               left: `${pos.leftPct}%`,
@@ -421,6 +425,11 @@ export default function BoardroomTable({
               }}
               onDragEnd={(e) => {
                 (e.currentTarget as HTMLElement).style.opacity = '1';
+              }}
+              onTouchStart={(e) => {
+                if (!director || isNonInteractive || !onTouchDragStart) return;
+                const touch = e.touches[0];
+                onTouchDragStart(director.id, touch.clientX, touch.clientY);
               }}
               className={`rounded-full flex items-center justify-center transition-all duration-200 w-full h-full ${
                 isLockedChairCeo
