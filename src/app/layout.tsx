@@ -63,11 +63,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <TouchGate>
-          <TabletRotateGate>
+        <TabletRotateGate>
+          <TouchGate>
             {children}
-          </TabletRotateGate>
-        </TouchGate>
+          </TouchGate>
+        </TabletRotateGate>
       </body>
     </html>
   );

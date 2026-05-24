@@ -3,23 +3,20 @@
 /**
  * TabletRotateGate
  *
- * Renders children normally, but overlays a full-screen "Rotate your device"
- * prompt when the viewport is in portrait orientation and between 600–1023px
- * wide (i.e. tablet portrait).  The overlay is handled entirely by CSS so
- * there is no hydration mismatch and no JS resize listener needed.
+ * Always renders children AND a fixed overlay div.  The overlay is hidden by
+ * default and made visible only via the CSS media query in globals.css:
+ *   @media (orientation: portrait) and (min-width: 600px) and (max-width: 1023px)
  *
- * Phones (<600px):  handled separately by TouchGate / TouchIntercept.
- * Tablet landscape: overlay hidden — desktop layout renders fine.
- * Desktop (≥1024px): overlay hidden — always fine.
+ * This component must be placed OUTSIDE <TouchGate> in the layout so it
+ * renders regardless of pointer type — ensuring the rotate prompt appears even
+ * on coarse-pointer tablets that would otherwise hit TouchIntercept.
  */
 export default function TabletRotateGate({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
 
-      {/* Overlay — visible only via the media query below */}
       <div className="bcraft-tablet-rotate-gate">
-        {/* Rotating tablet SVG */}
         <div className="bcraft-tablet-rotate-icon">
           <svg
             viewBox="0 0 80 80"
@@ -28,10 +25,10 @@ export default function TabletRotateGate({ children }: { children: React.ReactNo
             width="80"
             height="80"
           >
-            {/* Tablet body (portrait) */}
+            {/* Tablet body (portrait orientation) */}
             <rect x="22" y="10" width="36" height="50" rx="5" stroke="#C8960C" strokeWidth="2.5" fill="none" />
             <circle cx="40" cy="54" r="2.5" fill="#C8960C" opacity="0.6" />
-            {/* Rotation arc arrow */}
+            {/* Rotation arc */}
             <path
               d="M62 32 A24 24 0 0 1 40 64"
               stroke="#C8960C"
@@ -39,6 +36,7 @@ export default function TabletRotateGate({ children }: { children: React.ReactNo
               strokeLinecap="round"
               fill="none"
             />
+            {/* Arrow head */}
             <polyline
               points="60,40 62,32 70,34"
               stroke="#C8960C"
@@ -59,62 +57,6 @@ export default function TabletRotateGate({ children }: { children: React.ReactNo
 
         <p className="bcraft-tablet-rotate-brand">BOARDCRAFT</p>
       </div>
-
-      <style>{`
-        .bcraft-tablet-rotate-gate {
-          display: none;
-        }
-
-        @media (orientation: portrait) and (min-width: 600px) and (max-width: 1023px) {
-          .bcraft-tablet-rotate-gate {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background-color: #0B1628;
-            padding: 40px;
-            text-align: center;
-          }
-        }
-
-        .bcraft-tablet-rotate-icon {
-          animation: bcraft-rotate-pulse 2.4s ease-in-out infinite;
-        }
-
-        @keyframes bcraft-rotate-pulse {
-          0%, 100% { transform: rotate(0deg); opacity: 1; }
-          40%       { transform: rotate(15deg); opacity: 0.85; }
-          80%       { transform: rotate(-5deg); opacity: 1; }
-        }
-
-        .bcraft-tablet-rotate-title {
-          color: #C8960C;
-          font-size: 1.5rem;
-          font-weight: 700;
-          letter-spacing: 0.02em;
-          margin: 0;
-        }
-
-        .bcraft-tablet-rotate-subtitle {
-          color: rgba(255,255,255,0.55);
-          font-size: 0.95rem;
-          line-height: 1.6;
-          max-width: 340px;
-          margin: 0;
-        }
-
-        .bcraft-tablet-rotate-brand {
-          margin-top: 24px;
-          color: rgba(200,150,12,0.35);
-          font-size: 0.7rem;
-          font-weight: 700;
-          letter-spacing: 0.25em;
-        }
-      `}</style>
     </>
   );
 }
