@@ -103,18 +103,18 @@ export default function EventCard({
       initial={{ x: 300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="rounded-xl bg-card-bg border border-card-border p-4 md:p-6 w-full"
+      className="rounded-xl bg-card-bg border border-card-border p-3 md:p-6 w-full"
       style={{ borderLeftWidth: '4px', borderLeftColor: tierLeftBorderHex(event.tier) }}
     >
       {/* Header: name */}
       <div className="mb-3">
-        <h2 className="text-xl font-bold text-gold">{event.name}</h2>
+        <h2 className="text-base md:text-xl font-bold text-gold">{event.name}</h2>
       </div>
 
       {/* Domain tags */}
       <div className="flex flex-wrap gap-2 mb-4">
         <span
-          className="text-[13px] font-bold px-3 py-1 rounded-full text-white"
+          className="text-[11px] md:text-[13px] font-bold px-2 md:px-3 py-0.5 md:py-1 rounded-full text-white"
           style={{ backgroundColor: DOMAIN_COLORS[event.primaryDomain] || '#C8960C' }}
         >
           {DOMAIN_LABELS[event.primaryDomain]} ({Math.round(event.primaryWeight * 100)}%)
@@ -135,12 +135,12 @@ export default function EventCard({
       </div>
 
       {/* Narrative with floating illustration */}
-      <div className="mb-6 px-1">
+      <div className="mb-3 md:mb-6 px-1">
         <EventIllustration
           type={event.illustrationType ?? 'default'}
           className="hidden md:block float-right ml-4 mb-2"
         />
-        <p className="font-narrative italic text-foreground/80 leading-relaxed">
+        <p className="font-narrative italic text-foreground/80 leading-relaxed text-sm md:text-base">
           {event.narrativeCard}
         </p>
       </div>
@@ -167,14 +167,14 @@ export default function EventCard({
                   whileHover={isLocked ? {} : { borderColor: '#C8960C' }}
                   onClick={() => !isLocked && onSelectStrategy(strategy.id)}
                   disabled={isLocked}
-                  className={`w-full text-left rounded-lg border p-4 transition-all ${
+                  className={`w-full text-left rounded-lg border p-3 md:p-4 transition-all ${
                     isLocked
                       ? 'opacity-50 cursor-not-allowed border-card-border bg-navy-dark'
                       : 'border-card-border bg-navy-light hover:shadow-[0_0_12px_rgba(200,150,12,0.15)] cursor-pointer'
                   }`}
                 >
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="font-bold text-sm text-foreground">
+                    <span className="font-bold text-xs md:text-sm text-foreground">
                       {strategy.label}
                     </span>
                     {(() => {
@@ -186,7 +186,7 @@ export default function EventCard({
                       ) : null;
                     })()}
                   </div>
-                  <p className="text-xs text-foreground/60 leading-relaxed">
+                  <p className="text-[11px] md:text-xs text-foreground/60 leading-relaxed">
                     {strategy.description}
                   </p>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { GameState, GameEvent, BoardSeat, Director, ResolutionOutput, BoardRole } from '@/types/game';
 import { DOMAIN_SHORT, ALL_DOMAINS, getRoleLabel } from '@/engine/boardConstants';
 import DirectorPortrait from './DirectorPortrait';
@@ -430,11 +430,11 @@ export default function GameBoardScreen({
       )}
 
       {/* Main Content — stacks vertically on mobile, 40/60 side-by-side on md+ */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         {/* Left panel — Boardroom Table + Director Detail */}
         <div className="flex flex-col border-b md:border-b-0 md:border-r border-card-border md:w-[40%]">
-          {/* Boardroom Table — fixed height on mobile, flex-1 on desktop */}
-          <div className="overflow-hidden flex items-center justify-center p-3 h-[min(56vw,260px)] md:h-auto md:flex-1 md:min-h-0" style={{ paddingTop: '8px' }}>
+          {/* Boardroom Table — larger fixed height on mobile, flex-1 on desktop */}
+          <div className="overflow-hidden flex items-center justify-center p-3 h-[45vh] md:h-auto md:flex-1 md:min-h-0" style={{ paddingTop: '8px' }}>
             <BoardroomTable
               seats={gameState.board.seats}
               directors={gameState.directors}
@@ -451,10 +451,9 @@ export default function GameBoardScreen({
             />
           </div>
 
-          {/* Director Detail Box
-              Mobile:  auto height (max 180px), scrollable, no bottom margin
+          {/* Director Detail Box — hidden on mobile (profile shows as overlay instead)
               Desktop: fixed 180px, margin-bottom clears the news ticker */}
-          <div className="flex-none border-t border-card-border bg-navy-dark/30 px-3 md:px-4 py-2 md:py-3 overflow-y-auto max-h-[180px] md:max-h-none md:h-[180px] md:mb-[44px]">
+          <div className="hidden md:block flex-none border-t border-card-border bg-navy-dark/30 px-3 md:px-4 py-2 md:py-3 overflow-y-auto max-h-[180px] md:max-h-none md:h-[180px] md:mb-[44px]">
             {selectedDir ? (
               /* Mobile: portrait row at top, domain bars below
                  Desktop: portrait column on left, domain bars on right */
@@ -520,7 +519,7 @@ export default function GameBoardScreen({
         </div>
 
         {/* Right panel — Event Area */}
-        <main className="flex-1 min-h-0 overflow-y-auto py-4 md:py-6 px-4 md:px-5 pb-[84px] md:pb-6">
+        <main className="flex-1 min-h-0 overflow-y-auto pt-3 pb-[84px] md:py-6 px-3 md:px-5 md:pb-6">
           <div className="w-full">
             <AnimatePresence mode="wait">
               {currentEvent ? (
@@ -536,6 +535,81 @@ export default function GameBoardScreen({
             </AnimatePresence>
           </div>
         </main>
+
+        {/* ── Mobile: Director Profile Overlay (slides from right) ── */}
+        <AnimatePresence>
+          {selectedDirectorId && selectedDir && (
+            <motion.div
+              key="director-profile-overlay"
+              className="md:hidden absolute inset-0 z-30 flex flex-col bg-navy"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-card-border shrink-0">
+                <button
+                  onClick={() => setSelectedDirectorId(null)}
+                  className="text-gold text-sm font-semibold cursor-pointer"
+                >
+                  ← Return
+                </button>
+                <span className="text-foreground/40 text-xs">Director Profile</span>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto px-4 py-4">
+                {/* Portrait + name + role + stamina */}
+                <div className="flex items-center gap-4 mb-5 pb-4 border-b border-card-border">
+                  <div className="rounded-full overflow-hidden border-2 border-gold/40 shrink-0">
+                    <DirectorPortrait directorId={selectedDir.id} size={72} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-bold text-foreground text-base leading-tight block truncate">
+                      {selectedDir.name}
+                    </span>
+                    <span className="inline-block text-[11px] px-2 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/25 font-medium mt-1 leading-none">
+                      {shortRole(selectedDir.seatRole)}
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-2 min-w-[160px]">
+                      <span className="text-[11px] text-foreground/50 shrink-0">Stamina</span>
+                      <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${flashingIds.has(selectedDir.id) ? 'bg-success/30' : 'bg-navy-dark'}`}>
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${
+                            flashingIds.has(selectedDir.id) ? 'bg-green-400'
+                            : selectedDir.currentEnergy >= 60 ? 'bg-success'
+                            : selectedDir.currentEnergy >= 20 ? 'bg-warning'
+                            : 'bg-error'
+                          }`}
+                          style={{ width: `${selectedDir.currentEnergy}%` }}
+                        />
+                      </div>
+                      <span className="text-[11px] text-foreground/50 shrink-0">{selectedDir.currentEnergy}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Competency profile */}
+                <h4 className="text-[11px] text-foreground/50 uppercase tracking-wide mb-2">Competency Profile</h4>
+                <div className="space-y-1.5">
+                  {ALL_DOMAINS.map((domain) => {
+                    const score = selectedDir.domainRatings[domain];
+                    return (
+                      <div key={domain} className="flex items-center gap-2 text-[12px]">
+                        <span className="text-foreground/50" style={{ width: '5rem', flexShrink: 0 }}>{DOMAIN_SHORT[domain]}</span>
+                        <div className="flex-1 h-2 bg-navy-dark rounded-full overflow-hidden">
+                          <div className="h-full bg-gold/70 rounded-full" style={{ width: `${score}%` }} />
+                        </div>
+                        <span className="text-foreground/50 w-6 text-right font-medium">{score}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Deployment Modal */}
