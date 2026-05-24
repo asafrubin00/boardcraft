@@ -908,31 +908,74 @@ function BoardConstructionWrapper({
   // ── New interaction handlers ──
   const handleAssignToSeat = useCallback((directorId: string, posIdx: number) => {
     const pos = getTablePosition(posIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize);
-    if (boardIdSet.has(directorId)) {
-      // Director already on board → just update their role (swap if needed)
+    const d = directorMap.get(directorId);
+    if (!d) return;
+
+    const uniqRoles: BoardRole[] = ['chair','auditChair','remChair','nomChair','sid','safetyEnvChair','energyTransitionChair','csrdChair','strategyChair'];
+    const fee = budget === 0 ? 0 : computeFeeWithPremium(d.annualFee, pos.defaultRole);
+    const isOnBoard = boardIdSet.has(directorId);
+    // Who currently occupies this visual slot?
+    const currentOccupantId = tablePos[posIdx] ?? null;
+
+    // No-op: dropped on own current seat
+    if (currentOccupantId === directorId) return;
+
+    if (isOnBoard && uniqRoles.includes(pos.defaultRole)) {
+      // ── Case A: on-board director → named-role slot ──
+      // Use existing role-change / swap logic (handles promotions and swaps correctly)
       handleRoleChange(directorId, pos.defaultRole);
-    } else {
-      const d = directorMap.get(directorId);
-      if (!d) return;
-      // For companies with no board budget (e.g. Meridian — unpaid trustees), treat all fees
-      // as £0 so cross-listed directors with their original annualFee can still be appointed.
-      const fee = budget === 0 ? 0 : computeFeeWithPremium(d.annualFee, pos.defaultRole);
-      if (budget > 0 && committed + fee > budget) return;
-      // Who currently occupies this visual slot? (needed to evict NED seat occupants)
-      const currentOccupantId = tablePos[posIdx] ?? null;
-      const uniqRoles: BoardRole[] = ['chair','auditChair','remChair','nomChair','sid','safetyEnvChair','energyTransitionChair','csrdChair','strategyChair'];
+
+    } else if (isOnBoard) {
+      // ── Case B: on-board director → NED/non-unique slot ──
+      // Must physically move the director in the seats array so their visual position changes.
+      // handleRoleChange only updates the role field — it cannot move a NED to a different
+      // visual slot because NED positions are determined by array order, not by role.
       pushAndSetSeats((p) => {
-        let filtered: BoardSeat[];
-        if (uniqRoles.includes(pos.defaultRole)) {
-          // Remove any existing holder of this unique role
-          filtered = p.filter((s) => s.role !== pos.defaultRole);
-        } else {
-          // For NED and other non-unique roles, evict whoever is visually in this slot
-          filtered = currentOccupantId ? p.filter((s) => s.directorId !== currentOccupantId) : p;
+        const xSeat = p.find(s => s.directorId === directorId);
+        if (!xSeat) return p;
+
+        // If source director currently has a named role (e.g. AuditChair → NED slot),
+        // just do a plain role update — they'll land at the first available NED slot.
+        if (uniqRoles.includes(xSeat.role)) {
+          return p.map(s => s.directorId !== directorId ? s
+            : { ...s, role: pos.defaultRole, feeWithPremium: fee });
         }
-        return [...filtered, { directorId, role: pos.defaultRole, feeWithPremium: fee }];
+
+        // Source is NED/non-unique → use array-position swap for a correct visual result.
+        const xIdx = p.findIndex(s => s.directorId === directorId);
+        const yIdx = currentOccupantId ? p.findIndex(s => s.directorId === currentOccupantId) : -1;
+        if (xIdx < 0) return p;
+
+        if (yIdx >= 0) {
+          // Target slot occupied → swap array positions so both directors exchange visual slots
+          const result = [...p];
+          result[yIdx] = { directorId, role: pos.defaultRole, feeWithPremium: fee };
+          result[xIdx] = { ...p[yIdx] }; // occupant keeps their role/fee, moves to X's old slot
+          return result;
+        } else {
+          // Target slot empty → remove director from current position and append to end;
+          // deriveTablePositions will place them at the next available NED slot.
+          const filtered = p.filter(s => s.directorId !== directorId);
+          return [...filtered, { directorId, role: pos.defaultRole, feeWithPremium: fee }];
+        }
+      });
+
+    } else {
+      // ── Case C: pool director → any slot ──
+      if (budget > 0 && committed + fee > budget) return;
+      pushAndSetSeats((p) => {
+        if (uniqRoles.includes(pos.defaultRole)) {
+          // Remove any existing holder of this named role
+          const filtered = p.filter(s => s.role !== pos.defaultRole);
+          return [...filtered, { directorId, role: pos.defaultRole, feeWithPremium: fee }];
+        } else {
+          // NED slot: if occupied, evict the current director back to pool (they're removed)
+          const filtered = currentOccupantId ? p.filter(s => s.directorId !== currentOccupantId) : p;
+          return [...filtered, { directorId, role: pos.defaultRole, feeWithPremium: fee }];
+        }
       });
     }
+
     setActiveSeatIdx(null); setSelectedDirId(null);
     playBoardSeatDrop();
   }, [boardIdSet, committed, budget, handleRoleChange, pushAndSetSeats, directorMap, tablePos, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize]);
@@ -996,6 +1039,8 @@ function BoardConstructionWrapper({
       if (!el) return;
       const seatEl = (el as HTMLElement).closest('[data-seat-index]');
       if (!seatEl) return;
+      // Respect locked/non-interactive seats (worker reps, locked Chair/CEO, etc.)
+      if ((seatEl as HTMLElement).getAttribute('data-seat-interactive') === 'false') return;
       const idx = parseInt((seatEl as HTMLElement).getAttribute('data-seat-index') ?? '-1', 10);
       if (idx >= 0) handleAssignToSeatRef.current(ref.dirId, idx);
     };

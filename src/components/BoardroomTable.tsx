@@ -391,6 +391,7 @@ export default function BoardroomTable({
           <div
             key={`seat-${index}`}
             data-seat-index={index}
+            data-seat-interactive={isNonInteractive ? 'false' : 'true'}
             className={`absolute group ${isNonInteractive ? 'cursor-default' : 'cursor-pointer'}`}
             style={{
               left: `${pos.leftPct}%`,
