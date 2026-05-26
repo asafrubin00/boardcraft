@@ -1305,16 +1305,23 @@ function BoardConstructionWrapper({
                 {/* Header */}
                 <div className="flex-shrink-0 px-3 py-2.5 border-b border-card-border bg-navy-dark/30">
                   <div className="flex items-center gap-3">
-                    <button onClick={() => { setMobileOverlay(null); setActiveSeatIdx(null); setSelectedDirId(null); }} className="text-gold text-sm font-semibold shrink-0">← Return</button>
-                    {activeSeatIdx !== null && mode !== 'profile-seated' && (
+                    {(mode === 'profile-pool' || mode === 'comparison') ? (
+                      <button onClick={() => setSelectedDirId(null)} className="text-gold text-sm font-semibold shrink-0">← Back</button>
+                    ) : (
+                      <button onClick={() => { setMobileOverlay(null); setActiveSeatIdx(null); setSelectedDirId(null); }} className="text-gold text-sm font-semibold shrink-0">← Return</button>
+                    )}
+                    {activeSeatIdx !== null && mode !== 'profile-seated' && mode !== 'profile-pool' && mode !== 'comparison' && (
                       <span className="text-gold text-xs font-medium truncate">Selecting for: <span className="font-bold">{getShortRoleLabel(getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize).defaultRole, company.jurisdiction, company.id)}</span></span>
                     )}
                     {mode === 'profile-seated' && seatOccDir && (
                       <span className="text-foreground/60 text-xs truncate">{seatOccDir.name}</span>
                     )}
+                    {(mode === 'profile-pool' || mode === 'comparison') && selDir && (
+                      <span className="text-foreground/60 text-xs truncate">{selDir.name}</span>
+                    )}
                   </div>
                 </div>
-                {/* Content: profile-seated or pool */}
+                {/* Content: profile-seated, pool director profile, or pool grid */}
                 {mode === 'profile-seated' && seatOccDir ? (
                   <div className="flex-1 overflow-y-auto p-4">
                     <div className="space-y-4">
@@ -1349,6 +1356,47 @@ function BoardConstructionWrapper({
                       <button onClick={() => { handleRemoveDirector(seatOccDir.id); setMobileOverlay(null); }} className="w-full py-2 text-sm bg-error/15 text-error border border-error/30 rounded-lg">
                         {company.id === 'company_meridian' ? 'Remove Trustee' : 'Remove from Board'}
                       </button>
+                    </div>
+                  </div>
+                ) : selDir && (mode === 'profile-pool' || mode === 'comparison') ? (
+                  /* Pool director profile — shown when user taps a candidate card */
+                  <div className="flex-1 overflow-y-auto p-4">
+                    <div className="space-y-4">
+                      <div className="flex flex-col items-center text-center">
+                        <div className="rounded-full border-2 border-gold overflow-hidden"><DirectorPortrait directorId={selDir.id} size={72} /></div>
+                        <h2 className="text-base font-bold font-narrative text-foreground mt-2">{selDir.name}</h2>
+                        <div className="flex flex-wrap justify-center gap-1.5 mt-1.5">
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${INDEP_BADGE[selDir.independence].cls}`}>{INDEP_BADGE[selDir.independence].label}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${TIER_BADGE[selDir.availabilityTier].cls}`}>{TIER_BADGE[selDir.availabilityTier].label}</span>
+                          {selDir.inherited && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-warning/10 text-warning border border-warning/30">Inherited</span>}
+                        </div>
+                        <span className="text-gold font-semibold text-sm mt-1.5">{fmt(selDir.annualFee)} p.a.</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        <h4 className="text-[10px] text-foreground/40 uppercase tracking-wide">Competency Profile</h4>
+                        {ALL_DOMAINS.map((domain) => { const sc = selDir.domainRatings[domain]; return (
+                          <div key={domain} className="flex items-center gap-2 text-[11px]">
+                            <span className="w-16 text-foreground/60 truncate">{DOMAIN_SHORT[domain]}</span>
+                            <div className="flex-1 h-1.5 bg-navy-dark rounded-full overflow-hidden"><div className="h-full bg-gold rounded-full" style={{ width: `${sc}%` }} /></div>
+                            <span className="w-6 text-right text-foreground/50">{sc}</span>
+                          </div>
+                        ); })}
+                      </div>
+                      <div><h4 className="text-[10px] text-foreground/40 uppercase tracking-wide mb-1">Background</h4><p className="text-xs text-foreground/70 font-narrative leading-relaxed">{selDir.background}</p></div>
+                      {selDir.riskFlag && !selDir.riskFlag.activated && (
+                        <div className="flex items-center gap-1.5 text-xs text-warning/80 bg-warning/5 border border-warning/20 rounded-lg px-3 py-2">
+                          <span>⚠</span><span className="text-foreground/50">Potential risk flag</span>
+                        </div>
+                      )}
+                      {/* Comparison mode: replace button */}
+                      {mode === 'comparison' && seatOccDir && (
+                        <button
+                          onClick={() => { handleAssignCandidate(); setMobileOverlay(null); }}
+                          className="w-full py-2.5 rounded-lg bg-gold text-navy-dark text-sm font-bold cursor-pointer"
+                        >
+                          Replace {seatOccDir.name.split(' ').pop()} with {selDir.name.split(' ').pop()}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : (
