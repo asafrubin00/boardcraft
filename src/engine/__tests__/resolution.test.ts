@@ -324,11 +324,11 @@ describe('Resolution Engine', () => {
 
       const result = resolveEvent(input);
 
-      // matchScore = 0, multiplier = 0.50
-      // rawScore = 0 * 0.50 + 0 = 0
-      // finalScore ≈ 0 → CRITICAL_FAILURE
+      // matchScore = 0, multiplier = 0.50 → rawScore 0, but the Do Nothing
+      // floor lifts tier-2 inaction to 20 (inaction isn't always catastrophic).
+      // finalScore = 20 × 1.0 → still CRITICAL_FAILURE (< 30).
       expect(result.outcomeTier).toBe('CRITICAL_FAILURE');
-      expect(result.finalScore).toBe(0);
+      expect(result.finalScore).toBe(20);
     });
   });
 

@@ -42,9 +42,21 @@ export function checkHealthCrisis(state: GameState): ForcedDirectorChange | null
 
 // ── FMC-02: Misconduct (Risk Flag Activation) ──
 
+/** Stable per-director hash so different directors get independent rolls */
+function hashDirectorId(dirId: string): number {
+  let h = 0;
+  for (let i = 0; i < dirId.length; i++) {
+    h = (h * 31 + dirId.charCodeAt(i)) | 0;
+  }
+  return h;
+}
+
 export function checkMisconduct(
   state: GameState,
-  deployedDirectorIds: string[]
+  deployedDirectorIds: string[],
+  /** Domains of the event being resolved — a flag only fires on events
+   *  whose domains overlap the flag's triggerCategories. */
+  eventDomains?: string[]
 ): ForcedDirectorChange | null {
   if (state.forcedChange) return null;
 
@@ -53,9 +65,19 @@ export function checkMisconduct(
     if (!director?.riskFlag) continue;
     if (director.riskFlag.activated) continue; // already activated
 
-    // Check if this deployment triggers the risk flag
-    const roll = seededRandom(state.randomSeed + dirId.length * 31);
-    if (roll < director.riskFlag.activationProbability) {
+    // The flag is only at risk of surfacing on events related to its trigger
+    // categories (e.g. a regulatory flag stays dormant on a tech event).
+    if (eventDomains && eventDomains.length > 0) {
+      const related = director.riskFlag.triggerCategories.some((c) =>
+        eventDomains.includes(c)
+      );
+      if (!related) continue;
+    }
+
+    // activationProbability is stored as a percentage (e.g. 40 = 40%);
+    // seededRandom returns 0–1, so scale the roll to match.
+    const roll = seededRandom(state.randomSeed + hashDirectorId(dirId));
+    if (roll * 100 < director.riskFlag.activationProbability) {
       return {
         type: 'misconduct',
         directorId: director.id,

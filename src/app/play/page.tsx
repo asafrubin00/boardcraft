@@ -218,8 +218,14 @@ function PlayPageInner() {
       // Rescale breakdown proportionally to match the event-adjusted GH
       newState.governanceHealthBreakdown = rescaleBreakdown(breakdown, newState.governanceHealth);
 
-      // Check for FMC-02: misconduct risk flag activation on deployed directors
-      const misconduct = checkMisconduct(newState, deployedDirectorIds);
+      // Check for FMC-02: misconduct risk flag activation on deployed directors.
+      // Flags only surface on events whose domains relate to the flag —
+      // riskFlagTriggerCategories when authored, else the event's own domains.
+      const eventDomains = currentEvent.riskFlagTriggerCategories ?? [
+        currentEvent.primaryDomain,
+        ...currentEvent.secondaryDomains.map((d) => d.domain),
+      ];
+      const misconduct = checkMisconduct(newState, deployedDirectorIds, eventDomains);
       if (misconduct) {
         // Activate the risk flag
         newState.directors = newState.directors.map((d) => {

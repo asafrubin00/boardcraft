@@ -54,13 +54,8 @@ export const events: GameEvent[] = [
     ],
     relevantCommittee: 'remuneration',
     committeeBonusValue: 10,
-    followOnTriggers: [
-      {
-        eventId: 'event_agm_rem_flag',
-        triggerTiers: ['FAILURE', 'CRITICAL_FAILURE'],
-        delay: 0,
-      },
-    ],
+    // TODO(content): author 'event_agm_rem_flag' before re-adding the trigger
+    followOnTriggers: [],
     outcomeTiers: {
       CRITICAL_SUCCESS: {
         svRange: [1.5, 2.5], // interpolated
@@ -141,13 +136,8 @@ export const events: GameEvent[] = [
     ],
     relevantCommittee: null,
     committeeBonusValue: 0,
-    followOnTriggers: [
-      {
-        eventId: 'event_cfo_departure',
-        triggerTiers: ['FAILURE', 'CRITICAL_FAILURE'],
-        delay: 1,
-      },
-    ],
+    // TODO(content): author 'event_cfo_departure' before re-adding the trigger
+    followOnTriggers: [],
     outcomeTiers: {
       CRITICAL_SUCCESS: {
         svRange: [1.0, 2.0], // interpolated
@@ -228,13 +218,8 @@ export const events: GameEvent[] = [
     ],
     relevantCommittee: 'safetyEnvironment',
     committeeBonusValue: 10,
-    followOnTriggers: [
-      {
-        eventId: 'event_hse_investigation',
-        triggerTiers: ['PARTIAL_SUCCESS', 'FAILURE', 'CRITICAL_FAILURE'],
-        delay: 2,
-      },
-    ],
+    // TODO(content): author 'event_hse_investigation' before re-adding the trigger
+    followOnTriggers: [],
     outcomeTiers: {
       CRITICAL_SUCCESS: {
         svRange: [1.0, 2.0], // interpolated
@@ -496,13 +481,8 @@ export const events: GameEvent[] = [
     ],
     relevantCommittee: 'remuneration',
     committeeBonusValue: 10,
-    followOnTriggers: [
-      {
-        eventId: 'event_agm_pay_flag',
-        triggerTiers: ['FAILURE', 'CRITICAL_FAILURE'],
-        delay: 0,
-      },
-    ],
+    // TODO(content): author 'event_agm_pay_flag' before re-adding the trigger
+    followOnTriggers: [],
     outcomeTiers: {
       CRITICAL_SUCCESS: {
         svRange: [1.5, 2.5], // interpolated
@@ -583,13 +563,8 @@ export const events: GameEvent[] = [
     ],
     relevantCommittee: null,
     committeeBonusValue: 0,
-    followOnTriggers: [
-      {
-        eventId: 'event_licence_revocation',
-        triggerTiers: ['FAILURE', 'CRITICAL_FAILURE'],
-        delay: 3,
-      },
-    ],
+    // TODO(content): author 'event_licence_revocation' before re-adding the trigger
+    followOnTriggers: [],
     outcomeTiers: {
       CRITICAL_SUCCESS: {
         svRange: [2.0, 3.5], // interpolated
@@ -720,13 +695,8 @@ export const events: GameEvent[] = [
     ],
     relevantCommittee: null,
     committeeBonusValue: 0,
-    followOnTriggers: [
-      {
-        eventId: 'event_post_agm_crisis',
-        triggerTiers: ['FAILURE', 'CRITICAL_FAILURE'],
-        delay: 0,
-      },
-    ],
+    // TODO(content): author 'event_post_agm_crisis' before re-adding the trigger
+    followOnTriggers: [],
     outcomeTiers: {
       CRITICAL_SUCCESS: {
         svRange: [3, 5], // interpolated
@@ -905,13 +875,8 @@ export const events: GameEvent[] = [
     ],
     relevantCommittee: null,
     committeeBonusValue: 0,
-    followOnTriggers: [
-      {
-        eventId: 'event_media_leak',
-        triggerTiers: ['FAILURE', 'CRITICAL_FAILURE'],
-        delay: 1,
-      },
-    ],
+    // TODO(content): author 'event_media_leak' before re-adding the trigger
+    followOnTriggers: [],
     outcomeTiers: {
       CRITICAL_SUCCESS: {
         svRange: [1, 2], // interpolated
@@ -1082,13 +1047,8 @@ export const events: GameEvent[] = [
     ],
     relevantCommittee: null,
     committeeBonusValue: 0,
-    followOnTriggers: [
-      {
-        eventId: 'event_hostile_bid_public',
-        triggerTiers: ['FAILURE', 'CRITICAL_FAILURE'],
-        delay: 1,
-      },
-    ],
+    // TODO(content): author 'event_hostile_bid_public' before re-adding the trigger
+    followOnTriggers: [],
     outcomeTiers: {
       CRITICAL_SUCCESS: {
         svRange: [12, 20], // interpolated
@@ -1170,13 +1130,8 @@ export const events: GameEvent[] = [
     ],
     relevantCommittee: null,
     committeeBonusValue: 0,
-    followOnTriggers: [
-      {
-        eventId: 'event_regulatory_investigation_ncsc',
-        triggerTiers: ['FAILURE', 'CRITICAL_FAILURE'],
-        delay: 1,
-      },
-    ],
+    // TODO(content): author 'event_regulatory_investigation_ncsc' before re-adding the trigger
+    followOnTriggers: [],
     outcomeTiers: {
       CRITICAL_SUCCESS: {
         svRange: [1, 3], // interpolated
