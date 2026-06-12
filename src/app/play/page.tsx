@@ -175,6 +175,45 @@ function PlayPageInner() {
     setPhase(target.phase);
   }, [searchParams, devBooted]);
 
+  // ── Mid-game persistence ──
+  // A refresh or tab eviction must not lose a 30–60 minute session.
+  // Saved during gameplay/AGM; cleared at year end, restart, or company change.
+  const SAVE_KEY = 'boardcraft_saved_game';
+  const restoredRef = useRef(false);
+
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    if (searchParams.get('dev')) return; // dev shortcuts take priority
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved?.v !== 1 || !saved.gameState) return;
+      setGameState(saved.gameState);
+      setSelectedCompany(saved.gameState.company);
+      setAgmResults(saved.agmResults ?? null);
+      setPhase(saved.phase === 'agm' ? 'agm' : 'gameplay');
+    } catch {
+      // Corrupt save — discard rather than block the app
+      try { localStorage.removeItem(SAVE_KEY); } catch {}
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    try {
+      if ((phase === 'gameplay' || phase === 'agm') && gameState) {
+        localStorage.setItem(
+          SAVE_KEY,
+          JSON.stringify({ v: 1, phase, gameState, agmResults, savedAt: Date.now() })
+        );
+      } else if (phase === 'year_end') {
+        // Game over — clearing prevents a refresh from double-recording career GC
+        localStorage.removeItem(SAVE_KEY);
+      }
+    } catch {} // storage full/unavailable — play continues unsaved
+  }, [phase, gameState, agmResults]);
+
   // ── Company Select → Board Construction ──
   const handleSelectCompany = useCallback((company: Company) => {
     setSelectedCompany(company);
@@ -374,7 +413,17 @@ function PlayPageInner() {
 
       const resolution1Pass = isSuccess || isPartial;
       const resolution2Pass = isSuccess;
-      const resolution3Pass = isSuccess || (isPartial && newState.committees.energyTransition.active);
+      // Resolution 3 on partial outcomes hinges on the company-specific lever:
+      // Harwick/default — ET committee demonstrates ESG credibility
+      // Vantage — board-endorsed Chair/CEO separation momentum carries the proposal
+      // Rheinfeld — Meridian Capital's pressure carries its strategic review
+      const res3PartialLever =
+        newState.company.id === 'company_vantage'
+          ? newState.chairCeoSeparationProgress >= 50
+          : newState.company.id === 'company_rheinfeld'
+            ? newState.meridianActive
+            : newState.committees.energyTransition.active;
+      const resolution3Pass = isSuccess || (isPartial && res3PartialLever);
 
       // AGM GH bonus: all resolutions pass → +5, one or zero pass → -8
       const passCount = [resolution1Pass, resolution2Pass, resolution3Pass].filter(Boolean).length;
@@ -412,6 +461,7 @@ function PlayPageInner() {
 
   // ── Restart - skip company select, go straight to board construction ──
   const handleRestart = useCallback(() => {
+    try { localStorage.removeItem('boardcraft_saved_game'); } catch {}
     setGameState(null);
     setAgmResults(null);
     setRegenDirectorIds([]);
@@ -421,6 +471,7 @@ function PlayPageInner() {
 
   // ── Change Company - full reset back to company select ──
   const handleChangeCompany = useCallback(() => {
+    try { localStorage.removeItem('boardcraft_saved_game'); } catch {}
     setGameState(null);
     setAgmResults(null);
     setRegenDirectorIds([]);

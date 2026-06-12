@@ -241,6 +241,9 @@ export interface ComplianceError {
   code: string;
   message: string;
   severity: 'error' | 'warning';
+  /** 'code' = grounded in a real governance code/listing rule;
+   *  'game' = a BoardCraft skill threshold (game heuristic, not a legal requirement) */
+  source?: 'code' | 'game';
 }
 
 export interface BoardComposition {

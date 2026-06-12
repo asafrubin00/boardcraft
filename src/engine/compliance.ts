@@ -37,16 +37,26 @@ export function checkCompliance(
   combinedChairCeo = false,
   companyId?: string,
 ): ComplianceError[] {
+  let errors: ComplianceError[];
   if (companyId === 'company_meridian') {
-    return checkComplianceCharityUK(seats, directors, committees);
+    errors = checkComplianceCharityUK(seats, directors, committees);
+  } else if (jurisdiction === 'US') {
+    errors = checkComplianceUS(seats, directors, committees, combinedChairCeo);
+  } else if (jurisdiction === 'EU') {
+    errors = checkComplianceEU(seats, directors, committees);
+  } else {
+    errors = checkComplianceUK(seats, directors, committees);
   }
-  if (jurisdiction === 'US') {
-    return checkComplianceUS(seats, directors, committees, combinedChairCeo);
-  }
-  if (jurisdiction === 'EU') {
-    return checkComplianceEU(seats, directors, committees);
-  }
-  return checkComplianceUK(seats, directors, committees);
+  return errors.map(tagErrorSource);
+}
+
+/** Numeric skill-threshold rules (codes containing "_LOW_") are BoardCraft
+ *  heuristics that quantify a real duty; everything else is grounded directly
+ *  in a governance code or listing rule. Surfacing the distinction protects
+ *  the product's accuracy claim with professional audiences. */
+function tagErrorSource(err: ComplianceError): ComplianceError {
+  if (err.source) return err;
+  return { ...err, source: /_LOW_/.test(err.code) ? 'game' : 'code' };
 }
 
 // ══════════════════════════════════════════════════════════════

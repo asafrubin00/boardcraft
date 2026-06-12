@@ -682,7 +682,7 @@ export const rheinfeldEvents: GameEvent[] = [
     turn: 1,
     illustrationType: 'revent-agm',
     narrativeCard:
-      "Rheinfeld's Hauptversammlung takes place in Düsseldorf. The hall is full - institutional investors, union representatives, and journalists. Meridian Capital has filed three shareholder proposals. Heinrich has opened the meeting with a 40-minute address about the company's heritage. The institutional shareholders are checking their phones.",
+      "Rheinfeld's Hauptversammlung takes place in Düsseldorf. The hall is full - institutional investors, union representatives, and journalists. Meridian Capital has tabled a shareholder proposal demanding an independent strategic review. Heinrich has opened the meeting with a 40-minute address about the company's heritage. The institutional shareholders are checking their phones.",
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.40,
     secondaryDomains: [
@@ -732,12 +732,12 @@ export const rheinfeldEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [6.0, 6.0],
         narrative:
-          'All four resolutions pass favourably - the Hauptversammlung has delivered a mandate for reform that even Heinrich cannot ignore, and the institutional shareholders leave Düsseldorf with something they have not felt about Rheinfeld in years: confidence.',
+          'All three resolutions pass favourably - the Hauptversammlung has delivered a mandate for reform that even Heinrich cannot ignore, and the institutional shareholders leave Düsseldorf with something they have not felt about Rheinfeld in years: confidence.',
       },
       SUCCESS: {
         svRange: [3.0, 3.0],
         narrative:
-          'Three resolutions pass - the strategic review is mandated, the CEO pay is approved with conditions, and Meridian has achieved enough to stand down from its most aggressive posture.',
+          'All three resolutions pass - the strategic review is mandated, the remuneration system is approved with conditions, and Meridian has achieved enough to stand down from its most aggressive posture.',
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
@@ -747,7 +747,7 @@ export const rheinfeldEvents: GameEvent[] = [
       FAILURE: {
         svRange: [-4.0, -4.0],
         narrative:
-          'Only one resolution passes - the Hauptversammlung has become a public demonstration of Rheinfeld\'s governance dysfunction, reported by Handelsblatt under the headline "Family First."',
+          'The Supervisory Board is refused discharge - the Hauptversammlung has become a public demonstration of Rheinfeld\'s governance dysfunction, reported by Handelsblatt under the headline "Family First."',
       },
       CRITICAL_FAILURE: {
         svRange: [-8.0, -8.0],

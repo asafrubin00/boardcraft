@@ -93,6 +93,20 @@ export default function CompliancePanel({ errors, title = 'FRC Code Compliance' 
                   }
                 >
                   {err.message}
+                  <span
+                    className={`ml-1.5 inline-block align-middle text-[8px] font-bold uppercase tracking-wider px-1 py-px rounded border ${
+                      err.source === 'game'
+                        ? 'text-gold/70 border-gold/30 bg-gold/5'
+                        : 'text-foreground/50 border-foreground/25 bg-foreground/5'
+                    }`}
+                    title={
+                      err.source === 'game'
+                        ? 'BoardCraft skill requirement — a game heuristic quantifying a governance duty, not a provision of the code itself'
+                        : 'Grounded in the governance code or listing rules cited'
+                    }
+                  >
+                    {err.source === 'game' ? 'BoardCraft rule' : 'Code'}
+                  </span>
                 </span>
               </motion.div>
             ))}
@@ -107,6 +121,10 @@ export default function CompliancePanel({ errors, title = 'FRC Code Compliance' 
                 Warnings will not prevent board lock.
               </p>
             )}
+            <p className="text-[10px] text-foreground/35 mt-2 pl-1 leading-snug">
+              <span className="font-bold uppercase tracking-wider">Code</span> = requirement of the governance code or listing rules ·{' '}
+              <span className="font-bold uppercase tracking-wider text-gold/60">BoardCraft rule</span> = game skill threshold quantifying a governance duty
+            </p>
           </motion.div>
         )}
       </AnimatePresence>

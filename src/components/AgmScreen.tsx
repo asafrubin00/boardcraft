@@ -113,6 +113,64 @@ const STRATEGIES_MERIDIAN = [
   },
 ];
 
+// ── Vantage Consumer Brands AGM strategies (mirror vevent_09 data) ───────────
+
+const STRATEGIES_VANTAGE = [
+  {
+    id: 'vevent_09_a',
+    label: 'Full institutional engagement roadshow',
+    description:
+      'Full institutional shareholder engagement before the AGM. Highest effort, highest reward.',
+  },
+  {
+    id: 'vevent_09_b',
+    label: 'Standard AGM preparation; strong opening statement',
+    description:
+      'Prepare a governance narrative with supporting data. Solid base approach.',
+  },
+  {
+    id: 'vevent_09_c',
+    label: 'Concede on Chair/CEO split to secure other votes',
+    description:
+      'Support Resolution 3 (Chair/CEO separation) to build goodwill for other contested items.',
+  },
+  {
+    id: 'vevent_09_d',
+    label: 'Do nothing',
+    description:
+      'No preparation. AGM results depend entirely on governance health and prior event outcomes.',
+  },
+];
+
+// ── Rheinfeld AG Hauptversammlung strategies (mirror revent_09 data) ─────────
+
+const STRATEGIES_RHEINFELD = [
+  {
+    id: 'revent_09_a',
+    label: 'Support reform — back independent review and succession',
+    description:
+      "Support Meridian's proposals for independent strategic review and Heinrich succession planning. Bold reform stance.",
+  },
+  {
+    id: 'revent_09_b',
+    label: 'Negotiate — partial concession on review, defend Heinrich',
+    description:
+      'Support the strategic review but oppose the no-confidence motion against Heinrich. Compromise position.',
+  },
+  {
+    id: 'revent_09_c',
+    label: 'Defend the status quo — oppose all Meridian proposals',
+    description:
+      "Back Heinrich's position completely. Only viable if governance reforms have been implemented independently.",
+  },
+  {
+    id: 'revent_09_d',
+    label: 'Do nothing',
+    description:
+      'Abstain from positioning. The votes proceed without board guidance.',
+  },
+];
+
 // ── Shared components ──────────────────────────────────────────────────────────
 
 function VoteBar({ forPercent, againstPercent }: { forPercent: number; againstPercent: number }) {
@@ -148,8 +206,10 @@ export default function AgmScreen({
   onChangeCompany,
 }: AgmScreenProps) {
   const isMeridian = gameState.company.id === 'company_meridian';
-  const meetingName = isMeridian ? 'Annual Members Meeting' : 'AGM';
-  const meetingNameShort = isMeridian ? 'AMM' : 'AGM';
+  const isVantage = gameState.company.id === 'company_vantage';
+  const isRheinfeld = gameState.company.id === 'company_rheinfeld';
+  const meetingName = isMeridian ? 'Annual Members Meeting' : isRheinfeld ? 'Hauptversammlung' : 'AGM';
+  const meetingNameShort = isMeridian ? 'AMM' : isRheinfeld ? 'HV' : 'AGM';
 
   const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
   const [deployedIds, setDeployedIds] = useState<string[]>([]);
@@ -191,7 +251,11 @@ export default function AgmScreen({
   // ── Strategy list ──────────────────────────────────────────────────────────
   const STRATEGIES = isMeridian
     ? STRATEGIES_MERIDIAN
-    : craneOnBoard ? STRATEGIES_WITH_CRANE : STRATEGIES_WITHOUT_CRANE;
+    : isVantage
+      ? STRATEGIES_VANTAGE
+      : isRheinfeld
+        ? STRATEGIES_RHEINFELD
+        : craneOnBoard ? STRATEGIES_WITH_CRANE : STRATEGIES_WITHOUT_CRANE;
 
   const baseVotes = estimateAgmVotes(gameState);
   const proxyRating = getProxyAdviserRating(gameState.governanceHealth);
@@ -231,20 +295,45 @@ export default function AgmScreen({
   if (mevent03 && (mevent03.outcomeTier === 'FAILURE' || mevent03.outcomeTier === 'CRITICAL_FAILURE')) mRes3Adjustment = 15;
   else if (mevent03 && (mevent03.outcomeTier === 'SUCCESS' || mevent03.outcomeTier === 'CRITICAL_SUCCESS')) mRes3Adjustment = -8;
 
+  // ── Vantage vote adjustments ───────────────────────────────────────────────
+  // Res1 (Director elections): Apex Capital's withhold campaign pressure
+  const vRes1Adjustment = !gameState.apexActive
+    ? 6
+    : gameState.apexStatus === 'hostile' ? -15
+    : gameState.apexStatus === 'escalating' ? -8
+    : -3;
+  // Res2 (Say-on-Pay): ISS red flag on the $14.2m package; a chaired Comp Committee mitigates
+  const vRes2Adjustment = (gameState.committees.remuneration.chairDirectorId ? 6 : -4) - 8;
+  // Res3 (Independent Chair proposal): board-endorsed separation momentum lifts support
+  const vRes3Adjustment = gameState.chairCeoSeparationProgress >= 50
+    ? 12
+    : gameState.chairCeoSeparationProgress > 0 ? 5 : -4;
+
+  // ── Rheinfeld vote adjustments ─────────────────────────────────────────────
+  // Res1 (Entlastung/discharge): conflict revelations and activist hostility erode ratification
+  const rRes1Adjustment =
+    (gameState.heinrichConflictRevealed ? -15 : 0) +
+    (gameState.meridianStatus === 'hostile' ? -8 : 0) +
+    (gameState.workerRepRelations === 'cooperative' ? 5 : gameState.workerRepRelations === 'hostile' ? -5 : 0);
+  // Res2 (Remuneration system, ARUG II): a chaired Rem Committee carries the advisory vote
+  const rRes2Adjustment = gameState.committees.remuneration.chairDirectorId ? 6 : -6;
+  // Res3 (Meridian's strategic review proposal): activist pressure builds support for it
+  const rRes3Adjustment = gameState.meridianStatus === 'hostile'
+    ? 15
+    : gameState.meridianStatus === 'escalating' ? 10 : 4;
+
   // ── Vote bar percentages ───────────────────────────────────────────────────
-  const res1For = isMeridian
-    ? Math.max(5, Math.min(95, baseVotes.forPercent + mRes1Adjustment))
-    : Math.max(5, Math.min(95, baseVotes.forPercent + res1TenurePenalty));
+  const res1Adj = isMeridian ? mRes1Adjustment : isVantage ? vRes1Adjustment : isRheinfeld ? rRes1Adjustment : res1TenurePenalty;
+  const res2Adj = isMeridian ? mRes2Adjustment : isVantage ? vRes2Adjustment : isRheinfeld ? rRes2Adjustment : res2Adjustment;
+  const res3Adj = isMeridian ? mRes3Adjustment : isVantage ? vRes3Adjustment : isRheinfeld ? rRes3Adjustment : res3Adjustment;
+
+  const res1For = Math.max(5, Math.min(95, baseVotes.forPercent + res1Adj));
   const res1Against = 100 - res1For;
 
-  const res2For = isMeridian
-    ? Math.max(5, Math.min(95, baseVotes.forPercent + mRes2Adjustment))
-    : Math.max(5, Math.min(95, baseVotes.forPercent + res2Adjustment));
+  const res2For = Math.max(5, Math.min(95, baseVotes.forPercent + res2Adj));
   const res2Against = 100 - res2For;
 
-  const res3For = isMeridian
-    ? Math.max(5, Math.min(95, baseVotes.forPercent + mRes3Adjustment))
-    : Math.max(5, Math.min(95, baseVotes.forPercent + res3Adjustment));
+  const res3For = Math.max(5, Math.min(95, baseVotes.forPercent + res3Adj));
   const res3Against = 100 - res3For;
 
   // ── Directors on board for deployment ─────────────────────────────────────
@@ -310,6 +399,62 @@ export default function AgmScreen({
         res3Explanation = mevent03 && (mevent03.outcomeTier === 'SUCCESS' || mevent03.outcomeTier === 'CRITICAL_SUCCESS')
           ? `Failed — the board's demonstrated mission discipline persuaded members a formal review was unnecessary.`
           : `Failed — ${ghLevel} governance health and insufficient member support meant the review motion fell.`;
+      }
+
+    } else if (isVantage) {
+      // ── Vantage result labels ──────────────────────────────────────────────
+      res1Label = 'Resolution 1: Director Elections';
+      res2Label = 'Resolution 2: Say-on-Pay (Advisory)';
+      res3Label = 'Resolution 3: Independent Board Chair (Shareholder Proposal)';
+
+      if (results.resolution1Pass) {
+        res1Explanation = gameState.apexActive
+          ? `Passed — the slate survived Apex Capital's withhold campaign; ${ghLevel} governance health held the institutional base.`
+          : `Passed — with Apex neutralised, the slate was re-elected comfortably.`;
+      } else {
+        res1Explanation = `Failed — Apex's withhold campaign found its mark; several incumbents fell below majority support.`;
+      }
+
+      if (results.resolution2Pass) {
+        res2Explanation = `Passed — Okafor's $14.2m package survived the advisory vote despite ISS's red flag.`;
+      } else {
+        res2Explanation = `Failed — ISS's red flag on the $14.2m package proved decisive; the Compensation Committee now owns a formal shareholder rebuke.`;
+      }
+
+      if (results.resolution3Pass) {
+        res3Explanation = gameState.chairCeoSeparationProgress >= 50
+          ? `Passed — with separation already underway, shareholders voted to make the independent Chair binding.`
+          : `Passed — shareholders mandated an independent Chair over the board's objection.`;
+      } else {
+        res3Explanation = gameState.chairCeoSeparationProgress >= 50
+          ? `Failed — shareholders accepted the board's own separation timetable as sufficient.`
+          : `Failed — the proposal fell short; the combined Chair/CEO structure survives, and so does the governance discount.`;
+      }
+
+    } else if (isRheinfeld) {
+      // ── Rheinfeld result labels ────────────────────────────────────────────
+      res1Label = 'Resolution 1: Discharge of the Supervisory Board (Entlastung)';
+      res2Label = 'Resolution 2: Remuneration System Approval (ARUG II)';
+      res3Label = "Resolution 3: Meridian Capital's Independent Strategic Review";
+
+      if (results.resolution1Pass) {
+        res1Explanation = gameState.heinrichConflictRevealed
+          ? `Passed — discharge granted, but narrowly; the conflict disclosures cost Heinrich the customary unanimity.`
+          : `Passed — the Supervisory Board's acts were ratified; ${ghLevel} governance health carried the floor.`;
+      } else {
+        res1Explanation = `Failed — discharge refused. In German corporate life there is no louder vote of no confidence.`;
+      }
+
+      if (results.resolution2Pass) {
+        res2Explanation = `Passed — the remuneration system was approved under ARUG II, with conditions noted in the minutes.`;
+      } else {
+        res2Explanation = `Failed — the advisory vote against the remuneration system puts the Supervisory Board on formal notice.`;
+      }
+
+      if (results.resolution3Pass) {
+        res3Explanation = `Passed — the independent strategic review is mandated; Meridian Capital stands down from its most aggressive posture.`;
+      } else {
+        res3Explanation = `Failed — the review was defeated; Meridian's analysts left the hall already drafting the EGM requisition.`;
       }
 
     } else {
@@ -466,7 +611,11 @@ export default function AgmScreen({
         >
           {isMeridian
             ? `The Annual Members Meeting has arrived. Meridian Foundation operates a supporter membership structure — registered members hold voting rights on constitutional matters. Three resolutions are contested. The Charity Governance Code assessor's view and your governance health score will influence how members vote.`
-            : `The AGM has arrived. Three resolutions are contested. Institutional shareholder voting will be influenced by Meridian Governance's recommendations and your governance health score.`}
+            : isVantage
+              ? `The AGM has arrived. Three resolutions are contested. Institutional voting will be shaped by the proxy advisers' recommendations, ISS's red flag on executive pay, and your governance health score — with Apex Capital's representatives watching from the third row.`
+              : isRheinfeld
+                ? `The Hauptversammlung has arrived in Düsseldorf. Three resolutions are contested. Institutional voting will be shaped by Meridian Capital's campaign, the proxy advisers' recommendations, and your governance health score. The worker representatives hold their five seats regardless — co-determination is not on the ballot.`
+                : `The AGM has arrived. Three resolutions are contested. Institutional shareholder voting will be influenced by Meridian Governance's recommendations and your governance health score.`}
         </motion.p>
 
         {/* Rating badge */}
@@ -535,6 +684,109 @@ export default function AgmScreen({
                 </h3>
                 <p className="text-foreground/70 text-sm leading-relaxed mb-3">
                   Members propose a formal independent review of whether Meridian&apos;s current programme portfolio remains consistent with its charitable objects.
+                </p>
+                <VoteBar forPercent={res3For} againstPercent={res3Against} />
+              </motion.div>
+            </>
+          ) : isVantage ? (
+            <>
+              {/* Vantage Resolution 1 */}
+              <motion.div
+                className="bg-card-bg border border-card-border rounded-lg p-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
+                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
+                  Resolution 1: Director Elections
+                </h3>
+                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+                  {gameState.apexActive
+                    ? 'The full slate stands for election. Apex Capital is running a withhold campaign against three incumbents.'
+                    : 'The full slate stands for election. With Apex Capital neutralised, no organised opposition remains.'}
+                </p>
+                <VoteBar forPercent={res1For} againstPercent={res1Against} />
+              </motion.div>
+
+              {/* Vantage Resolution 2 */}
+              <motion.div
+                className="bg-card-bg border border-card-border rounded-lg p-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
+                  Resolution 2: Say-on-Pay (Advisory)
+                </h3>
+                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+                  Sandra Okafor&apos;s $14.2m package faces the advisory vote carrying ISS&apos;s red flag.
+                </p>
+                <VoteBar forPercent={res2For} againstPercent={res2Against} />
+              </motion.div>
+
+              {/* Vantage Resolution 3 */}
+              <motion.div
+                className="bg-card-bg border border-card-border rounded-lg p-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+              >
+                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
+                  Resolution 3: Independent Board Chair
+                </h3>
+                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+                  A shareholder proposal to separate the combined Chair/CEO role and appoint an independent Chair.
+                </p>
+                <VoteBar forPercent={res3For} againstPercent={res3Against} />
+              </motion.div>
+            </>
+          ) : isRheinfeld ? (
+            <>
+              {/* Rheinfeld Resolution 1 */}
+              <motion.div
+                className="bg-card-bg border border-card-border rounded-lg p-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
+                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
+                  Resolution 1: Discharge of the Supervisory Board
+                </h3>
+                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+                  The customary Entlastung vote ratifying the Supervisory Board&apos;s acts for the year.
+                  {gameState.heinrichConflictRevealed ? ' Heinrich’s conflict disclosures hang over the vote.' : ''}
+                </p>
+                <VoteBar forPercent={res1For} againstPercent={res1Against} />
+              </motion.div>
+
+              {/* Rheinfeld Resolution 2 */}
+              <motion.div
+                className="bg-card-bg border border-card-border rounded-lg p-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
+                  Resolution 2: Remuneration System Approval
+                </h3>
+                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+                  The advisory vote on the Management Board remuneration system required under ARUG II.
+                </p>
+                <VoteBar forPercent={res2For} againstPercent={res2Against} />
+              </motion.div>
+
+              {/* Rheinfeld Resolution 3 */}
+              <motion.div
+                className="bg-card-bg border border-card-border rounded-lg p-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+              >
+                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
+                  Resolution 3: Independent Strategic Review
+                </h3>
+                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+                  Meridian Capital&apos;s shareholder proposal demanding an independent review of Rheinfeld&apos;s strategy and capital allocation.
                 </p>
                 <VoteBar forPercent={res3For} againstPercent={res3Against} />
               </motion.div>

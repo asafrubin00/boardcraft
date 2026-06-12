@@ -671,7 +671,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 1,
     illustrationType: 'vevent-agm',
     narrativeCard:
-      'The AGM is here, and the room feels like a courtroom. Four contested resolutions. Apex Capital\'s representatives are seated in the third row, legal pads out, looking like they\'ve been waiting for this moment all year - because they have. Meridian\'s recommendations are already baked into every institutional proxy card. Sandra Okafor is in the hallway doing a last-minute call with your largest friendly holder. The webcast is live. The vote tallies will move markets.',
+      'The AGM is here, and the room feels like a courtroom. Three contested resolutions. Apex Capital\'s representatives are seated in the third row, legal pads out, looking like they\'ve been waiting for this moment all year - because they have. Meridian\'s recommendations are already baked into every institutional proxy card. Sandra Okafor is in the hallway doing a last-minute call with your largest friendly holder. The webcast is live. The vote tallies will move markets.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.40,
     secondaryDomains: [
@@ -720,22 +720,22 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.0, 5.0],
         narrative:
-          'All four resolutions pass with comfortable margins - Apex\'s representative sits through the results stone-faced, and by the time the webcast ends, the stock is up 5%.',
+          'All three resolutions pass with comfortable margins - Apex\'s representative sits through the results stone-faced, and by the time the webcast ends, the stock is up 5%.',
       },
       SUCCESS: {
         svRange: [2.0, 3.0],
         narrative:
-          'Three of four pass - a credible showing that keeps the board intact and gives you a mandate to govern for another year.',
+          'All three resolutions pass - a credible showing that keeps the board intact and gives you a mandate to govern for another year.',
       },
       PARTIAL_SUCCESS: {
         svRange: [-1.0, 0],
         narrative:
-          'Two pass, two fail - the kind of split decision that satisfies nobody and guarantees six more months of activist pressure.',
+          'The vote splits - the kind of result that satisfies nobody and guarantees six more months of activist pressure.',
       },
       FAILURE: {
         svRange: [-4.0, -3.0],
         narrative:
-          'Say-on-pay goes down in flames and only one resolution passes - three analysts downgraded before lunch, the kind of consensus that takes quarters to reverse.',
+          'Say-on-pay goes down in flames and the rest of the slate follows - three analysts downgraded before lunch, the kind of consensus that takes quarters to reverse.',
       },
       CRITICAL_FAILURE: {
         svRange: [-6.0, -6.0],
