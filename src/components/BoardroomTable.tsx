@@ -464,9 +464,9 @@ export default function BoardroomTable({
               height: seatPx,
               zIndex: hoveredSeatIdx === index ? 50 : undefined,
             }}
-            onMouseEnter={() => setHoveredSeatIdx(index)}
-            onMouseLeave={() => setHoveredSeatIdx(null)}
-            onClick={() => { if (!isNonInteractive) onSeatClick(index); }}
+            onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHoveredSeatIdx(index); }}
+            onPointerLeave={(e) => { if (e.pointerType === 'mouse') setHoveredSeatIdx(null); }}
+            onClick={() => { setHoveredSeatIdx(null); if (!isNonInteractive) onSeatClick(index); }}
             onDragOver={(e) => {
               if (isNonInteractive) return;
               e.preventDefault();

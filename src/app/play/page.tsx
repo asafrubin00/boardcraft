@@ -1357,7 +1357,7 @@ function BoardConstructionWrapper({
         {/* ── Director Pool overlay (slides from right) ── */}
         <AnimatePresence>
           {mobileOverlay === 'pool' && (
-            <motion.div key="mobile-pool-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="absolute inset-0 z-20">
+            <motion.div key="mobile-pool-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="absolute inset-0 z-[60]">
               <div className="absolute inset-0 bg-black/60" onClick={() => { setMobileOverlay(null); setActiveSeatIdx(null); setSelectedDirId(null); }} />
               <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ duration: 0.25, ease: 'easeOut' }} className="absolute right-0 top-0 bottom-0 w-[95%] bg-navy flex flex-col shadow-2xl border-l border-card-border">
                 {/* Header */}
@@ -1523,7 +1523,7 @@ function BoardConstructionWrapper({
         {/* ── Compliance overlay (slides from left) ── */}
         <AnimatePresence>
           {mobileOverlay === 'compliance' && (
-            <motion.div key="mobile-compliance-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="absolute inset-0 z-20">
+            <motion.div key="mobile-compliance-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="absolute inset-0 z-[60]">
               <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOverlay(null)} />
               <motion.div initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ duration: 0.25, ease: 'easeOut' }} className="absolute left-0 top-0 bottom-0 w-[95%] bg-navy flex flex-col shadow-2xl border-r border-card-border">
                 {/* Header */}
