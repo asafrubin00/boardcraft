@@ -6,6 +6,68 @@ import { ROLE_LABELS, getRoleLabel } from '@/engine/boardConstants';
 import type { Jurisdiction } from '@/types/game';
 import DirectorPortrait from './DirectorPortrait';
 
+// ── Seat role tooltips ──
+
+interface RoleTooltipInfo {
+  description: string;
+  requirements: string[];
+}
+
+const ROLE_TOOLTIPS: Partial<Record<BoardRole, RoleTooltipInfo>> = {
+  chair: {
+    description: 'Leads the board, sets agenda, and ensures effective governance.',
+    requirements: ['Must be independent', 'Strategy & Markets ≥ 60', 'Stakeholder & Comms ≥ 60'],
+  },
+  sid: {
+    description: 'Acts as a sounding board for the Chair and conduit for shareholder concerns.',
+    requirements: ['Must be independent', 'Stakeholder & Comms ≥ 60'],
+  },
+  auditChair: {
+    description: 'Oversees financial reporting, internal controls, and external audit.',
+    requirements: ['Must be independent', 'Financial Oversight ≥ 75'],
+  },
+  remChair: {
+    description: 'Sets executive remuneration policy and monitors pay structure.',
+    requirements: ['People & Culture ≥ 60'],
+  },
+  nomChair: {
+    description: 'Leads board succession planning and director appointment process.',
+    requirements: ['People & Culture ≥ 55', 'Strategy & Markets ≥ 50'],
+  },
+  ned: {
+    description: 'Provides independent scrutiny and challenge to executive management.',
+    requirements: ['Must be independent'],
+  },
+  energyTransitionChair: {
+    description: 'Oversees the company\'s strategy on energy transition and decarbonisation.',
+    requirements: ['ESG & Sustainability ≥ 70'],
+  },
+  csrdChair: {
+    description: 'Oversees sustainability reporting and CSRD compliance framework.',
+    requirements: ['ESG & Sustainability or Geopolitical Macro ≥ 65'],
+  },
+  strategyChair: {
+    description: 'Chairs the dedicated strategy committee and long-term planning oversight.',
+    requirements: ['Strategy & Markets ≥ 60'],
+  },
+  esgChair: {
+    description: 'Leads the board\'s oversight of environmental, social, and governance matters.',
+    requirements: ['ESG & Sustainability ≥ 65'],
+  },
+  riskChair: {
+    description: 'Oversees the company\'s risk management framework and appetite.',
+    requirements: ['Financial Oversight ≥ 60'],
+  },
+  techChair: {
+    description: 'Provides oversight of technology, digital transformation, and cyber risk.',
+    requirements: ['Technology & Digital ≥ 65'],
+  },
+  safetyEnvChair: {
+    description: 'Oversees safety management systems and environmental compliance.',
+    requirements: ['ESG & Sustainability ≥ 70'],
+  },
+};
+
 // ── Table position definitions ──
 
 export interface TablePosition {
@@ -290,6 +352,7 @@ export default function BoardroomTable({
 
   const positions = deriveTablePositions(seats, hasEnergyTransition, hasCsrd, hasStrategy, isRheinfeld);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [hoveredSeatIdx, setHoveredSeatIdx] = useState<number | null>(null);
 
   const getDirector = (id: string) => directors.find((d) => d.id === id);
   const getSeat = (directorId: string) => seats.find((s) => s.directorId === directorId);
@@ -399,7 +462,10 @@ export default function BoardroomTable({
               transform: 'translate(-50%, -50%)',
               width: seatPx,
               height: seatPx,
+              zIndex: hoveredSeatIdx === index ? 50 : undefined,
             }}
+            onMouseEnter={() => setHoveredSeatIdx(index)}
+            onMouseLeave={() => setHoveredSeatIdx(null)}
             onClick={() => { if (!isNonInteractive) onSeatClick(index); }}
             onDragOver={(e) => {
               if (isNonInteractive) return;
@@ -477,6 +543,55 @@ export default function BoardroomTable({
                 !
               </div>
             )}
+            {/* Role tooltip on hover (empty seats only, or always when hovered) */}
+            {hoveredSeatIdx === index && !director && (() => {
+              const role = pos.defaultRole;
+              const tooltip = ROLE_TOOLTIPS[role];
+              if (!tooltip) return null;
+              // Position tooltip above seats in bottom half, below seats in top half
+              const showAbove = pos.topPct > 50;
+              return (
+                <div
+                  className="pointer-events-none absolute z-50"
+                  style={{
+                    left: '50%',
+                    ...(showAbove
+                      ? { bottom: seatPx + 6 }
+                      : { top: seatPx + 6 }),
+                    transform: 'translateX(-50%)',
+                    width: 180,
+                  }}
+                >
+                  <div
+                    className="rounded-lg border border-gold/30 shadow-xl text-left"
+                    style={{
+                      background: 'rgba(10, 22, 40, 0.97)',
+                      padding: '8px 10px',
+                    }}
+                  >
+                    <div className="font-semibold text-gold mb-1" style={{ fontSize: '10px' }}>
+                      {getRoleLabel(role, jurisdiction, companyId)}
+                    </div>
+                    <div className="text-foreground/70 mb-2 leading-snug" style={{ fontSize: '9px' }}>
+                      {tooltip.description}
+                    </div>
+                    {tooltip.requirements.length > 0 && (
+                      <div>
+                        <div className="text-foreground/40 uppercase tracking-wide mb-1" style={{ fontSize: '8px' }}>
+                          Requirements
+                        </div>
+                        {tooltip.requirements.map((req, i) => (
+                          <div key={i} className="flex items-start gap-1" style={{ fontSize: '9px' }}>
+                            <span className="text-gold/60 mt-px" style={{ fontSize: '8px' }}>›</span>
+                            <span className="text-foreground/60 leading-snug">{req}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         );
       })}
