@@ -1074,8 +1074,8 @@ function BoardConstructionWrapper({
     const handleTouchMove = (e: TouchEvent) => {
       const ref = touchDragRef.current;
       if (!ref) return;
-      // Don't intercept scroll when an overlay is open — clear drag and bail out
-      if (mobileOverlayRef.current !== null) { touchDragRef.current = null; return; }
+      // On mobile viewports, don't intercept scroll when an overlay is open
+      if (mobileOverlayRef.current !== null && window.innerWidth < 768) { touchDragRef.current = null; return; }
       const touch = e.touches[0];
       const dx = touch.clientX - ref.startX;
       const dy = touch.clientY - ref.startY;
@@ -1791,6 +1791,23 @@ function BoardConstructionWrapper({
                 <div className="w-20 h-20 rounded-full border-2 border-dashed border-gold/40 flex items-center justify-center mb-4 animate-pulse"><span className="text-gold/40 text-3xl">+</span></div>
                 <h3 className="text-lg font-bold text-gold font-narrative mb-2">{company.id === 'company_meridian' ? 'Select a Trustee' : 'Select a Director'}</h3>
                 <p className="text-xs text-foreground/50 max-w-xs">Choose a director from the pool to fill the <span className="text-gold font-semibold">{activeSeatIdx !== null ? getShortRoleLabel(getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize).defaultRole, company.jurisdiction, company.id) : ''}</span> seat.</p>
+                {activeSeatIdx !== null && (() => {
+                  const seatRole = getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize).defaultRole;
+                  const info = ROLE_TOOLTIPS[seatRole];
+                  if (!info) return null;
+                  return (
+                    <div className="mt-4 text-left w-full max-w-xs rounded-lg border border-gold/20 bg-navy-dark/40 px-4 py-3">
+                      <p className="text-[11px] text-foreground/60 leading-snug mb-2">{info.description}</p>
+                      <p className="text-[9px] text-foreground/40 uppercase tracking-wide mb-1">Requirements</p>
+                      {info.requirements.map((req, i) => (
+                        <div key={i} className="flex items-start gap-1 text-[11px] text-foreground/55">
+                          <span className="text-gold/60 mt-px">›</span>
+                          <span>{req}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
                 {/* Cancel handled by sticky Back to Overview button above */}
               </motion.div>
             )}
