@@ -1063,9 +1063,11 @@ function BoardConstructionWrapper({
     touchDragRef.current = { dirId, startX: x, startY: y, active: false };
   }, []);
 
-  // Keep a stable ref to handleAssignToSeat so the global touch effect doesn't re-register on every render
+  // Keep stable refs so the global touch effect doesn't re-register on every render
   const handleAssignToSeatRef = useRef(handleAssignToSeat);
   useEffect(() => { handleAssignToSeatRef.current = handleAssignToSeat; }, [handleAssignToSeat]);
+  const handleRemoveDirectorRef = useRef(handleRemoveDirector);
+  useEffect(() => { handleRemoveDirectorRef.current = handleRemoveDirector; }, [handleRemoveDirector]);
 
   // Keep mobileOverlayRef in sync so the global touch handler can check it without stale closure
   useEffect(() => { mobileOverlayRef.current = mobileOverlay; }, [mobileOverlay]);
@@ -1103,11 +1105,15 @@ function BoardConstructionWrapper({
       if (touchGhostRef.current) touchGhostRef.current.style.display = '';
       if (!el) return;
       const seatEl = (el as HTMLElement).closest('[data-seat-index]');
-      if (!seatEl) return;
-      // Respect locked/non-interactive seats (worker reps, locked Chair/CEO, etc.)
-      if ((seatEl as HTMLElement).getAttribute('data-seat-interactive') === 'false') return;
-      const idx = parseInt((seatEl as HTMLElement).getAttribute('data-seat-index') ?? '-1', 10);
-      if (idx >= 0) handleAssignToSeatRef.current(ref.dirId, idx);
+      if (seatEl) {
+        // Drop onto a seat
+        if ((seatEl as HTMLElement).getAttribute('data-seat-interactive') === 'false') return;
+        const idx = parseInt((seatEl as HTMLElement).getAttribute('data-seat-index') ?? '-1', 10);
+        if (idx >= 0) handleAssignToSeatRef.current(ref.dirId, idx);
+      } else if (window.innerWidth >= 768 && (el as HTMLElement).closest('[data-pool-drop-zone]')) {
+        // Tablet only: drop onto the director pool removes the director from the board
+        handleRemoveDirectorRef.current(ref.dirId);
+      }
     };
 
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -1640,6 +1646,7 @@ function BoardConstructionWrapper({
             </div>
           </div>
           <div
+            data-pool-drop-zone
             className="flex-1 overflow-y-auto p-3"
             onDragOver={(e) => {
               // Only highlight if dragging a seated director
