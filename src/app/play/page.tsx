@@ -563,6 +563,7 @@ import BoardroomTable, {
   computeStandardGridPositions,
   deriveTablePositions,
   getOverflowDirectorIds,
+  ROLE_TOOLTIPS,
 } from '@/components/BoardroomTable';
 import DirectorPortrait from '@/components/DirectorPortrait';
 import type { BoardRole, CompetencyDomain, CommitteeState, Director } from '@/types/game';
@@ -1476,6 +1477,25 @@ function BoardConstructionWrapper({
                         <button onClick={() => { if (sortBy === 'score') { setSortDir((p) => p === 'asc' ? 'desc' : 'asc'); } else { setSortBy('score'); setSortDir('desc'); } }} className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 ${sortBy === 'score' ? 'bg-gold/20 text-gold border border-gold/40' : 'text-foreground/40 hover:text-foreground/60'}`}>Gov. Score {sortBy === 'score' && (sortDir === 'asc' ? '↑' : '↓')}</button>
                       </div>
                     </div>
+                    {/* Role info — shown above the candidate list when selecting for a named role */}
+                    {activeSeatIdx !== null && mode === 'select' && (() => {
+                      const seatRole = getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize).defaultRole;
+                      const info = ROLE_TOOLTIPS[seatRole];
+                      if (!info) return null;
+                      return (
+                        <div className="flex-shrink-0 px-3 pt-2 pb-1 border-b border-card-border">
+                          <p className="text-xs font-semibold text-gold mb-0.5">{getRoleLabel(seatRole, company.jurisdiction, company.id)}</p>
+                          <p className="text-[11px] text-foreground/60 leading-snug mb-1">{info.description}</p>
+                          <p className="text-[9px] text-foreground/40 uppercase tracking-wide mb-0.5">Requirements</p>
+                          {info.requirements.map((req, i) => (
+                            <div key={i} className="flex items-start gap-1 text-[11px] text-foreground/55">
+                              <span className="text-gold/60 mt-px">›</span>
+                              <span>{req}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                     <div className="flex-1 overflow-y-auto p-3">
                       {overflowIds.length > 0 && <p className="text-[10px] text-warning font-medium mb-2">⚠ Unseated {company.id === 'company_meridian' ? 'trustees' : 'directors'} — tap a seat to place them</p>}
                       {sortedPool.length === 0 && filterDomain !== null ? (

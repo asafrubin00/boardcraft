@@ -13,7 +13,7 @@ interface RoleTooltipInfo {
   requirements: string[];
 }
 
-const ROLE_TOOLTIPS: Partial<Record<BoardRole, RoleTooltipInfo>> = {
+export const ROLE_TOOLTIPS: Partial<Record<BoardRole, RoleTooltipInfo>> = {
   chair: {
     description: 'Leads the board, sets agenda, and ensures effective governance.',
     requirements: ['Must be independent', 'Strategy & Markets ≥ 60', 'Stakeholder & Comms ≥ 60'],
@@ -543,22 +543,27 @@ export default function BoardroomTable({
                 !
               </div>
             )}
-            {/* Role tooltip on hover (empty seats only, or always when hovered) */}
+            {/* Role tooltip on hover (empty seats only, desktop only) */}
             {hoveredSeatIdx === index && !director && (() => {
               const role = pos.defaultRole;
               const tooltip = ROLE_TOOLTIPS[role];
               if (!tooltip) return null;
-              // Position tooltip above seats in bottom half, below seats in top half
               const showAbove = pos.topPct > 50;
+              // Shift inward for left/right column seats so tooltip stays within bounds
+              const horizStyle: React.CSSProperties =
+                pos.leftPct <= 20
+                  ? { left: 0, transform: 'none' }
+                  : pos.leftPct >= 80
+                    ? { right: 0, left: 'auto', transform: 'none' }
+                    : { left: '50%', transform: 'translateX(-50%)' };
               return (
                 <div
-                  className="pointer-events-none absolute z-50"
+                  className="pointer-events-none absolute z-50 hidden md:block"
                   style={{
-                    left: '50%',
+                    ...horizStyle,
                     ...(showAbove
                       ? { bottom: seatPx + 6 }
                       : { top: seatPx + 6 }),
-                    transform: 'translateX(-50%)',
                     width: 180,
                   }}
                 >
