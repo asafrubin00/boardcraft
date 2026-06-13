@@ -694,6 +694,7 @@ function BoardConstructionWrapper({
   const touchDragRef = useRef<{ dirId: string; startX: number; startY: number; active: boolean } | null>(null);
   const [touchGhost, setTouchGhost] = useState<{ dirId: string; x: number; y: number } | null>(null);
   const touchGhostRef = useRef<HTMLDivElement | null>(null);
+  const mobileOverlayRef = useRef<null | 'pool' | 'compliance'>(null);
 
   // ── Undo / Redo history ──
   const MAX_HISTORY = 20;
@@ -1039,6 +1040,7 @@ function BoardConstructionWrapper({
   }, [boardIdSet, committed, budget, handleRoleChange, pushAndSetSeats, directorMap, tablePos, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize]);
 
   const handleSeatClick = useCallback((idx: number) => {
+    touchDragRef.current = null; // cancel any in-flight touch drag before opening overlay
     if (activeSeatIdx === idx) { setActiveSeatIdx(null); setSelectedDirId(null); setMobileOverlay(null); return; }
     setActiveSeatIdx(idx); setSelectedDirId(null);
     setMobileOverlay('pool'); // mobile: open pool overlay on any seat tap
@@ -1065,10 +1067,15 @@ function BoardConstructionWrapper({
   const handleAssignToSeatRef = useRef(handleAssignToSeat);
   useEffect(() => { handleAssignToSeatRef.current = handleAssignToSeat; }, [handleAssignToSeat]);
 
+  // Keep mobileOverlayRef in sync so the global touch handler can check it without stale closure
+  useEffect(() => { mobileOverlayRef.current = mobileOverlay; }, [mobileOverlay]);
+
   useEffect(() => {
     const handleTouchMove = (e: TouchEvent) => {
       const ref = touchDragRef.current;
       if (!ref) return;
+      // Don't intercept scroll when an overlay is open — clear drag and bail out
+      if (mobileOverlayRef.current !== null) { touchDragRef.current = null; return; }
       const touch = e.touches[0];
       const dx = touch.clientX - ref.startX;
       const dy = touch.clientY - ref.startY;
