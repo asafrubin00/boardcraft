@@ -1506,7 +1506,7 @@ function BoardConstructionWrapper({
                       ) : (
                         <div className="grid grid-cols-4 gap-1.5">
                           {sortedPool.map((d) => (
-                            <PoolCard key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} displayFee={budget === 0 ? 0 : undefined} onTouchStart={(e) => { const t = e.touches[0]; startTouchDrag(d.id, t.clientX, t.clientY); }} />
+                            <PoolCard key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} displayFee={budget === 0 ? 0 : undefined} />
                           ))}
                         </div>
                       )}
