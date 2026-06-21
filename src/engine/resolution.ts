@@ -4,6 +4,9 @@ import type {
   DirectorDynamic,
   GameState,
   ResolutionOutput,
+  ResolutionBreakdown,
+  DirectorContribution,
+  BestAvailableGap,
   OutcomeTier,
   EnergyUpdate,
   CompetencyDomain,
@@ -145,6 +148,14 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
   // Do Nothing score floor: Tier 1 events are more forgiving of inaction
   const doNothingFloor = isDoNothing ? (event.tier === 1 ? 30 : 20) : 0;
 
+  // ── Breakdown tracking ──
+  const directorContributions: DirectorContribution[] = [];
+  let dynamicsModifier = 0;
+  let competencyGatePassed = true;
+  let fallbackTriggered = false;
+  let usedStrategyId = strategyChoice;
+  let fallbackStrategyId: string | undefined;
+
   if (!isDoNothing && deployedDirectors.length > 0) {
     // Step 2: Compute Director Match Score
     const allDomains: { domain: CompetencyDomain; weight: number }[] = [
@@ -156,24 +167,30 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
 
     for (const director of deployedDirectors) {
       let directorScore = 0;
+      const energyMod = getEnergyModifier(director.currentEnergy);
+      const jurisdictionScore =
+        director.jurisdictionScores[company.jurisdiction as keyof typeof director.jurisdictionScores];
+      const jurisdictionPenaltyApplied = jurisdictionScore !== undefined && jurisdictionScore < 50;
 
       for (const { domain, weight } of allDomains) {
         let rawRating = director.domainRatings[domain];
 
         // Jurisdiction familiarity penalty
-        const jurisdictionScore =
-          director.jurisdictionScores[company.jurisdiction as keyof typeof director.jurisdictionScores];
-        if (jurisdictionScore !== undefined && jurisdictionScore < 50) {
+        if (jurisdictionPenaltyApplied) {
           rawRating = rawRating * 0.7;
         }
-
-        // Energy modifier
-        const energyMod = getEnergyModifier(director.currentEnergy);
 
         directorScore += rawRating * weight * energyMod;
       }
 
       directorScores.push(directorScore);
+      directorContributions.push({
+        directorId: director.id,
+        directorName: director.name,
+        weightedScore: Math.round(directorScore * 100) / 100,
+        energyModifier: energyMod,
+        jurisdictionPenaltyApplied,
+      });
     }
 
     // Average across deployed directors
@@ -191,6 +208,7 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
           );
           if (dynamic) {
             matchScore += dynamic.modifier;
+            dynamicsModifier += dynamic.modifier;
           }
         }
       }
@@ -214,19 +232,26 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
         }
       }
 
+      competencyGatePassed = gatesPassed;
+
       if (gatesPassed) {
         strategyMultiplier = strategy.multiplier;
+        usedStrategyId = strategy.id;
       } else if (strategy.fallback) {
         const fallbackStrategy = event.strategies.find(
           (s) => s.id === strategy.fallback
         );
         if (fallbackStrategy) {
+          fallbackTriggered = true;
+          fallbackStrategyId = fallbackStrategy.id;
           strategyChoice = fallbackStrategy.id;
+          usedStrategyId = fallbackStrategy.id;
           strategyMultiplier = fallbackStrategy.multiplier;
         }
       } else {
         // No fallback - use the strategy anyway but it shouldn't reach here
         strategyMultiplier = strategy.multiplier;
+        usedStrategyId = strategy.id;
       }
     }
   }
@@ -319,6 +344,66 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
     }
   }
 
+  // ── Best Available Gap analysis ──
+  const domainsToCheck: { domain: CompetencyDomain }[] = [
+    { domain: event.primaryDomain },
+    ...event.secondaryDomains,
+  ];
+  const bestAvailableGaps: BestAvailableGap[] = [];
+  const rosterDirectors = input.gameState.directors;
+  if (rosterDirectors.length > 0) {
+    for (const { domain } of domainsToCheck) {
+      const deployedRatings = deployedDirectors.map((d) => ({
+        name: d.name,
+        rating: d.domainRatings[domain],
+      }));
+      const deployedBest =
+        deployedRatings.length > 0
+          ? deployedRatings.reduce((a, b) => (a.rating >= b.rating ? a : b))
+          : null;
+      const deployedBestRating = deployedBest?.rating ?? 0;
+
+      const rosterRatings = rosterDirectors.map((d) => ({
+        name: d.name,
+        rating: d.domainRatings[domain],
+      }));
+      const rosterBest = rosterRatings.reduce((a, b) =>
+        a.rating >= b.rating ? a : b
+      );
+
+      const gap = rosterBest.rating - deployedBestRating;
+      if (gap > 15) {
+        bestAvailableGaps.push({
+          domain,
+          deployedBestName: deployedBest?.name ?? null,
+          deployedBestRating,
+          rosterBestName: rosterBest.name,
+          rosterBestRating: rosterBest.rating,
+          gap,
+        });
+      }
+    }
+  }
+
+  // ── Build breakdown ──
+  const breakdown: ResolutionBreakdown = {
+    isDoNothing,
+    primaryDomain: event.primaryDomain,
+    directorContributions,
+    dynamicsModifier,
+    matchScore: Math.round(matchScore * 100) / 100,
+    strategyId: usedStrategyId,
+    strategyMultiplier,
+    competencyGatePassed,
+    fallbackTriggered,
+    ...(fallbackStrategyId ? { fallbackStrategyId } : {}),
+    committeeBonus,
+    rawScore: Math.round(rawScore * 100) / 100,
+    randomRange: randRange,
+    randomFactor: Math.round(randomFactor * 1000) / 1000,
+    bestAvailableGaps,
+  };
+
   // ── Dev logging ──
   if (process.env.NODE_ENV === 'development') {
     console.log('[Resolution]', {
@@ -346,5 +431,6 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
     energyUpdates,
     followOnEvents,
     wildcard,
+    breakdown,
   };
 }

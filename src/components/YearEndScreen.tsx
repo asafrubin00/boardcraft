@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { GameState, ResolvedEvent, GovernanceHealthBreakdown } from '@/types/game';
+import type { GameState, ResolvedEvent, GovernanceHealthBreakdown, CompetencyDomain } from '@/types/game';
 import { getSvHistory, getProxyAdviserRating, getAllEvents } from '@/engine/gameStateManager';
+import { DOMAIN_LABELS } from '@/engine/boardConstants';
 import {
   calculateGameGc,
   getCareerTitle,
@@ -170,6 +171,171 @@ function SvSparkline({ data }: { data: { turn: string; sv: number }[] }) {
         <text key={`l${i}`} x={p.x} y={height - 6} textAnchor="middle" fill="#E8E4DC" fontSize={9} opacity={0.6}>{p.turn}</text>
       ))}
     </svg>
+  );
+}
+
+// ── Season Postmortem ──
+
+interface PostmortemProps {
+  resolvedEvents: ResolvedEvent[];
+  eventNameMap: Record<string, string>;
+  directors: GameState['directors'];
+  isMeridian: boolean;
+}
+
+function buildDomainPattern(
+  resolvedEvents: ResolvedEvent[],
+  directors: GameState['directors']
+): { domain: CompetencyDomain; label: string; boardAvg: number; eventDemand: number; weakEvents: number } | null {
+  if (resolvedEvents.length < 3) return null;
+
+  // Tally domain demand across all fired events (using breakdown data)
+  const domainDemand: Partial<Record<CompetencyDomain, number>> = {};
+  let eventsWithBreakdown = 0;
+  for (const ev of resolvedEvents) {
+    if (!ev.breakdown) continue;
+    eventsWithBreakdown++;
+    const { primaryDomain, strategyMultiplier } = ev.breakdown;
+    domainDemand[primaryDomain] = (domainDemand[primaryDomain] ?? 0) + strategyMultiplier;
+  }
+  if (eventsWithBreakdown < 3) return null;
+
+  // Board average per domain
+  const boardAvg = (domain: CompetencyDomain): number => {
+    if (directors.length === 0) return 0;
+    return Math.round(
+      directors.reduce((s, d) => s + (d.domainRatings[domain] ?? 0), 0) / directors.length
+    );
+  };
+
+  // Find the weakest board domain that also had high event demand
+  let worstGap = 0;
+  let worstDomain: CompetencyDomain | null = null;
+  for (const [domain, demand] of Object.entries(domainDemand) as [CompetencyDomain, number][]) {
+    const avg = boardAvg(domain);
+    if (avg > 60) continue; // not actually weak
+    const gap = demand * (60 - avg); // demand-weighted weakness
+    if (gap > worstGap) {
+      worstGap = gap;
+      worstDomain = domain;
+    }
+  }
+
+  if (!worstDomain) return null;
+
+  // Count events where this was the primary domain AND outcome was FAILURE or CRITICAL_FAILURE or PARTIAL_SUCCESS
+  const weakEvents = resolvedEvents.filter(
+    (ev) =>
+      ev.breakdown?.primaryDomain === worstDomain &&
+      (ev.outcomeTier === 'FAILURE' || ev.outcomeTier === 'CRITICAL_FAILURE' || ev.outcomeTier === 'PARTIAL_SUCCESS')
+  ).length;
+
+  const totalDomainEvents = resolvedEvents.filter(
+    (ev) => ev.breakdown?.primaryDomain === worstDomain
+  ).length;
+
+  // Only surface it if there were at least 2 events in this domain and >50% were weak
+  if (totalDomainEvents < 2 || weakEvents < 2) return null;
+
+  return {
+    domain: worstDomain,
+    label: DOMAIN_LABELS[worstDomain] ?? worstDomain,
+    boardAvg: boardAvg(worstDomain),
+    eventDemand: totalDomainEvents,
+    weakEvents,
+  };
+}
+
+function SeasonPostmortem({ resolvedEvents, eventNameMap, directors, isMeridian }: PostmortemProps) {
+  const [open, setOpen] = useState(false);
+  const valueLabel = isMeridian ? 'mission integrity' : 'shareholder value';
+
+  if (resolvedEvents.length === 0) return null;
+
+  const sorted = [...resolvedEvents].sort((a, b) => b.svDelta - a.svDelta);
+  const best = sorted[0];
+  const worst = sorted[sorted.length - 1];
+
+  const bestName = eventNameMap[best.eventId] ?? best.eventId;
+  const worstName = eventNameMap[worst.eventId] ?? worst.eventId;
+
+  const pattern = buildDomainPattern(resolvedEvents, directors);
+
+  // If nothing interesting to say, don't show the section
+  const hasWorstInfo = worst.svDelta < -0.5;
+  const hasBestInfo = best.svDelta > 0.5;
+  if (!hasBestInfo && !hasWorstInfo && !pattern) return null;
+
+  return (
+    <motion.div
+      className="bg-card-bg border border-card-border rounded-lg p-5 mb-10"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.55, duration: 0.5 }}
+    >
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between text-left cursor-pointer"
+      >
+        <h3 className="text-gold font-narrative font-bold text-sm uppercase tracking-wide">
+          Season Analysis
+        </h3>
+        <span className="text-foreground/40 text-sm">{open ? '↑ Collapse' : '↓ Expand'}</span>
+      </button>
+
+      {open && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          transition={{ duration: 0.25 }}
+          className="mt-4 space-y-4"
+        >
+          {hasBestInfo && (
+            <div>
+              <p className="text-xs text-foreground/50 uppercase tracking-wide mb-1">Strongest outcome</p>
+              <p className="text-sm text-foreground/80">
+                <span className="font-semibold text-foreground">{bestName}</span>
+                {' '}—{' '}
+                {OUTCOME_LABELS[best.outcomeTier] ?? best.outcomeTier.replace('_', ' ')},{' '}
+                adding {best.svDelta.toFixed(1)} to {valueLabel}
+                {(best.breakdown?.committeeBonus ?? 0) > 0 ? `, aided by a committee bonus of +${best.breakdown!.committeeBonus}` : ''}
+                {best.breakdown && !best.breakdown.isDoNothing && best.breakdown.directorContributions.length > 0
+                  ? ` with a team score of ${best.breakdown.matchScore}`
+                  : ''}.
+              </p>
+            </div>
+          )}
+
+          {hasWorstInfo && (
+            <div>
+              <p className="text-xs text-foreground/50 uppercase tracking-wide mb-1">Weakest outcome</p>
+              <p className="text-sm text-foreground/80">
+                <span className="font-semibold text-foreground">{worstName}</span>
+                {' '}—{' '}
+                {OUTCOME_LABELS[worst.outcomeTier] ?? worst.outcomeTier.replace('_', ' ')},{' '}
+                costing {Math.abs(worst.svDelta).toFixed(1)} in {valueLabel}
+                {worst.breakdown?.fallbackTriggered ? ', with the chosen strategy falling back to a weaker alternative' : ''}
+                {worst.breakdown && !worst.breakdown.isDoNothing && worst.breakdown.matchScore < 45
+                  ? ` — team score of ${worst.breakdown.matchScore} was a poor match for this event's demands`
+                  : ''}.
+              </p>
+            </div>
+          )}
+
+          {pattern && (
+            <div>
+              <p className="text-xs text-foreground/50 uppercase tracking-wide mb-1">Roster pattern</p>
+              <p className="text-sm text-foreground/80">
+                The board averaged {pattern.boardAvg} on{' '}
+                <span className="font-semibold text-foreground">{pattern.label}</span>,
+                {' '}yet {pattern.weakEvents} of the {pattern.eventDemand} events weighted this domain returned sub-par outcomes.
+                {' '}A stronger bench in this area would have changed the calculus.
+              </p>
+            </div>
+          )}
+        </motion.div>
+      )}
+    </motion.div>
   );
 }
 
@@ -485,6 +651,14 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
             </tbody>
           </table>
         </motion.div>
+
+        {/* Season Postmortem */}
+        <SeasonPostmortem
+          resolvedEvents={gameState.resolvedEvents}
+          eventNameMap={eventNameMap}
+          directors={gameState.directors}
+          isMeridian={isMeridian}
+        />
 
         {/* Governance Health Breakdown */}
         <motion.div

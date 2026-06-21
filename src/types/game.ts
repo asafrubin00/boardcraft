@@ -182,6 +182,15 @@ export interface StrategyOption {
   competencyGates: CompetencyGate[];
   fallback?: string;
   isDoNothing?: boolean;
+  /** If set, a successful resolution at or above minOutcomeTier triggers a director removal */
+  boardEffect?: {
+    removeDirectorId: string;
+    minOutcomeTier: OutcomeTier;
+    requiresReplacement: boolean;
+    vacatedRole: BoardRole;
+    /** Additional director IDs removed silently alongside the primary removal (no replacement modal) */
+    simultaneousRemoveIds?: string[];
+  };
 }
 
 export interface OutcomeTierDefinition {
@@ -278,6 +287,41 @@ export interface EnergyUpdate {
   newEnergy: number;
 }
 
+export interface DirectorContribution {
+  directorId: string;
+  directorName: string;
+  weightedScore: number;
+  energyModifier: number;
+  jurisdictionPenaltyApplied: boolean;
+}
+
+export interface BestAvailableGap {
+  domain: CompetencyDomain;
+  deployedBestName: string | null;
+  deployedBestRating: number;
+  rosterBestName: string;
+  rosterBestRating: number;
+  gap: number;
+}
+
+export interface ResolutionBreakdown {
+  isDoNothing: boolean;
+  primaryDomain: CompetencyDomain;
+  directorContributions: DirectorContribution[];
+  dynamicsModifier: number;
+  matchScore: number;
+  strategyId: string;
+  strategyMultiplier: number;
+  competencyGatePassed: boolean;
+  fallbackTriggered: boolean;
+  fallbackStrategyId?: string;
+  committeeBonus: number;
+  rawScore: number;
+  randomRange: [number, number];
+  randomFactor: number;
+  bestAvailableGaps: BestAvailableGap[];
+}
+
 export interface ResolutionOutput {
   outcomeTier: OutcomeTier;
   finalScore: number;
@@ -287,6 +331,8 @@ export interface ResolutionOutput {
   followOnEvents: string[];
   /** True if a wildcard shifted the outcome tier unexpectedly */
   wildcard?: boolean;
+  /** Optional explainability data — always populated, used by OutcomeDisplay and YearEndScreen */
+  breakdown?: ResolutionBreakdown;
 }
 
 // ── Committee State ──
@@ -306,11 +352,13 @@ export interface ResolvedEvent {
   strategyChosen: string;
   resolvedAtTurn: number;
   resolvedAtQuarter: Quarter;
+  /** Explainability data from resolution engine — optional for backwards compatibility */
+  breakdown?: ResolutionBreakdown;
 }
 
 // ── Forced Mid-Game Director Changes ──
 
-export type ForcedChangeType = 'health_crisis' | 'misconduct' | 'regulatory_disqualification';
+export type ForcedChangeType = 'health_crisis' | 'misconduct' | 'regulatory_disqualification' | 'event_resolution';
 
 export interface ForcedDirectorChange {
   type: ForcedChangeType;
@@ -373,4 +421,7 @@ export interface GameState {
   charityCommissionInquiryActive: boolean;
   /** Meridian Foundation-specific: whether the organisation faces a formal solvency concern */
   solvencyRisk: boolean;
+  /** Transient notification from an event consequence (e.g. involuntary board removals).
+   *  Shown as a dismissible banner; cleared when player acknowledges. */
+  pendingBoardNotification?: string | null;
 }

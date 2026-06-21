@@ -2,8 +2,9 @@
 
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { ResolutionOutput, OutcomeTier } from '@/types/game';
+import type { ResolutionOutput, OutcomeTier, ResolutionBreakdown } from '@/types/game';
 import { playOutcomeSound, playWildcard } from '@/engine/soundEngine';
+import { DOMAIN_LABELS } from '@/engine/boardConstants';
 
 interface OutcomeDisplayProps {
   outcome: ResolutionOutput | null;
@@ -68,6 +69,101 @@ function AnimatedNumber({ value, duration = 800 }: { value: number; duration?: n
 
   const sign = display >= 0 ? '+' : '';
   return <>{sign}{display.toFixed(2)}%</>;
+}
+
+function generateWhyLines(bd: ResolutionBreakdown): string[] {
+  const lines: string[] = [];
+
+  if (bd.isDoNothing) {
+    lines.push('No directors were deployed and no strategy was engaged — the board stood aside.');
+    return lines;
+  }
+
+  // Team score line
+  if (bd.directorContributions.length > 0) {
+    const names = bd.directorContributions.map((c) => c.directorName.split(' ').pop()).join(' and ');
+    const teamAvg = Math.round(
+      bd.directorContributions.reduce((s, c) => s + c.weightedScore, 0) / bd.directorContributions.length
+    );
+    const energyNote = bd.directorContributions.some((c) => c.energyModifier < 1.0)
+      ? `, though energy depletion reduced effectiveness`
+      : '';
+    const dynamicsNote =
+      bd.dynamicsModifier !== 0
+        ? ` — board dynamics ${bd.dynamicsModifier > 0 ? 'added' : 'subtracted'} ${Math.abs(bd.dynamicsModifier)} points`
+        : '';
+    lines.push(
+      `${names} produced a team score of ${teamAvg}${energyNote}${dynamicsNote}, ${
+        bd.matchScore < 40 ? 'a weak match for this event' : bd.matchScore >= 70 ? 'a strong match for this event' : 'a moderate match for this event'
+      }.`
+    );
+  }
+
+  // Strategy line
+  const multiplierStr = bd.strategyMultiplier.toFixed(2).replace(/\.?0+$/, '');
+  if (bd.fallbackTriggered) {
+    lines.push(
+      `The chosen strategy's competency gate was not met — the board fell back to an alternative approach (×${multiplierStr} multiplier).`
+    );
+  } else {
+    const gateNote = bd.competencyGatePassed ? '' : '';
+    lines.push(
+      `Strategy applied at ×${multiplierStr} multiplier${bd.committeeBonus > 0 ? `, with a +${bd.committeeBonus} committee bonus` : ''}${gateNote}.`
+    );
+  }
+
+  // Randomness line
+  const tierVariance = `${Math.round((1 - bd.randomRange[0]) * 100)}%`;
+  const factorDir = bd.randomFactor > 1.0 ? 'boosted' : bd.randomFactor < 1.0 ? 'reduced' : 'left unchanged';
+  lines.push(
+    `Difficulty variance of ±${tierVariance} ${factorDir} the raw score by a factor of ${bd.randomFactor.toFixed(2)}, arriving at a final score of ${Math.round(bd.rawScore * bd.randomFactor)}.`
+  );
+
+  // Best available gap (primary domain only, to keep it tight)
+  const primaryGap = bd.bestAvailableGaps.find((g) => g.domain === bd.primaryDomain);
+  if (primaryGap) {
+    const domainLabel = DOMAIN_LABELS[primaryGap.domain] ?? primaryGap.domain;
+    const deployed = primaryGap.deployedBestName
+      ? `${primaryGap.deployedBestName} (${primaryGap.deployedBestRating})`
+      : `none deployed (0)`;
+    lines.push(
+      `On ${domainLabel}, the best available director rates ${primaryGap.rosterBestRating} vs the deployed team's ${primaryGap.deployedBestRating} — a gap of ${primaryGap.gap} points. RNG variance means outcomes are never guaranteed, but this deficit was a factor.`
+    );
+    void deployed; // included above inline
+  }
+
+  return lines.slice(0, 4);
+}
+
+function WhyExpander({ breakdown }: { breakdown: ResolutionBreakdown }) {
+  const [open, setOpen] = useState(false);
+  const lines = generateWhyLines(breakdown);
+
+  return (
+    <div className="border-t border-card-border pt-3 mt-1">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className="text-xs text-foreground/40 hover:text-foreground/70 transition-colors flex items-center gap-1 mx-auto cursor-pointer"
+      >
+        Why this outcome {open ? '↑' : '→'}
+      </button>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.2 }}
+          className="mt-2 space-y-1.5"
+        >
+          {lines.map((line, i) => (
+            <p key={i} className="text-xs text-foreground/60 leading-relaxed">
+              {line}
+            </p>
+          ))}
+        </motion.div>
+      )}
+    </div>
+  );
 }
 
 export default function OutcomeDisplay({
@@ -196,6 +292,17 @@ export default function OutcomeDisplay({
                     {update.newEnergy}%
                   </p>
                 ))}
+              </motion.div>
+            )}
+
+            {/* Why this outcome expander */}
+            {outcome.breakdown && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.7, duration: 0.3 }}
+              >
+                <WhyExpander breakdown={outcome.breakdown} />
               </motion.div>
             )}
 

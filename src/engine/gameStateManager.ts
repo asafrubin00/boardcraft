@@ -142,6 +142,7 @@ export function initializeGameState(
     founderSyndromeScore: co.id === 'company_meridian' ? 55 : 0,
     charityCommissionInquiryActive: false,
     solvencyRisk: false,
+    pendingBoardNotification: null,
   };
 }
 
@@ -526,6 +527,7 @@ export function applyResolution(
     strategyChosen,
     resolvedAtTurn: state.currentTurn,
     resolvedAtQuarter: state.currentQuarter,
+    breakdown: output.breakdown,
   };
 
   // Increment random seed for next resolution

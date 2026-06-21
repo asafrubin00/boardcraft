@@ -517,6 +517,249 @@ describe('Resolution Engine', () => {
     });
   });
 
+  describe('Resolution Breakdown', () => {
+    it('always returns a breakdown field', () => {
+      const rngValues = [0.3333333, 0.5];
+      let callIndex = 0;
+      const rng = () => rngValues[callIndex++] ?? 0.5;
+
+      const input: ResolveEventInput = {
+        event: event05,
+        deployedDirectors: [larsson, okafor],
+        strategyChoice: 'event_05_a',
+        gameState: {
+          company: { jurisdiction: 'UK', difficultyTier: 2 },
+          committees,
+          directors: [larsson, okafor],
+          randomSeed: 42,
+        },
+        directorDynamics: [larssonOkaforDynamic],
+        rngOverride: rng,
+      };
+
+      const result = resolveEvent(input);
+
+      expect(result.breakdown).toBeDefined();
+      const bd = result.breakdown!;
+      expect(bd.isDoNothing).toBe(false);
+      expect(bd.primaryDomain).toBe('esgSustainability');
+    });
+
+    it('breakdown captures correct match score and dynamics modifier', () => {
+      const rngValues = [0.3333333, 0.5];
+      let callIndex = 0;
+      const rng = () => rngValues[callIndex++] ?? 0.5;
+
+      const input: ResolveEventInput = {
+        event: event05,
+        deployedDirectors: [larsson, okafor],
+        strategyChoice: 'event_05_a',
+        gameState: {
+          company: { jurisdiction: 'UK', difficultyTier: 2 },
+          committees,
+          directors: [larsson, okafor],
+          randomSeed: 42,
+        },
+        directorDynamics: [larssonOkaforDynamic],
+        rngOverride: rng,
+      };
+
+      const result = resolveEvent(input);
+      const bd = result.breakdown!;
+
+      // Larsson: 79.1, Okafor: 71.4, avg 75.25, +10 dynamic → clamp(85.25, 0, 100) = 85.25
+      expect(bd.matchScore).toBeCloseTo(85.25, 1);
+      expect(bd.dynamicsModifier).toBe(10);
+      expect(bd.directorContributions).toHaveLength(2);
+      expect(bd.directorContributions[0].directorId).toBe('dir_14_larsson');
+      expect(bd.directorContributions[0].weightedScore).toBeCloseTo(79.1, 1);
+      expect(bd.directorContributions[0].jurisdictionPenaltyApplied).toBe(false);
+    });
+
+    it('breakdown captures strategy multiplier and no fallback for successful gate', () => {
+      const rngValues = [0.5, 0.5];
+      let callIndex = 0;
+      const rng = () => rngValues[callIndex++] ?? 0.5;
+
+      const input: ResolveEventInput = {
+        event: event05,
+        deployedDirectors: [larsson, okafor],
+        strategyChoice: 'event_05_a',
+        gameState: {
+          company: { jurisdiction: 'UK', difficultyTier: 2 },
+          committees,
+          directors: [larsson, okafor],
+          randomSeed: 42,
+        },
+        directorDynamics: [],
+        rngOverride: rng,
+      };
+
+      const result = resolveEvent(input);
+      const bd = result.breakdown!;
+
+      expect(bd.strategyId).toBe('event_05_a');
+      expect(bd.strategyMultiplier).toBe(1.1);
+      expect(bd.competencyGatePassed).toBe(true);
+      expect(bd.fallbackTriggered).toBe(false);
+    });
+
+    it('breakdown captures fallback trigger when competency gate fails', () => {
+      const weakDirector: Director = {
+        ...okafor,
+        id: 'dir_weak',
+        domainRatings: { ...okafor.domainRatings, stakeholderComms: 40 },
+      };
+
+      const rngValues = [0.5, 0.5];
+      let callIndex = 0;
+      const rng = () => rngValues[callIndex++] ?? 0.5;
+
+      const input: ResolveEventInput = {
+        event: event05,
+        deployedDirectors: [weakDirector],
+        strategyChoice: 'event_05_c', // requires stakeholderComms >= 65
+        gameState: {
+          company: { jurisdiction: 'UK', difficultyTier: 2 },
+          committees,
+          directors: [weakDirector],
+          randomSeed: 42,
+        },
+        directorDynamics: [],
+        rngOverride: rng,
+      };
+
+      const result = resolveEvent(input);
+      const bd = result.breakdown!;
+
+      expect(bd.competencyGatePassed).toBe(false);
+      expect(bd.fallbackTriggered).toBe(true);
+      expect(bd.strategyId).toBe('event_05_b');
+      expect(bd.fallbackStrategyId).toBe('event_05_b');
+    });
+
+    it('breakdown captures best available gaps when roster has stronger directors', () => {
+      // Deploy a weak director but roster has strong ones
+      const weakDeployed: Director = {
+        ...larsson,
+        id: 'dir_weak_deployed',
+        domainRatings: { ...larsson.domainRatings, esgSustainability: 30 },
+      };
+
+      // Roster includes the strong larsson and okafor
+      const rngValues = [0.5, 0.5];
+      let callIndex = 0;
+      const rng = () => rngValues[callIndex++] ?? 0.5;
+
+      const input: ResolveEventInput = {
+        event: event05,
+        deployedDirectors: [weakDeployed],
+        strategyChoice: 'event_05_a',
+        gameState: {
+          company: { jurisdiction: 'UK', difficultyTier: 2 },
+          committees,
+          directors: [weakDeployed, larsson, okafor], // larsson rates 92 ESG
+          randomSeed: 42,
+        },
+        directorDynamics: [],
+        rngOverride: rng,
+      };
+
+      const result = resolveEvent(input);
+      const bd = result.breakdown!;
+
+      // Gap on esgSustainability: larsson 92 vs deployed 30 = 62 > 15
+      const esgGap = bd.bestAvailableGaps.find((g) => g.domain === 'esgSustainability');
+      expect(esgGap).toBeDefined();
+      expect(esgGap!.deployedBestRating).toBe(30);
+      expect(esgGap!.rosterBestRating).toBe(92);
+      expect(esgGap!.gap).toBe(62);
+    });
+
+    it('breakdown does not surface best available gaps below 15 points', () => {
+      // Deploy larsson (ESG 92) — gap to okafor (ESG 88) is only 4 points
+      const rngValues = [0.5, 0.5];
+      let callIndex = 0;
+      const rng = () => rngValues[callIndex++] ?? 0.5;
+
+      const input: ResolveEventInput = {
+        event: event05,
+        deployedDirectors: [larsson],
+        strategyChoice: 'event_05_a',
+        gameState: {
+          company: { jurisdiction: 'UK', difficultyTier: 2 },
+          committees,
+          directors: [larsson, okafor], // okafor ESG 88, larsson ESG 92 deployed
+          randomSeed: 42,
+        },
+        directorDynamics: [],
+        rngOverride: rng,
+      };
+
+      const result = resolveEvent(input);
+      const bd = result.breakdown!;
+
+      // Larsson (deployed) ESG 92, Okafor (roster best) ESG 88 → gap -4 (deployed IS best)
+      const esgGap = bd.bestAvailableGaps.find((g) => g.domain === 'esgSustainability');
+      expect(esgGap).toBeUndefined();
+    });
+
+    it('breakdown marks isDoNothing when no directors deployed', () => {
+      const rngValues = [0.5, 0.5];
+      let callIndex = 0;
+      const rng = () => rngValues[callIndex++] ?? 0.5;
+
+      const input: ResolveEventInput = {
+        event: event05,
+        deployedDirectors: [],
+        strategyChoice: 'do_nothing',
+        gameState: {
+          company: { jurisdiction: 'UK', difficultyTier: 2 },
+          committees,
+          directors: [],
+          randomSeed: 42,
+        },
+        directorDynamics: [],
+        rngOverride: rng,
+      };
+
+      const result = resolveEvent(input);
+      const bd = result.breakdown!;
+
+      expect(bd.isDoNothing).toBe(true);
+      expect(bd.directorContributions).toHaveLength(0);
+      expect(bd.dynamicsModifier).toBe(0);
+    });
+
+    it('breakdown captures randomRange and randomFactor correctly for tier 2', () => {
+      const rngValues = [0.5, 0.5];
+      let callIndex = 0;
+      const rng = () => rngValues[callIndex++] ?? 0.5;
+
+      const input: ResolveEventInput = {
+        event: event05,
+        deployedDirectors: [larsson],
+        strategyChoice: 'event_05_a',
+        gameState: {
+          company: { jurisdiction: 'UK', difficultyTier: 2 },
+          committees,
+          directors: [larsson],
+          randomSeed: 42,
+        },
+        directorDynamics: [],
+        rngOverride: rng,
+      };
+
+      const result = resolveEvent(input);
+      const bd = result.breakdown!;
+
+      // Tier 2 range: [0.82, 1.18]
+      expect(bd.randomRange).toEqual([0.82, 1.18]);
+      // rng() returns 0.5, so randomFactor = 0.82 + 0.5 * 0.36 = 1.0
+      expect(bd.randomFactor).toBeCloseTo(1.0, 3);
+    });
+  });
+
   describe('Follow-on Events', () => {
     it('triggers follow-on events on FAILURE', () => {
       // Deploy a very weak director to ensure failure
