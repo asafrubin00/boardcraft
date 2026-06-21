@@ -29,6 +29,7 @@ import type { BoardRole as _DevBoardRole } from '@/types/game';
 import { harwickEnergy } from '@/data/company';
 import { vantageConsumer } from '@/data/vantage/company';
 import { rheinfeldAG } from '@/data/rheinfeld/company';
+import { rheinfeldDirectors } from '@/data/rheinfeld/directors';
 import {
   checkHealthCrisis,
   checkMisconduct,
@@ -373,9 +374,17 @@ function PlayPageInner() {
         }
       }
 
-      // TODO(content): revent_12 CRITICAL_SUCCESS — "Meridian gets one board seat."
-      // Scope decision: narrative-only. No nominee director object exists; authoring
-      // domain ratings + background for an activist-investor seat is deferred content work.
+      // ── revent_12 CRITICAL_SUCCESS: Meridian Capital wins one supervisory board seat ──
+      if (currentEvent.id === 'revent_12' && output.outcomeTier === 'CRITICAL_SUCCESS') {
+        // Idempotency guard — Reuter should never be added twice
+        if (!newState.directors.some((d) => d.id === 'rdir_12_reuter')) {
+          const reuter = rheinfeldDirectors.find((d) => d.id === 'rdir_12_reuter');
+          if (reuter) newState.directors = [...newState.directors, reuter];
+        }
+        Object.assign(newState, applyReplacement(newState, 'rdir_12_reuter', 'ned'));
+        newState.pendingBoardNotification =
+          "Following the negotiated settlement, Dr. Johanna Reuter joins the Supervisory Board as Meridian Capital's nominee.";
+      }
 
       setGameState(newState);
       return output;

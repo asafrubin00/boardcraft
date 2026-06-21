@@ -417,4 +417,28 @@ export const rheinfeldDirectors: Director[] = [
     suitableRoles: 'CSRD Committee Chair (elite), Audit Committee Chair, EU regulatory events - the best combined financial/ESG director in the pool.',
     inherited: false,
   },
+
+  // 12. Dr. Johanna Reuter — Meridian Capital nominee (revent_12 CRITICAL_SUCCESS only)
+  // NOT in candidatePool — injected programmatically when the EGM settlement fires.
+  {
+    id: 'rdir_12_reuter',
+    name: 'Dr. Johanna Reuter',
+    background:
+      "Operating partner at Meridian Capital's European activist strategy. Ran industrial-sector equity research in London for nine years before moving to the investment side. Has sat on three DAX supervisory boards as a shareholder nominee, each time over the incumbent chair's objections. Negotiated the Rheinfeld settlement personally.",
+    domainRatings: {
+      financialOversight: 80, regulatoryLegal: 70, strategyMarkets: 86,
+      peopleCulture: 52, esgSustainability: 40, geopoliticalMacro: 68,
+      technologyDigital: 45, stakeholderComms: 88,
+    },
+    jurisdictionScores: { EU: 90 },
+    independence: 'independent',
+    tenure: 0,
+    annualFee: 150_000,
+    availabilityTier: 'B',
+    currentEnergy: 100,
+    riskFlag: null,
+    suitableRoles:
+      "NED only — Meridian Capital's nominee. Exceptional Stakeholder & Comms and Strategy & Markets credibility; the board's most capital-markets-literate voice going forward. Worth remembering whose seat this was.",
+    inherited: false,
+  },
 ];
