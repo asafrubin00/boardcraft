@@ -153,7 +153,7 @@ export function generateDebrief(
       ? [...bd.directorContributions].sort((a, b) => a.weightedScore - b.weightedScore)[0]
       : null;
     const weakestName = weakest ? ` — and sending ${weakest.directorName} compounded it` : '';
-    sentences.push(`This was a structural failure in how the problem was read, not randomness. ${fluency.gap.charAt(0).toUpperCase() + fluency.gap.slice(1)}${weakestName}.`);
+    sentences.push(`This was a structural failure in how the problem was read, not circumstance. ${fluency.gap.charAt(0).toUpperCase() + fluency.gap.slice(1)}${weakestName}.`);
   }
 
   // STEP 6 — What could have gone better (non-CRITICAL_SUCCESS only)
@@ -167,7 +167,7 @@ export function generateDebrief(
     if (seatedGap) {
       const swapTarget = weakestDeployed ? ` instead of ${weakestDeployed.directorName}` : '';
       sentences.push(
-        `Your board had ${seatedGap.rosterBestName} — already seated with a ${fluency.label} rating of ${seatedGap.rosterBestRating}. Sending them${swapTarget} would have given this team real strength where it mattered.`
+        `Your board had ${seatedGap.rosterBestName} — already seated with a strong ${fluency.label} background. Sending them${swapTarget} would have given this team real strength where it mattered.`
       );
     } else if (poolGap) {
       sentences.push(
