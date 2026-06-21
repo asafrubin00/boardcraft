@@ -377,12 +377,14 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
 
       const gap = rosterBest.rating - deployedBestRating;
       if (gap > 15) {
+        const rosterBestDir = rosterDirectors.find((d) => d.name === rosterBest.name);
         bestAvailableGaps.push({
           domain,
           deployedBestName: deployedBest?.name ?? null,
           deployedBestRating,
           rosterBestName: rosterBest.name,
           rosterBestRating: rosterBest.rating,
+          rosterBestBackground: rosterBestDir?.background,
           gap,
         });
       }
@@ -413,6 +415,7 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
           deployedBestRating: deplBestRating,
           rosterBestName: seatedBest.name,
           rosterBestRating: seatedBest.domainRatings[domain],
+          rosterBestBackground: seatedBest.background,
           gap: gap2,
         });
       }

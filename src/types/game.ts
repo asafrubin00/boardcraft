@@ -302,6 +302,7 @@ export interface BestAvailableGap {
   deployedBestRating: number;
   rosterBestName: string;
   rosterBestRating: number;
+  rosterBestBackground?: string;
   gap: number;
 }
 
