@@ -98,6 +98,7 @@ export interface DirectorDynamic {
   type: DynamicModifierType;
   modifier: number;
   triggerDescription: string;
+  narrativeReason?: string;
 }
 
 // ── Company ──
@@ -320,6 +321,12 @@ export interface ResolutionBreakdown {
   randomRange: [number, number];
   randomFactor: number;
   bestAvailableGaps: BestAvailableGap[];
+  dynamicsTriggered: {
+    directorAId: string;
+    directorBId: string;
+    modifier: number;
+  }[];
+  bestSeatedUndeployedGaps: BestAvailableGap[];
 }
 
 export interface ResolutionOutput {

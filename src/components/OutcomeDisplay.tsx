@@ -2,15 +2,18 @@
 
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { ResolutionOutput, OutcomeTier, ResolutionBreakdown } from '@/types/game';
+import type { ResolutionOutput, OutcomeTier, Director, GameEvent, DirectorDynamic } from '@/types/game';
 import { playOutcomeSound, playWildcard } from '@/engine/soundEngine';
-import { DOMAIN_LABELS } from '@/engine/boardConstants';
+import { generateDebrief } from '@/engine/narrativeExplanation';
 
 interface OutcomeDisplayProps {
   outcome: ResolutionOutput | null;
   eventName: string;
   onDismiss: () => void;
   directorNames?: Record<string, string>;
+  deployedDirectors?: Director[];
+  event?: GameEvent | null;
+  directorDynamics?: DirectorDynamic[];
 }
 
 const TIER_CONFIG: Record<
@@ -71,98 +74,58 @@ function AnimatedNumber({ value, duration = 800 }: { value: number; duration?: n
   return <>{sign}{display.toFixed(2)}%</>;
 }
 
-function generateWhyLines(bd: ResolutionBreakdown): string[] {
-  const lines: string[] = [];
+function DebriefModal({
+  outcome,
+  eventName,
+  deployedDirectors,
+  event,
+  directorDynamics,
+  onClose,
+}: {
+  outcome: ResolutionOutput;
+  eventName: string;
+  deployedDirectors: Director[];
+  event: GameEvent | null;
+  directorDynamics: DirectorDynamic[];
+  onClose: () => void;
+}) {
+  const narrative = event && outcome.breakdown
+    ? generateDebrief(outcome, deployedDirectors, event, directorDynamics)
+    : 'No analysis available for this event.';
 
-  if (bd.isDoNothing) {
-    lines.push('No directors were deployed and no strategy was engaged — the board stood aside.');
-    return lines;
-  }
-
-  // Team score line
-  if (bd.directorContributions.length > 0) {
-    const names = bd.directorContributions.map((c) => c.directorName.split(' ').pop()).join(' and ');
-    const teamAvg = Math.round(
-      bd.directorContributions.reduce((s, c) => s + c.weightedScore, 0) / bd.directorContributions.length
-    );
-    const energyNote = bd.directorContributions.some((c) => c.energyModifier < 1.0)
-      ? `, though energy depletion reduced effectiveness`
-      : '';
-    const dynamicsNote =
-      bd.dynamicsModifier !== 0
-        ? ` — board dynamics ${bd.dynamicsModifier > 0 ? 'added' : 'subtracted'} ${Math.abs(bd.dynamicsModifier)} points`
-        : '';
-    lines.push(
-      `${names} produced a team score of ${teamAvg}${energyNote}${dynamicsNote}, ${
-        bd.matchScore < 40 ? 'a weak match for this event' : bd.matchScore >= 70 ? 'a strong match for this event' : 'a moderate match for this event'
-      }.`
-    );
-  }
-
-  // Strategy line
-  const multiplierStr = bd.strategyMultiplier.toFixed(2).replace(/\.?0+$/, '');
-  if (bd.fallbackTriggered) {
-    lines.push(
-      `The chosen strategy's competency gate was not met — the board fell back to an alternative approach (×${multiplierStr} multiplier).`
-    );
-  } else {
-    const gateNote = bd.competencyGatePassed ? '' : '';
-    lines.push(
-      `Strategy applied at ×${multiplierStr} multiplier${bd.committeeBonus > 0 ? `, with a +${bd.committeeBonus} committee bonus` : ''}${gateNote}.`
-    );
-  }
-
-  // Randomness line
-  const tierVariance = `${Math.round((1 - bd.randomRange[0]) * 100)}%`;
-  const factorDir = bd.randomFactor > 1.0 ? 'boosted' : bd.randomFactor < 1.0 ? 'reduced' : 'left unchanged';
-  lines.push(
-    `Difficulty variance of ±${tierVariance} ${factorDir} the raw score by a factor of ${bd.randomFactor.toFixed(2)}, arriving at a final score of ${Math.round(bd.rawScore * bd.randomFactor)}.`
-  );
-
-  // Best available gap (primary domain only, to keep it tight)
-  const primaryGap = bd.bestAvailableGaps.find((g) => g.domain === bd.primaryDomain);
-  if (primaryGap) {
-    const domainLabel = DOMAIN_LABELS[primaryGap.domain] ?? primaryGap.domain;
-    const deployed = primaryGap.deployedBestName
-      ? `${primaryGap.deployedBestName} (${primaryGap.deployedBestRating})`
-      : `none deployed (0)`;
-    lines.push(
-      `On ${domainLabel}, the best available director rates ${primaryGap.rosterBestRating} vs the deployed team's ${primaryGap.deployedBestRating} — a gap of ${primaryGap.gap} points. RNG variance means outcomes are never guaranteed, but this deficit was a factor.`
-    );
-    void deployed; // included above inline
-  }
-
-  return lines.slice(0, 4);
-}
-
-function WhyExpander({ breakdown }: { breakdown: ResolutionBreakdown }) {
-  const [open, setOpen] = useState(false);
-  const lines = generateWhyLines(breakdown);
+  const config = TIER_CONFIG[outcome.outcomeTier];
 
   return (
-    <div className="border-t border-card-border pt-3 mt-1">
-      <button
-        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
-        className="text-xs text-foreground/40 hover:text-foreground/70 transition-colors flex items-center gap-1 mx-auto cursor-pointer"
-      >
-        Why this outcome {open ? '↑' : '→'}
-      </button>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.2 }}
-          className="mt-2 space-y-1.5"
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[70] flex flex-col bg-[#070f1a]/97"
+    >
+      {/* Header */}
+      <div className="flex-shrink-0 px-6 pt-8 pb-4 border-b border-card-border">
+        <p className="text-xs text-foreground/40 uppercase tracking-widest mb-1">The Debrief</p>
+        <h2 className="text-2xl font-bold" style={{ color: config.color }}>{config.label}</h2>
+        <p className="text-sm text-gold-dim mt-1">{eventName}</p>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto px-6 py-6">
+        <p className="font-narrative italic text-foreground/80 text-base leading-relaxed">
+          {narrative}
+        </p>
+      </div>
+
+      {/* Footer */}
+      <div className="flex-shrink-0 px-6 pb-8 pt-4 border-t border-card-border">
+        <button
+          onClick={onClose}
+          className="w-full py-4 rounded-xl bg-gold/10 border border-gold/40 hover:bg-gold/20 transition-colors text-gold font-semibold text-base cursor-pointer"
         >
-          {lines.map((line, i) => (
-            <p key={i} className="text-xs text-foreground/60 leading-relaxed">
-              {line}
-            </p>
-          ))}
-        </motion.div>
-      )}
-    </div>
+          Continue →
+        </button>
+      </div>
+    </motion.div>
   );
 }
 
@@ -171,7 +134,13 @@ export default function OutcomeDisplay({
   eventName,
   onDismiss,
   directorNames = {},
+  deployedDirectors,
+  event,
+  directorDynamics,
 }: OutcomeDisplayProps) {
+  const [debriefOpen, setDebriefOpen] = useState(false);
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleDismiss = useCallback(() => {
     onDismiss();
   }, [onDismiss]);
@@ -188,9 +157,21 @@ export default function OutcomeDisplay({
 
   useEffect(() => {
     if (!outcome) return;
-    const timer = setTimeout(handleDismiss, AUTO_DISMISS_MS);
-    return () => clearTimeout(timer);
-  }, [outcome, handleDismiss]);
+    if (debriefOpen) {
+      if (dismissTimerRef.current) {
+        clearTimeout(dismissTimerRef.current);
+        dismissTimerRef.current = null;
+      }
+      return;
+    }
+    dismissTimerRef.current = setTimeout(handleDismiss, AUTO_DISMISS_MS);
+    return () => {
+      if (dismissTimerRef.current) {
+        clearTimeout(dismissTimerRef.current);
+        dismissTimerRef.current = null;
+      }
+    };
+  }, [outcome, debriefOpen, handleDismiss]);
 
   const config = outcome ? TIER_CONFIG[outcome.outcomeTier] : null;
   const isCritFail = outcome?.outcomeTier === 'CRITICAL_FAILURE';
@@ -295,14 +276,20 @@ export default function OutcomeDisplay({
               </motion.div>
             )}
 
-            {/* Why this outcome expander */}
+            {/* Debrief button */}
             {outcome.breakdown && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.7, duration: 0.3 }}
               >
-                <WhyExpander breakdown={outcome.breakdown} />
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDebriefOpen(true); }}
+                  className="w-full mt-3 px-4 py-3 rounded-lg border border-gold/50 bg-gold/5 hover:bg-gold/10 transition-colors text-left cursor-pointer"
+                >
+                  <p className="text-gold font-semibold text-sm">The Debrief</p>
+                  <p className="text-foreground/50 text-xs mt-0.5">What worked, what didn&apos;t, and why.</p>
+                </button>
               </motion.div>
             )}
 
@@ -311,6 +298,19 @@ export default function OutcomeDisplay({
               Click to dismiss
             </p>
           </motion.div>
+
+          <AnimatePresence>
+            {debriefOpen && outcome && (
+              <DebriefModal
+                outcome={outcome}
+                eventName={eventName}
+                deployedDirectors={deployedDirectors ?? []}
+                event={event ?? null}
+                directorDynamics={directorDynamics ?? []}
+                onClose={() => { setDebriefOpen(false); onDismiss(); }}
+              />
+            )}
+          </AnimatePresence>
         </>
       )}
     </AnimatePresence>

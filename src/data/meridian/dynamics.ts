@@ -21,6 +21,7 @@ export const meridianDynamics: DirectorDynamic[] = [
     modifier: 8,
     triggerDescription:
       'Both deployed on any MIS-positive event (mission, programmes, beneficiary, or ESG focus) — Al-Rashid and Prof. Okonkwo form Meridian\'s mission-integrity bloc; their combined academic and field voices carry weight the board cannot easily dismiss',
+    narrativeReason: "Al-Rashid's field experience in East Africa and due-diligence instincts and Okonkwo's published research on aid effectiveness and programme evaluation reinforce each other: she brings the practitioner's eye for whether a programme is actually working, he brings the academic framework for why, and together they form the only credible mission-scrutiny bloc on the current board.",
   },
 
   // ── 2. Founder vs Reform Trustee ───────────────────────────────────────────
@@ -36,6 +37,7 @@ export const meridianDynamics: DirectorDynamic[] = [
     modifier: -14,
     triggerDescription:
       'Both deployed on Programmes & Impact, mission-alignment, or strategy events — Dr. Osei-Bonsu\'s founder authority collides with Yusuf\'s reform mandate; the confrontation suppresses deployment effectiveness while simultaneously driving down the Founder Syndrome Score',
+    narrativeReason: "Osei-Bonsu built Meridian from nothing and has never stopped treating it as hers; Yusuf walked away from a previous role over exactly the kind of mission compromise she's now being asked to scrutinise. Osei-Bonsu reads her reform mandate as a personal attack on her legacy. The confrontation is structural, not accidental.",
   },
 
   // ── 3. Legal Expert Forces Disclosure ──────────────────────────────────────
@@ -51,6 +53,7 @@ export const meridianDynamics: DirectorDynamic[] = [
     modifier: 18,
     triggerDescription:
       'Both deployed on Finance & Risk, conflict-of-interest, or procurement events — Hedley\'s charity-law expertise compels immediate and proper disclosure of Cavendish\'s logistics conflict; the board handles the event transparently rather than suppressing it, significantly improving the outcome',
+    narrativeReason: "Hedley is a charity-law partner at Clifford Chance; Cavendish chairs the Finance & Risk Committee that oversees a contract his brother-in-law's firm is bidding on. The moment both are in the same meeting, Hedley recognises the conflict and the proper process takes over — which Cavendish cannot prevent without making things significantly worse.",
   },
 
   // ── 4. Chair–Founder Deadlock ───────────────────────────────────────────────
@@ -66,6 +69,7 @@ export const meridianDynamics: DirectorDynamic[] = [
     modifier: -10,
     triggerDescription:
       'Both deployed on any event (especially Events 03 and 09) — Mensah\'s seven-year pattern of deference to the founder repeats; without a third independent trustee formally seconding any challenge motion, neither Critical Success nor a clean board majority is achievable',
+    narrativeReason: "Mensah has been board chair for seven years and has not once successfully challenged Osei-Bonsu on anything material. He defers when she pushes back, reframes her directives as board decisions, and avoids the confrontation that his role requires. The pattern is so established that even well-intentioned governance events stall without a third trustee willing to formally second any challenge.",
   },
 
   // ── 5. Mission-Drift Echo Chamber ──────────────────────────────────────────
@@ -80,6 +84,7 @@ export const meridianDynamics: DirectorDynamic[] = [
     modifier: -8,
     triggerDescription:
       'Both deployed on fundraising, income-strategy, or donor-relations events — Webb\'s commercial instincts and Osei-Bonsu\'s founder authority converge to deflect scrutiny of the grant-chasing strategy; mission drift decisions evade proper challenge and Mission Integrity drifts further',
+    narrativeReason: "Webb views income growth as a straightforwardly good thing and sees donor-alignment concerns as the kind of scruple organisations indulge when they can afford to; Osei-Bonsu's founder authority gives both of them cover to deflect scrutiny of the grant-chasing strategy. They're not coordinating — they just want the same thing for different reasons, and together they're effective at blocking reform.",
   },
 
   // ── 6. Conflict Exposure — Finance Chair vs Independent Voice ───────────────
@@ -95,6 +100,7 @@ export const meridianDynamics: DirectorDynamic[] = [
     modifier: -12,
     triggerDescription:
       'Both deployed on Finance & Risk, procurement, or accountability events — Al-Rashid\'s diligence surfaces the undisclosed logistics conflict; the resulting stand-off between Cavendish and the mission-integrity bloc suppresses deployment effectiveness until the conflict is formally disclosed and managed',
+    narrativeReason: "Al-Rashid's due-diligence instincts mean she will eventually find the undisclosed logistics conflict if given enough time in the same finance or procurement meeting as Cavendish. He knows this. The resulting tension — him deflecting, her pressing — consumes committee time and suppresses the quality of financial oversight until the conflict is formally disclosed.",
   },
 
 ];

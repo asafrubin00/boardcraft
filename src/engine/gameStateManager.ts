@@ -463,6 +463,7 @@ export function applyResolution(
       committees: state.committees,
       directors: state.directors,
       randomSeed: state.randomSeed,
+      boardSeats: state.board.seats,
     },
     directorDynamics: state.directorDynamics,
   };

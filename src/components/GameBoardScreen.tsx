@@ -79,6 +79,8 @@ export default function GameBoardScreen({
   const [showDeployment, setShowDeployment] = useState(false);
   const [lastOutcome, setLastOutcome] = useState<ResolutionOutput | null>(null);
   const [lastEventName, setLastEventName] = useState('');
+  const [lastDeployedDirectors, setLastDeployedDirectors] = useState<Director[]>([]);
+  const [lastResolvedEvent, setLastResolvedEvent] = useState<GameEvent | null>(null);
   const [waitingForNext, setWaitingForNext] = useState(false);
   const [flashingIds, setFlashingIds] = useState<Set<string>>(new Set());
   const [selectedDirectorId, setSelectedDirectorId] = useState<string | null>(null);
@@ -207,6 +209,8 @@ export default function GameBoardScreen({
       const output = onResolveEvent(strategyId, []);
       setLastOutcome(output);
       setLastEventName(currentEvent.name);
+      setLastDeployedDirectors([]);
+      setLastResolvedEvent(currentEvent);
       return;
     }
     setSelectedStrategy(strategyId);
@@ -234,6 +238,8 @@ export default function GameBoardScreen({
     const output = onResolveEvent(strategyId, []);
     setLastOutcome(output);
     setLastEventName(currentEvent.name);
+    setLastDeployedDirectors([]);
+    setLastResolvedEvent(currentEvent);
   }, [currentEvent, onResolveEvent, onSkipEvent]);
 
   // Handle deployment confirmation
@@ -245,9 +251,15 @@ export default function GameBoardScreen({
       const output = onResolveEvent(selectedStrategy, directorIds);
       setLastOutcome(output);
       setLastEventName(currentEvent.name);
+      setLastDeployedDirectors(
+        directorIds
+          .map((id) => gameState.directors.find((d) => d.id === id))
+          .filter((d): d is Director => d !== undefined)
+      );
+      setLastResolvedEvent(currentEvent);
       setSelectedStrategy(null);
     },
-    [selectedStrategy, currentEvent, onResolveEvent]
+    [selectedStrategy, currentEvent, onResolveEvent, gameState.directors]
   );
 
   // Handle outcome dismissal
@@ -634,6 +646,9 @@ export default function GameBoardScreen({
         eventName={lastEventName}
         onDismiss={handleDismissOutcome}
         directorNames={directorNames}
+        deployedDirectors={lastDeployedDirectors}
+        event={lastResolvedEvent}
+        directorDynamics={gameState.directorDynamics}
       />
 
       {/* SV Dashboard Modal */}

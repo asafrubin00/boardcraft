@@ -832,4 +832,125 @@ describe('Resolution Engine', () => {
       expect(result.followOnEvents).toEqual([]);
     });
   });
+
+  describe('dynamicsTriggered', () => {
+    it('dynamicsTriggered records pairs when a dynamic fires', () => {
+      const rngValues = [0.5, 0.5, 0.5];
+      let callIndex = 0;
+      const rng = () => rngValues[callIndex++] ?? 0.5;
+
+      const input: ResolveEventInput = {
+        event: event05,
+        deployedDirectors: [larsson, okafor],
+        strategyChoice: 'event_05_a',
+        gameState: {
+          company: { jurisdiction: 'UK', difficultyTier: 2 },
+          committees,
+          directors: [larsson, okafor],
+          randomSeed: 42,
+        },
+        directorDynamics: [larssonOkaforDynamic],
+        rngOverride: rng,
+      };
+
+      const result = resolveEvent(input);
+
+      expect(result.breakdown?.dynamicsTriggered).toHaveLength(1);
+      expect(result.breakdown?.dynamicsTriggered[0].directorAId).toBe('dir_14_larsson');
+      expect(result.breakdown?.dynamicsTriggered[0].directorBId).toBe('dir_13_okafor');
+      expect(result.breakdown?.dynamicsTriggered[0].modifier).toBe(10);
+    });
+  });
+
+  describe('bestSeatedUndeployedGaps', () => {
+    it('bestSeatedUndeployedGaps identifies seated undeployed director with large gap', () => {
+      // Deploy a weak director (ESG 10), boardSeats includes larsson (ESG 92) as seated but undeployed
+      const weakDirectorForGap: Director = {
+        id: 'dir_weak_gap',
+        name: 'Weak Director',
+        background: 'Limited governance background.',
+        domainRatings: {
+          financialOversight: 10,
+          regulatoryLegal: 10,
+          strategyMarkets: 10,
+          peopleCulture: 10,
+          esgSustainability: 10,
+          geopoliticalMacro: 10,
+          technologyDigital: 10,
+          stakeholderComms: 10,
+        },
+        jurisdictionScores: { UK: 80 },
+        independence: 'independent',
+        tenure: 0,
+        annualFee: 50_000,
+        availabilityTier: 'A',
+        currentEnergy: 100,
+        riskFlag: null,
+        suitableRoles: 'General',
+        inherited: false,
+      };
+
+      const rngValues = [0.5, 0.5, 0.5];
+      let callIndex = 0;
+      const rng = () => rngValues[callIndex++] ?? 0.5;
+
+      const input: ResolveEventInput = {
+        event: event05,
+        deployedDirectors: [weakDirectorForGap],
+        strategyChoice: 'event_05_a',
+        gameState: {
+          company: { jurisdiction: 'UK', difficultyTier: 2 },
+          committees,
+          directors: [larsson, okafor, weakDirectorForGap],
+          randomSeed: 42,
+          boardSeats: [
+            { directorId: 'dir_14_larsson', role: 'ned', feeWithPremium: 125_000 },
+            { directorId: 'dir_weak_gap', role: 'ned', feeWithPremium: 50_000 },
+          ],
+        },
+        directorDynamics: [],
+        rngOverride: rng,
+      };
+
+      const result = resolveEvent(input);
+
+      // larsson is seated but not deployed; ESG gap = 92 - 10 = 82 > 15
+      const esgGap = result.breakdown?.bestSeatedUndeployedGaps.find((g) => g.domain === 'esgSustainability');
+      expect(esgGap).toBeDefined();
+      expect(esgGap?.rosterBestName).toBe('Dr. Ingrid Larsson');
+      expect(esgGap?.rosterBestRating).toBe(92);
+    });
+
+    it('bestSeatedUndeployedGaps is empty when seated undeployed gap is ≤15', () => {
+      // Deploy larsson (ESG 92), boardSeats includes okafor (ESG 88) undeployed → gap = 0
+      const rngValues = [0.5, 0.5, 0.5];
+      let callIndex = 0;
+      const rng = () => rngValues[callIndex++] ?? 0.5;
+
+      const input: ResolveEventInput = {
+        event: event05,
+        deployedDirectors: [larsson],
+        strategyChoice: 'event_05_a',
+        gameState: {
+          company: { jurisdiction: 'UK', difficultyTier: 2 },
+          committees,
+          directors: [larsson, okafor],
+          randomSeed: 42,
+          boardSeats: [
+            { directorId: 'dir_14_larsson', role: 'ned', feeWithPremium: 125_000 },
+            { directorId: 'dir_13_okafor', role: 'ned', feeWithPremium: 145_000 },
+          ],
+        },
+        directorDynamics: [],
+        rngOverride: rng,
+      };
+
+      const result = resolveEvent(input);
+
+      // okafor is seated but not deployed; ESG gap = 88 - 92 = -4, not > 15
+      const esgGap = result.breakdown?.bestSeatedUndeployedGaps.find((g) => g.domain === 'esgSustainability');
+      expect(esgGap).toBeUndefined();
+      expect(result.breakdown?.bestSeatedUndeployedGaps).toHaveLength(0);
+    });
+  });
 });

@@ -12,6 +12,7 @@ import type {
   CompetencyDomain,
   CommitteeState,
   CommitteeId,
+  BoardSeat,
 } from '@/types/game';
 
 // ── Seeded RNG (Mulberry32) ──
@@ -125,6 +126,7 @@ export interface ResolveEventInput {
     committees: Record<string, CommitteeState>;
     directors: Director[];
     randomSeed: number;
+    boardSeats?: BoardSeat[];
   };
   directorDynamics: DirectorDynamic[];
   rngOverride?: () => number; // for deterministic testing
@@ -155,6 +157,7 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
   let fallbackTriggered = false;
   let usedStrategyId = strategyChoice;
   let fallbackStrategyId: string | undefined;
+  const dynamicsTriggered: { directorAId: string; directorBId: string; modifier: number; }[] = [];
 
   if (!isDoNothing && deployedDirectors.length > 0) {
     // Step 2: Compute Director Match Score
@@ -209,6 +212,7 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
           if (dynamic) {
             matchScore += dynamic.modifier;
             dynamicsModifier += dynamic.modifier;
+            dynamicsTriggered.push({ directorAId: deployedDirectors[i].id, directorBId: deployedDirectors[j].id, modifier: dynamic.modifier });
           }
         }
       }
@@ -385,6 +389,36 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
     }
   }
 
+  // ── Best Seated Undeployed Gap analysis ──
+  const bestSeatedUndeployedGaps: BestAvailableGap[] = [];
+  const boardSeatIds = new Set((input.gameState.boardSeats ?? []).map((s) => s.directorId));
+  const deployedIds = new Set(deployedDirectors.map((d) => d.id));
+  const seatedUndeployed = input.gameState.directors.filter(
+    (d) => boardSeatIds.has(d.id) && !deployedIds.has(d.id)
+  );
+  if (seatedUndeployed.length > 0) {
+    for (const { domain } of domainsToCheck) {
+      const deplBest = deployedDirectors.length > 0
+        ? deployedDirectors.reduce((a, b) => a.domainRatings[domain] >= b.domainRatings[domain] ? a : b)
+        : null;
+      const deplBestRating = deplBest?.domainRatings[domain] ?? 0;
+      const seatedBest = seatedUndeployed.reduce((a, b) =>
+        a.domainRatings[domain] >= b.domainRatings[domain] ? a : b
+      );
+      const gap2 = seatedBest.domainRatings[domain] - deplBestRating;
+      if (gap2 > 15) {
+        bestSeatedUndeployedGaps.push({
+          domain,
+          deployedBestName: deplBest?.name ?? null,
+          deployedBestRating: deplBestRating,
+          rosterBestName: seatedBest.name,
+          rosterBestRating: seatedBest.domainRatings[domain],
+          gap: gap2,
+        });
+      }
+    }
+  }
+
   // ── Build breakdown ──
   const breakdown: ResolutionBreakdown = {
     isDoNothing,
@@ -402,6 +436,8 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
     randomRange: randRange,
     randomFactor: Math.round(randomFactor * 1000) / 1000,
     bestAvailableGaps,
+    dynamicsTriggered,
+    bestSeatedUndeployedGaps,
   };
 
   // ── Dev logging ──

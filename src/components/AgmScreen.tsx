@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { GameState, Director, CompetencyDomain } from '@/types/game';
+import type { GameState, Director, CompetencyDomain, GovernanceHealthBreakdown } from '@/types/game';
 import { estimateAgmVotes, getProxyAdviserRating } from '@/engine/gameStateManager';
+import { generateAgmResolutionDebrief } from '@/engine/agmNarrative';
 import { DOMAIN_SHORT } from '@/engine/boardConstants';
 import { playAGMBell, playAGMApplause, playResolutionPass, playResolutionFail } from '@/engine/soundEngine';
 import SiteFooter from './SiteFooter';
@@ -198,6 +199,33 @@ function VoteBar({ forPercent, againstPercent }: { forPercent: number; againstPe
   );
 }
 
+function AgmDebriefModal({ narrative, label, onClose }: { narrative: string; label: string; onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[70] flex flex-col bg-[#070f1a]/97"
+    >
+      <div className="flex-shrink-0 px-6 pt-8 pb-4 border-b border-card-border">
+        <p className="text-xs text-foreground/40 uppercase tracking-widest mb-1">The Debrief</p>
+        <p className="text-gold-dim text-sm">{label}</p>
+      </div>
+      <div className="flex-1 overflow-y-auto px-6 py-6">
+        <p className="font-narrative italic text-foreground/80 text-base leading-relaxed">{narrative}</p>
+      </div>
+      <div className="flex-shrink-0 px-6 pb-8 pt-4 border-t border-card-border">
+        <button
+          onClick={onClose}
+          className="w-full py-4 rounded-xl bg-gold/10 border border-gold/40 hover:bg-gold/20 transition-colors text-gold font-semibold text-base cursor-pointer"
+        >
+          Continue →
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function AgmScreen({
   gameState,
   onResolveAgm,
@@ -214,6 +242,7 @@ export default function AgmScreen({
   const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
   const [deployedIds, setDeployedIds] = useState<string[]>([]);
   const [revealedCount, setRevealedCount] = useState(0);
+  const [agmDebriefOpen, setAgmDebriefOpen] = useState<number | null>(null);
 
   // Play AGM bell + applause on mount
   useEffect(() => {
@@ -510,6 +539,24 @@ export default function AgmScreen({
       { label: res3Label, pass: results.resolution3Pass, explanation: res3Explanation },
     ];
 
+    const agmDebriefParams = {
+      governanceHealth: gameState.governanceHealth,
+      governanceHealthBreakdown: gameState.governanceHealthBreakdown as GovernanceHealthBreakdown,
+      companyId: gameState.company.id,
+      contextFlags: {
+        craneOnBoard,
+        apexActive: gameState.apexActive,
+        heinrichConflictRevealed: gameState.heinrichConflictRevealed,
+        chairCeoSeparationProgress: gameState.chairCeoSeparationProgress,
+      },
+      boardSeats: gameState.board.seats,
+      directors: gameState.directors,
+    };
+
+    const agmDebriefNarratives = resolutions.map((res) =>
+      generateAgmResolutionDebrief({ ...agmDebriefParams, resolutionLabel: res.label, passed: res.pass })
+    );
+
     return (
       <div className="min-h-screen bg-navy flex flex-col items-center justify-center px-4 py-12">
         {onChangeCompany && (
@@ -556,6 +603,12 @@ export default function AgmScreen({
                   <p className={`text-xs mt-2 font-narrative italic ${res.pass ? 'text-success/70' : 'text-error/70'}`}>
                     {res.explanation}
                   </p>
+                  <button
+                    onClick={() => setAgmDebriefOpen(idx + 1)}
+                    className="mt-2 text-xs text-gold/70 hover:text-gold underline cursor-pointer bg-transparent border-none"
+                  >
+                    The Debrief →
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -585,6 +638,16 @@ export default function AgmScreen({
           )}
         </AnimatePresence>
       <SiteFooter vertical className="fixed bottom-4 right-4 z-10" />
+
+        <AnimatePresence>
+          {agmDebriefOpen !== null && (
+            <AgmDebriefModal
+              narrative={agmDebriefNarratives[agmDebriefOpen - 1]}
+              label={resolutions[agmDebriefOpen - 1].label}
+              onClose={() => setAgmDebriefOpen(null)}
+            />
+          )}
+        </AnimatePresence>
     </div>
     );
   }

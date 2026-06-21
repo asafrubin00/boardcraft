@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { GameState, ResolvedEvent, GovernanceHealthBreakdown, CompetencyDomain } from '@/types/game';
 import { getSvHistory, getProxyAdviserRating, getAllEvents } from '@/engine/gameStateManager';
+import { generateDebrief } from '@/engine/narrativeExplanation';
 import { DOMAIN_LABELS } from '@/engine/boardConstants';
 import {
   calculateGameGc,
@@ -181,6 +182,8 @@ interface PostmortemProps {
   eventNameMap: Record<string, string>;
   directors: GameState['directors'];
   isMeridian: boolean;
+  allEvents: import('@/types/game').GameEvent[];
+  directorDynamics: GameState['directorDynamics'];
 }
 
 function buildDomainPattern(
@@ -246,8 +249,9 @@ function buildDomainPattern(
   };
 }
 
-function SeasonPostmortem({ resolvedEvents, eventNameMap, directors, isMeridian }: PostmortemProps) {
+function SeasonPostmortem({ resolvedEvents, eventNameMap, directors, isMeridian, allEvents, directorDynamics }: PostmortemProps) {
   const [open, setOpen] = useState(false);
+  const [debriefTarget, setDebriefTarget] = useState<'best' | 'worst' | null>(null);
   const valueLabel = isMeridian ? 'mission integrity' : 'shareholder value';
 
   if (resolvedEvents.length === 0) return null;
@@ -260,6 +264,24 @@ function SeasonPostmortem({ resolvedEvents, eventNameMap, directors, isMeridian 
   const worstName = eventNameMap[worst.eventId] ?? worst.eventId;
 
   const pattern = buildDomainPattern(resolvedEvents, directors);
+
+  // Generate debrief narratives for best/worst
+  const getDebriefNarrative = (re: ResolvedEvent): string => {
+    const fullEvent = allEvents.find((e) => e.id === re.eventId);
+    if (!fullEvent || !re.breakdown) return 'No detailed analysis available for this event.';
+    const deployedDirs = directors.filter((d) => re.deployedDirectorIds.includes(d.id));
+    const output: import('@/types/game').ResolutionOutput = {
+      outcomeTier: re.outcomeTier,
+      finalScore: 0,
+      svDelta: re.svDelta,
+      narrativeText: '',
+      energyUpdates: [],
+      followOnEvents: [],
+      wildcard: false,
+      breakdown: re.breakdown,
+    };
+    return generateDebrief(output, deployedDirs, fullEvent, directorDynamics);
+  };
 
   // If nothing interesting to say, don't show the section
   const hasWorstInfo = worst.svDelta < -0.5;
@@ -298,11 +320,17 @@ function SeasonPostmortem({ resolvedEvents, eventNameMap, directors, isMeridian 
                 {' '}—{' '}
                 {OUTCOME_LABELS[best.outcomeTier] ?? best.outcomeTier.replace('_', ' ')},{' '}
                 adding {best.svDelta.toFixed(1)} to {valueLabel}
-                {(best.breakdown?.committeeBonus ?? 0) > 0 ? `, aided by a committee bonus of +${best.breakdown!.committeeBonus}` : ''}
+                {(best.breakdown?.committeeBonus ?? 0) > 0 ? ', aided by an active and properly chaired committee' : ''}
                 {best.breakdown && !best.breakdown.isDoNothing && best.breakdown.directorContributions.length > 0
-                  ? ` with a team score of ${best.breakdown.matchScore}`
+                  ? ` — the right expertise was in the room`
                   : ''}.
               </p>
+              <button
+                onClick={() => setDebriefTarget('best')}
+                className="mt-1 text-xs text-gold/70 hover:text-gold underline cursor-pointer bg-transparent border-none"
+              >
+                The Debrief →
+              </button>
             </div>
           )}
 
@@ -314,11 +342,17 @@ function SeasonPostmortem({ resolvedEvents, eventNameMap, directors, isMeridian 
                 {' '}—{' '}
                 {OUTCOME_LABELS[worst.outcomeTier] ?? worst.outcomeTier.replace('_', ' ')},{' '}
                 costing {Math.abs(worst.svDelta).toFixed(1)} in {valueLabel}
-                {worst.breakdown?.fallbackTriggered ? ', with the chosen strategy falling back to a weaker alternative' : ''}
-                {worst.breakdown && !worst.breakdown.isDoNothing && worst.breakdown.matchScore < 45
-                  ? ` — team score of ${worst.breakdown.matchScore} was a poor match for this event's demands`
+                {worst.breakdown?.fallbackTriggered ? ', with the board falling back to a weaker approach than intended' : ''}
+                {worst.breakdown && !worst.breakdown.isDoNothing && !worst.breakdown.fallbackTriggered
+                  ? ' — a mismatch between the event\'s demands and who was sent'
                   : ''}.
               </p>
+              <button
+                onClick={() => setDebriefTarget('worst')}
+                className="mt-1 text-xs text-gold/70 hover:text-gold underline cursor-pointer bg-transparent border-none"
+              >
+                The Debrief →
+              </button>
             </div>
           )}
 
@@ -326,13 +360,42 @@ function SeasonPostmortem({ resolvedEvents, eventNameMap, directors, isMeridian 
             <div>
               <p className="text-xs text-foreground/50 uppercase tracking-wide mb-1">Roster pattern</p>
               <p className="text-sm text-foreground/80">
-                The board averaged {pattern.boardAvg} on{' '}
-                <span className="font-semibold text-foreground">{pattern.label}</span>,
-                {' '}yet {pattern.weakEvents} of the {pattern.eventDemand} events weighted this domain returned sub-par outcomes.
-                {' '}A stronger bench in this area would have changed the calculus.
+                The board was consistently light on{' '}
+                <span className="font-semibold text-foreground">{pattern.label}</span>{' '}
+                expertise all season — this was a factor in {pattern.weakEvents} of the {pattern.eventDemand} events where it mattered most.{' '}
+                A stronger bench in this area would have changed several of those outcomes.
               </p>
             </div>
           )}
+
+          <AnimatePresence>
+            {debriefTarget !== null && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[70] flex flex-col bg-[#070f1a]/97"
+              >
+                <div className="flex-shrink-0 px-6 pt-8 pb-4 border-b border-card-border">
+                  <p className="text-xs text-foreground/40 uppercase tracking-widest mb-1">The Debrief</p>
+                  <p className="text-gold-dim text-sm">{debriefTarget === 'best' ? bestName : worstName}</p>
+                </div>
+                <div className="flex-1 overflow-y-auto px-6 py-6">
+                  <p className="font-narrative italic text-foreground/80 text-base leading-relaxed">
+                    {getDebriefNarrative(debriefTarget === 'best' ? best : worst)}
+                  </p>
+                </div>
+                <div className="flex-shrink-0 px-6 pb-8 pt-4 border-t border-card-border">
+                  <button
+                    onClick={() => setDebriefTarget(null)}
+                    className="w-full py-4 rounded-xl bg-gold/10 border border-gold/40 hover:bg-gold/20 transition-colors text-gold font-semibold text-base cursor-pointer"
+                  >
+                    Continue →
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </motion.div>
@@ -658,6 +721,8 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
           eventNameMap={eventNameMap}
           directors={gameState.directors}
           isMeridian={isMeridian}
+          allEvents={allEventsData}
+          directorDynamics={gameState.directorDynamics}
         />
 
         {/* Governance Health Breakdown */}
