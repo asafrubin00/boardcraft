@@ -29,6 +29,12 @@ export const vantageEvents: GameEvent[] = [
           'Remove Patricia Nguyen from the Audit Committee Chair and appoint a qualified replacement. Requires a director with Financial Oversight ≥ 75 in the deployed team. Clean and decisive.',
         multiplier: 1.00,
         competencyGates: [{ domain: 'financialOversight', minimumRating: 75 }],
+        boardEffect: {
+          removeDirectorId: 'vdir_02_nguyen',
+          minOutcomeTier: 'SUCCESS',
+          requiresReplacement: true,
+          vacatedRole: 'auditChair',
+        },
       },
       {
         id: 'vevent_01_b',

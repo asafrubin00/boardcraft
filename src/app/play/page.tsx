@@ -276,6 +276,107 @@ function PlayPageInner() {
         newState.forcedChange = misconduct;
       }
 
+      // Check for boardEffect: if the chosen strategy mandates removing a director on success.
+      // Only fires if no forced change is already queued (single-flight guard).
+      if (!newState.forcedChange) {
+        const chosenStrategy = currentEvent.strategies.find((s) => s.id === strategyChoice);
+        const effect = chosenStrategy?.boardEffect;
+        if (effect) {
+          const TIER_RANK: Record<string, number> = {
+            CRITICAL_SUCCESS: 4, SUCCESS: 3, PARTIAL_SUCCESS: 2, FAILURE: 1, CRITICAL_FAILURE: 0,
+          };
+          const tierMet =
+            (TIER_RANK[output.outcomeTier] ?? 0) >= (TIER_RANK[effect.minOutcomeTier] ?? 99);
+          const directorOnBoard = newState.board.seats.some((s) => s.directorId === effect.removeDirectorId);
+          if (tierMet && directorOnBoard) {
+            const removedDir = newState.directors.find((d) => d.id === effect.removeDirectorId);
+            const afterRemoval = applyForcedRemoval(newState, effect.removeDirectorId);
+            Object.assign(newState, afterRemoval);
+            const roleLabel = effect.vacatedRole === 'auditChair' ? 'Audit Chair' : effect.vacatedRole;
+            newState.forcedChange = {
+              type: 'event_resolution',
+              directorId: effect.removeDirectorId,
+              directorName: removedDir?.name ?? effect.removeDirectorId,
+              turnsRemaining: 2,
+              narrative: `${removedDir?.name ?? 'The director'} has vacated their ${roleLabel} seat as a result of this event. Appoint a replacement from the candidate pool.`,
+              canRetain: false,
+            };
+            // Silent simultaneous removals (e.g. mevent_14 CRITICAL_SUCCESS: Osei-Bonsu departs alongside Mensah)
+            if (effect.simultaneousRemoveIds) {
+              for (const simId of effect.simultaneousRemoveIds) {
+                if (newState.board.seats.some((s) => s.directorId === simId)) {
+                  const afterSim = applyForcedRemoval(newState, simId);
+                  Object.assign(newState, afterSim);
+                  if (newState.forcedChange) {
+                    const simName = newState.directors.find((d) => d.id === simId)?.name ?? simId;
+                    newState.forcedChange = {
+                      ...newState.forcedChange,
+                      narrative: newState.forcedChange.narrative +
+                        ` ${simName} has also departed as part of this board renewal.`,
+                    };
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // ── mevent_09 CRITICAL_SUCCESS: Osei-Bonsu retain-or-replace ──
+      if (!newState.forcedChange && currentEvent.id === 'mevent_09' &&
+          strategyChoice === 'mevent_09_a' && output.outcomeTier === 'CRITICAL_SUCCESS') {
+        const oseiBonsu = newState.directors.find((d) => d.id === 'mdir_osei_bonsu');
+        if (oseiBonsu && newState.board.seats.some((s) => s.directorId === 'mdir_osei_bonsu')) {
+          newState.forcedChange = {
+            type: 'event_resolution',
+            directorId: 'mdir_osei_bonsu',
+            directorName: oseiBonsu.name,
+            turnsRemaining: 2,
+            narrative: 'The board has formally established role boundaries. Dr. Osei-Bonsu must now choose: accept the resolution and continue as trustee, or step down gracefully.',
+            canRetain: true,
+          };
+        }
+      }
+
+      // ── mevent_14 CRITICAL_FAILURE: Osei-Bonsu becomes chair (role swap, no modal) ──
+      if (currentEvent.id === 'mevent_14' && output.outcomeTier === 'CRITICAL_FAILURE') {
+        newState.board.seats = newState.board.seats.map((s) => {
+          if (s.directorId === 'mdir_mensah') return { ...s, role: 'ned' as const };
+          if (s.directorId === 'mdir_osei_bonsu') return { ...s, role: 'chair' as const };
+          return s;
+        });
+      }
+
+      // ── revent_12 FAILURE/CRITICAL_FAILURE: Supervisory Board loses two members ──
+      if (currentEvent.id === 'revent_12' &&
+          (output.outcomeTier === 'FAILURE' || output.outcomeTier === 'CRITICAL_FAILURE')) {
+        // Worker reps (rdir_w_*) and Heinrich (fixed chair) are protected
+        const removableSeats = newState.board.seats.filter(
+          (s) => !s.directorId.startsWith('rdir_w_') && s.directorId !== 'rdir_heinrich'
+        );
+        const toRemove = removableSeats
+          .map((s) => ({
+            id: s.directorId,
+            tenure: newState.directors.find((d) => d.id === s.directorId)?.tenure ?? 999,
+          }))
+          .sort((a, b) => a.tenure - b.tenure)
+          .slice(0, 2);
+        const removedNames: string[] = [];
+        for (const { id } of toRemove) {
+          const dir = newState.directors.find((d) => d.id === id);
+          if (dir) removedNames.push(dir.name);
+          Object.assign(newState, applyForcedRemoval(newState, id));
+        }
+        if (removedNames.length > 0) {
+          newState.pendingBoardNotification =
+            `Following the EGM vote, ${removedNames.join(' and ')} have been removed from the Supervisory Board.`;
+        }
+      }
+
+      // TODO(content): revent_12 CRITICAL_SUCCESS — "Meridian gets one board seat."
+      // Scope decision: narrative-only. No nominee director object exists; authoring
+      // domain ratings + background for an activist-investor seat is deferred content work.
+
       setGameState(newState);
       return output;
     },
@@ -431,6 +532,13 @@ function PlayPageInner() {
       newState.governanceHealth = Math.max(0, Math.min(100, newState.governanceHealth + agmGhDelta));
       newState.governanceHealthBreakdown = rescaleBreakdown(breakdown, newState.governanceHealth);
 
+      // ── event_09 Harwick AGM: Crane stands down gracefully ──
+      if (newState.company.id === 'company_harwick' && strategyChoice === 'event_09_b') {
+        if (newState.board.seats.some((s) => s.directorId === 'dir_08_crane')) {
+          Object.assign(newState, applyForcedRemoval(newState, 'dir_08_crane'));
+        }
+      }
+
       setGameState(newState);
 
       setAgmResults({
@@ -531,20 +639,41 @@ function PlayPageInner() {
 
   if (phase === 'gameplay' && gameState) {
     return (
-      <GameBoardScreen
-        gameState={gameState}
-        currentEvent={currentEvent}
-        svHistory={svHistory}
-        proxyAdviserRating={proxyAdviserRating}
-        onResolveEvent={handleResolveEvent}
-        onAdvanceTurn={handleAdvanceTurn}
-        onSkipEvent={handleSkipEvent}
-        regenDirectorIds={regenDirectorIds}
-        onClearRegen={() => setRegenDirectorIds([])}
-        onForcedDismissAndReplace={handleForcedDismissAndReplace}
-        onForcedRetain={handleForcedRetain}
-        showForcedModal={!!gameState.forcedChange && !replacementConfirmed.current}
-      />
+      <>
+        <GameBoardScreen
+          gameState={gameState}
+          currentEvent={currentEvent}
+          svHistory={svHistory}
+          proxyAdviserRating={proxyAdviserRating}
+          onResolveEvent={handleResolveEvent}
+          onAdvanceTurn={handleAdvanceTurn}
+          onSkipEvent={handleSkipEvent}
+          regenDirectorIds={regenDirectorIds}
+          onClearRegen={() => setRegenDirectorIds([])}
+          onForcedDismissAndReplace={handleForcedDismissAndReplace}
+          onForcedRetain={handleForcedRetain}
+          showForcedModal={!!gameState.forcedChange && !replacementConfirmed.current}
+        />
+        {gameState.pendingBoardNotification && (
+          <div style={{
+            position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+            background: 'rgba(13,27,42,0.96)', border: '1px solid rgba(200,150,12,0.45)',
+            borderRadius: 12, padding: '14px 20px', maxWidth: 480, width: 'calc(100% - 48px)',
+            color: '#E8DCC0', fontSize: 13, lineHeight: 1.6,
+            zIndex: 40, display: 'flex', gap: 14, alignItems: 'flex-start',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+          }}>
+            <span style={{ flex: 1 }}>{gameState.pendingBoardNotification}</span>
+            <button
+              onClick={() => setGameState((prev) => prev ? { ...prev, pendingBoardNotification: null } : prev)}
+              style={{ color: '#C8960C', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 16, lineHeight: 1 }}
+              aria-label="Dismiss notification"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+      </>
     );
   }
 
@@ -563,7 +692,7 @@ import BoardroomTable, {
   computeStandardGridPositions,
   deriveTablePositions,
   getOverflowDirectorIds,
-  ROLE_TOOLTIPS,
+  getRoleTooltip,
 } from '@/components/BoardroomTable';
 import DirectorPortrait from '@/components/DirectorPortrait';
 import type { BoardRole, CompetencyDomain, CommitteeState, Director } from '@/types/game';
@@ -1493,7 +1622,7 @@ function BoardConstructionWrapper({
                     {/* Role info — shown above the candidate list when selecting for a named role */}
                     {activeSeatIdx !== null && mode === 'select' && (() => {
                       const seatRole = getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize).defaultRole;
-                      const info = ROLE_TOOLTIPS[seatRole];
+                      const info = getRoleTooltip(seatRole, company.jurisdiction, company.id);
                       if (!info) return null;
                       return (
                         <div className="flex-shrink-0 px-3 pt-2 pb-1 border-b border-card-border">
@@ -1800,7 +1929,7 @@ function BoardConstructionWrapper({
                 <p className="text-xs text-foreground/50 max-w-xs">Choose a director from the pool to fill the <span className="text-gold font-semibold">{activeSeatIdx !== null ? getShortRoleLabel(getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize).defaultRole, company.jurisdiction, company.id) : ''}</span> seat.</p>
                 {activeSeatIdx !== null && (() => {
                   const seatRole = getTablePosition(activeSeatIdx, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize).defaultRole;
-                  const info = ROLE_TOOLTIPS[seatRole];
+                  const info = getRoleTooltip(seatRole, company.jurisdiction, company.id);
                   if (!info) return null;
                   return (
                     <div className="mt-4 text-left w-full max-w-xs rounded-lg border border-gold/20 bg-navy-dark/40 px-4 py-3">

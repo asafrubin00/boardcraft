@@ -153,6 +153,8 @@ export default function ForcedChangeModal({
       ? 'Director Health Crisis'
       : forcedChange.type === 'misconduct'
       ? 'Director Misconduct'
+      : forcedChange.type === 'event_resolution'
+      ? 'Board Seat Vacated'
       : 'Regulatory Disqualification';
 
   return (
@@ -521,7 +523,7 @@ export default function ForcedChangeModal({
                   : 'Select a Director to Continue'}
               </button>
 
-              {/* Retain option (misconduct only) */}
+              {/* Retain option (misconduct / event_resolution with canRetain) */}
               {forcedChange.canRetain && onRetain && (
                 <button
                   onClick={onRetain}
@@ -535,7 +537,9 @@ export default function ForcedChangeModal({
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  Keep Vacancy (GH −8, proxy flags)
+                  {forcedChange.type === 'event_resolution'
+                    ? 'She accepts — retain her on the board'
+                    : 'Keep Vacancy (GH −8, proxy flags)'}
                 </button>
               )}
             </div>

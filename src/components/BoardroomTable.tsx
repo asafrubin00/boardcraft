@@ -13,7 +13,9 @@ interface RoleTooltipInfo {
   requirements: string[];
 }
 
-export const ROLE_TOOLTIPS: Partial<Record<BoardRole, RoleTooltipInfo>> = {
+type RoleTooltipMap = Partial<Record<BoardRole, RoleTooltipInfo>>;
+
+const BASE_ROLE_TOOLTIPS: RoleTooltipMap = {
   chair: {
     description: 'Leads the board, sets agenda, and ensures effective governance.',
     requirements: ['Must be independent', 'Strategy & Markets ≥ 60', 'Stakeholder & Comms ≥ 60'],
@@ -28,7 +30,7 @@ export const ROLE_TOOLTIPS: Partial<Record<BoardRole, RoleTooltipInfo>> = {
   },
   remChair: {
     description: 'Sets executive remuneration policy and monitors pay structure.',
-    requirements: ['People & Culture ≥ 60'],
+    requirements: ['Must be independent', 'People & Culture ≥ 60'],
   },
   nomChair: {
     description: 'Leads board succession planning and director appointment process.',
@@ -67,6 +69,92 @@ export const ROLE_TOOLTIPS: Partial<Record<BoardRole, RoleTooltipInfo>> = {
     requirements: ['ESG & Sustainability ≥ 70'],
   },
 };
+
+// Per-jurisdiction overrides for roles whose requirements differ from the UK defaults
+const EU_ROLE_TOOLTIPS: RoleTooltipMap = {
+  // Supervisory Board Chair: no coded skill thresholds in GCGC for this role
+  chair: {
+    description: 'Chairs the Supervisory Board, sets agenda, and ensures effective oversight.',
+    requirements: [],
+  },
+  // Rem Committee: independence not a hard requirement under GCGC (majority shareholder-side)
+  remChair: {
+    description: 'Sets executive remuneration policy and monitors pay structure.',
+    requirements: ['People & Culture ≥ 60'],
+  },
+  // CSRD Chair: no coded skill threshold enforced for EU in-game
+  csrdChair: {
+    description: 'Oversees CSRD sustainability reporting and ESG disclosure framework.',
+    requirements: ['ESG & Sustainability ≥ 65'],
+  },
+  // Strategy Chair: no coded skill threshold enforced for EU in-game
+  strategyChair: {
+    description: 'Chairs the Strategy Committee and oversees long-term planning.',
+    requirements: ['Strategy & Markets ≥ 60'],
+  },
+};
+
+// Per-company overrides (applied after jurisdiction overrides)
+const COMPANY_ROLE_TOOLTIPS: Partial<Record<string, RoleTooltipMap>> = {
+  company_vantage: {
+    // US Chair: Stakeholder & Comms not checked; independence is a warning not a hard requirement
+    chair: {
+      description: 'Leads the board and provides oversight of the combined Chair/CEO dynamic.',
+      requirements: ['Must be independent', 'Strategy & Markets ≥ 60'],
+    },
+    // US Rem Chair (Compensation Committee): independence required (NYSE §303A.05)
+    remChair: {
+      description: 'Chairs the Compensation Committee and sets executive pay policy.',
+      requirements: ['Must be independent', 'People & Culture ≥ 60'],
+    },
+    // US Nom/Gov Chair: independence required (NYSE §303A.04); no Strategy & Markets check
+    nomChair: {
+      description: 'Chairs the Nominating/Governance Committee and leads director recruitment.',
+      requirements: ['Must be independent', 'People & Culture ≥ 55'],
+    },
+    // CA&R Chair (mapped to energyTransitionChair): requires Regulatory & Legal, not ESG
+    energyTransitionChair: {
+      description: 'Chairs the Consumer Affairs & Regulatory Committee overseeing UPF and labelling risk.',
+      requirements: ['Regulatory & Legal ≥ 65'],
+    },
+  },
+  company_meridian: {
+    // Charity Chair: Strategy & Markets threshold is 55 (not 60); no Stakeholder & Comms check
+    chair: {
+      description: 'Leads the board of trustees and ensures the charity fulfils its mission.',
+      requirements: ['Must be independent', 'Strategy & Markets ≥ 55'],
+    },
+    // Finance & Risk Chair: threshold is 65 (not 75); independence is conflict-risk warning, not hard rule
+    auditChair: {
+      description: 'Chairs the Finance & Risk Committee and oversees financial stewardship.',
+      requirements: ['Financial Oversight ≥ 65'],
+    },
+    // People & Culture Chair: no independence requirement in charity compliance
+    remChair: {
+      description: 'Chairs the People & Culture Committee covering safeguarding and CEO oversight.',
+      requirements: ['People & Culture ≥ 60'],
+    },
+    // Programmes & Impact Chair: ESG Sustainability or Geopolitical Macro ≥ 65
+    csrdChair: {
+      description: 'Chairs the Programmes & Impact Committee and holds mission delivery to account.',
+      requirements: ['ESG & Sustainability or Geopolitical Macro ≥ 65'],
+    },
+  },
+};
+
+export function getRoleTooltip(
+  role: BoardRole,
+  jurisdiction: Jurisdiction = 'UK',
+  companyId?: string,
+): RoleTooltipInfo | undefined {
+  const base = BASE_ROLE_TOOLTIPS[role];
+  const jurisdictionOverride = jurisdiction === 'EU' ? EU_ROLE_TOOLTIPS[role] : undefined;
+  const companyOverride = companyId ? COMPANY_ROLE_TOOLTIPS[companyId]?.[role] : undefined;
+  return companyOverride ?? jurisdictionOverride ?? base;
+}
+
+/** @deprecated use getRoleTooltip instead */
+export const ROLE_TOOLTIPS = BASE_ROLE_TOOLTIPS;
 
 // ── Table position definitions ──
 
@@ -546,7 +634,7 @@ export default function BoardroomTable({
             {/* Role tooltip on hover (empty seats only, desktop only) */}
             {hoveredSeatIdx === index && !director && (() => {
               const role = pos.defaultRole;
-              const tooltip = ROLE_TOOLTIPS[role];
+              const tooltip = getRoleTooltip(role, jurisdiction, companyId);
               if (!tooltip) return null;
               const showAbove = pos.topPct > 50;
               // Shift inward for left/right column seats so tooltip stays within bounds

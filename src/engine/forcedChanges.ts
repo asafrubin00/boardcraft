@@ -115,8 +115,9 @@ export function applyForcedRemoval(
 // ── Apply forced change retention (misconduct - keep director with penalties) ──
 
 export function applyRetainDirector(state: GameState): GameState {
-  // Governance health penalty: -8
-  const newGH = Math.max(0, Math.min(100, state.governanceHealth - 8));
+  // event_resolution retain = voluntary acceptance (no governance penalty)
+  const ghPenalty = state.forcedChange?.type === 'event_resolution' ? 0 : 8;
+  const newGH = Math.max(0, Math.min(100, state.governanceHealth - ghPenalty));
 
   // Activate the risk flag on the director
   const dirId = state.forcedChange?.directorId;

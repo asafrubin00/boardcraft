@@ -35,6 +35,12 @@ export const meridianEvents: GameEvent[] = [
         multiplier: 1.10,
         competencyGates: [{ domain: 'regulatoryLegal', minimumRating: 75 }],
         fallback: 'mevent_01_b',
+        boardEffect: {
+          removeDirectorId: 'mdir_cavendish',
+          minOutcomeTier: 'CRITICAL_SUCCESS',
+          requiresReplacement: true,
+          vacatedRole: 'auditChair',
+        },
       },
       {
         id: 'mevent_01_b',
@@ -1215,6 +1221,13 @@ export const meridianEvents: GameEvent[] = [
           { domain: 'strategyMarkets', minimumRating: 65 },
         ],
         fallback: 'mevent_14_b',
+        boardEffect: {
+          removeDirectorId: 'mdir_mensah',
+          minOutcomeTier: 'CRITICAL_SUCCESS',
+          requiresReplacement: true,
+          vacatedRole: 'chair',
+          simultaneousRemoveIds: ['mdir_osei_bonsu'],
+        },
       },
       {
         id: 'mevent_14_b',
