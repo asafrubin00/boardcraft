@@ -19,7 +19,7 @@ export default function TabletRotateGate({ children }: { children: React.ReactNo
     const check = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      setShow(h > w && w >= 600 && w <= 1023);
+      setShow(h > w && w <= 1023);
     };
 
     check();
@@ -66,7 +66,7 @@ export default function TabletRotateGate({ children }: { children: React.ReactNo
           </h1>
 
           <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.95rem', lineHeight: 1.6, maxWidth: 340, margin: 0 }}>
-            BoardCraft is designed for landscape mode on tablets.
+            BoardCraft is designed for landscape mode.
             <br />
             Please rotate your device to continue.
           </p>
