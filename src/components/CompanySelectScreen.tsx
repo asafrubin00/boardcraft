@@ -71,8 +71,34 @@ const FOCUS_PACKS = [
 ];
 
 function FocusPlayModal({ onClose }: { onClose: () => void }) {
-  const mailtoHref =
-    'mailto:asafrubin00@gmail.com?subject=BoardCraft%20Focus%20Play%20%E2%80%94%20notify%20me&body=Please%20add%20me%20to%20the%20early%20access%20list%20for%20BoardCraft%20Focus%20Play.';
+  const [view, setView] = useState<'main' | 'contact' | 'submitted'>('main');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch('https://formspree.io/f/xgvkwkqd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ email, message: message || 'No message provided.', _subject: 'BoardCraft Focus Play — early access request' }),
+      });
+      if (res.ok) {
+        setView('submitted');
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#070f1a]/97">
@@ -82,40 +108,110 @@ function FocusPlayModal({ onClose }: { onClose: () => void }) {
           <p className="text-xs text-foreground/40 uppercase tracking-widest mb-1">In development</p>
           <h2 className="text-2xl font-narrative font-bold text-gold">Focus Play</h2>
         </div>
-        <button
-          onClick={onClose}
-          className="text-foreground/40 hover:text-foreground text-2xl leading-none cursor-pointer mt-1"
-          aria-label="Close"
-        >
-          &times;
-        </button>
+        <div className="flex items-center gap-4 mt-1">
+          {view === 'contact' && (
+            <button
+              onClick={() => setView('main')}
+              className="text-xs text-foreground/40 hover:text-foreground/70 transition-colors cursor-pointer"
+            >
+              ← Back
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="text-foreground/40 hover:text-foreground text-2xl leading-none cursor-pointer"
+            aria-label="Close"
+          >
+            &times;
+          </button>
+        </div>
       </div>
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-6 py-6 max-w-2xl">
-        <p className="font-narrative italic text-foreground/80 text-base leading-relaxed mb-6">
-          Focus Play lets you run targeted scenario sessions around a specific governance domain. Instead of a full annual cycle, you work through a curated sequence of scenarios that test one area in depth — the kind of intensive practice that maps directly to how boards actually build expertise.
-        </p>
-        <p className="text-xs text-foreground/40 uppercase tracking-widest mb-3">Topic packs in development</p>
-        <ul className="space-y-2">
-          {FOCUS_PACKS.map((pack) => (
-            <li key={pack} className="flex items-center gap-2 text-foreground/70 text-sm">
-              <span className="text-gold/50 text-xs">•</span>
-              {pack}
-            </li>
-          ))}
-        </ul>
+        {view === 'main' && (
+          <>
+            <p className="font-narrative italic text-foreground/80 text-base leading-relaxed mb-6">
+              Focus Play lets you run targeted scenario sessions around a specific governance domain. Instead of a full annual cycle, you work through a curated sequence of scenarios that test one area in depth — the kind of intensive practice that maps directly to how boards actually build expertise.
+            </p>
+            <p className="text-xs text-foreground/40 uppercase tracking-widest mb-3">Topic packs in development</p>
+            <ul className="space-y-2">
+              {FOCUS_PACKS.map((pack) => (
+                <li key={pack} className="flex items-center gap-2 text-foreground/70 text-sm">
+                  <span className="text-gold/50 text-xs">•</span>
+                  {pack}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        {view === 'contact' && (
+          <form onSubmit={handleSubmit} className="space-y-5 max-w-md">
+            <p className="text-foreground/60 text-sm">
+              Leave your email and we&apos;ll notify you when Focus Play launches.
+            </p>
+            <div>
+              <label className="block text-xs text-foreground/40 uppercase tracking-widest mb-2">
+                Email address <span className="text-error">*</span>
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="w-full bg-navy-dark border border-card-border rounded-lg px-4 py-3 text-foreground text-sm placeholder:text-foreground/30 focus:outline-none focus:border-gold/60 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-foreground/40 uppercase tracking-widest mb-2">
+                Message <span className="text-foreground/30">(optional)</span>
+              </label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Which topic pack interests you most?"
+                rows={3}
+                className="w-full bg-navy-dark border border-card-border rounded-lg px-4 py-3 text-foreground text-sm placeholder:text-foreground/30 focus:outline-none focus:border-gold/60 transition-colors resize-none"
+              />
+            </div>
+            {error && <p className="text-error text-xs">{error}</p>}
+            <button
+              type="submit"
+              disabled={submitting || !email.trim()}
+              className="w-full py-3 rounded-lg bg-gold/15 border border-gold/50 hover:bg-gold/25 transition-colors text-gold font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {submitting ? 'Sending…' : 'Submit'}
+            </button>
+          </form>
+        )}
+
+        {view === 'submitted' && (
+          <div className="flex flex-col items-start gap-3 pt-2">
+            <p className="text-gold font-narrative font-semibold text-lg">You&apos;re on the list.</p>
+            <p className="text-foreground/60 text-sm">We&apos;ll reach out when Focus Play is ready. Thanks for the interest.</p>
+            <button
+              onClick={onClose}
+              className="mt-4 px-5 py-2 rounded-lg bg-card-bg border border-card-border text-foreground/60 hover:text-foreground text-sm transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Footer */}
-      <div className="flex-shrink-0 px-6 pb-8 pt-4 border-t border-card-border">
-        <a
-          href={mailtoHref}
-          className="block w-full py-4 rounded-xl bg-gold/10 border border-gold/40 hover:bg-gold/20 transition-colors text-gold font-semibold text-base text-center cursor-pointer"
-        >
-          Notify me when available
-        </a>
-      </div>
+      {view === 'main' && (
+        <div className="flex-shrink-0 px-6 pb-8 pt-4 border-t border-card-border">
+          <button
+            onClick={() => setView('contact')}
+            className="block w-full py-4 rounded-xl bg-gold/10 border border-gold/40 hover:bg-gold/20 transition-colors text-gold font-semibold text-base text-center cursor-pointer"
+          >
+            Notify me when available
+          </button>
+        </div>
+      )}
     </div>
   );
 }
