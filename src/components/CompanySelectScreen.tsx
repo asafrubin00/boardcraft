@@ -83,7 +83,7 @@ function FocusPlayModal({ onClose }: { onClose: () => void }) {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('https://formspree.io/f/xgvkwkqd', {
+      const res = await fetch('https://formspree.io/f/xjgqynpo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ email, message: message || 'No message provided.', _subject: 'BoardCraft Focus Play — early access request' }),
