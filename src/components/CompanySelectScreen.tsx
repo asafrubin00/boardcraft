@@ -72,31 +72,30 @@ const FOCUS_PACKS = [
 
 function FocusPlayModal({ onClose }: { onClose: () => void }) {
   const [view, setView] = useState<'main' | 'contact' | 'submitted'>('main');
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!email.trim()) return;
     setSubmitting(true);
     setError(null);
+    const form = e.currentTarget;
+    const data = new FormData(form);
     try {
       const res = await fetch('https://formspree.io/f/xjgqynpo', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ email, message: message || 'No message provided.', _subject: 'BoardCraft Focus Play — early access request' }),
+        body: data,
+        headers: { Accept: 'application/json' },
       });
-      const data = await res.json().catch(() => null);
       if (res.ok) {
         setView('submitted');
       } else {
-        const msg = data?.error ?? data?.errors?.[0]?.message ?? `Error ${res.status}`;
-        setError(`Submission failed: ${msg}`);
+        const json = await res.json().catch(() => null);
+        const msg = json?.error ?? json?.errors?.[0]?.message ?? `Error ${res.status}`;
+        setError(msg);
       }
     } catch {
-      setError('Something went wrong. Please try again.');
+      setError('Network error — please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -154,25 +153,25 @@ function FocusPlayModal({ onClose }: { onClose: () => void }) {
               Leave your email and we&apos;ll notify you when Focus Play launches.
             </p>
             <div>
-              <label className="block text-xs text-foreground/40 uppercase tracking-widest mb-2">
+              <label htmlFor="fp-email" className="block text-xs text-foreground/40 uppercase tracking-widest mb-2">
                 Email address <span className="text-error">*</span>
               </label>
               <input
+                id="fp-email"
                 type="email"
+                name="email"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 className="w-full bg-navy-dark border border-card-border rounded-lg px-4 py-3 text-foreground text-sm placeholder:text-foreground/30 focus:outline-none focus:border-gold/60 transition-colors"
               />
             </div>
             <div>
-              <label className="block text-xs text-foreground/40 uppercase tracking-widest mb-2">
+              <label htmlFor="fp-message" className="block text-xs text-foreground/40 uppercase tracking-widest mb-2">
                 Message <span className="text-foreground/30">(optional)</span>
               </label>
               <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                id="fp-message"
+                name="message"
                 placeholder="Which topic pack interests you most?"
                 rows={3}
                 className="w-full bg-navy-dark border border-card-border rounded-lg px-4 py-3 text-foreground text-sm placeholder:text-foreground/30 focus:outline-none focus:border-gold/60 transition-colors resize-none"
@@ -181,7 +180,7 @@ function FocusPlayModal({ onClose }: { onClose: () => void }) {
             {error && <p className="text-error text-xs">{error}</p>}
             <button
               type="submit"
-              disabled={submitting || !email.trim()}
+              disabled={submitting}
               className="w-full py-3 rounded-lg bg-gold/15 border border-gold/50 hover:bg-gold/25 transition-colors text-gold font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               {submitting ? 'Sending…' : 'Submit'}
