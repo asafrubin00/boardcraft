@@ -96,13 +96,7 @@ function DebriefModal({
   const config = TIER_CONFIG[outcome.outcomeTier];
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0 }}
-      className="fixed inset-0 z-[70] flex flex-col bg-[#070f1a]/97"
-    >
+    <div className="fixed inset-0 z-[70] flex flex-col bg-[#070f1a]/97">
       {/* Header */}
       <div className="flex-shrink-0 px-6 pt-8 pb-4 border-b border-card-border">
         <p className="text-xs text-foreground/40 uppercase tracking-widest mb-1">The Debrief</p>
@@ -126,7 +120,7 @@ function DebriefModal({
           Continue →
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -300,18 +294,16 @@ export default function OutcomeDisplay({
             </p>
           </motion.div>
 
-          <AnimatePresence onExitComplete={onDismiss}>
-            {debriefOpen && outcome && (
-              <DebriefModal
-                outcome={outcome}
-                eventName={eventName}
-                deployedDirectors={deployedDirectors ?? []}
-                event={event ?? null}
-                directorDynamics={directorDynamics ?? []}
-                onClose={() => setDebriefOpen(false)}
-              />
-            )}
-          </AnimatePresence>
+          {debriefOpen && outcome && (
+            <DebriefModal
+              outcome={outcome}
+              eventName={eventName}
+              deployedDirectors={deployedDirectors ?? []}
+              event={event ?? null}
+              directorDynamics={directorDynamics ?? []}
+              onClose={() => { setDebriefOpen(false); onDismiss(); }}
+            />
+          )}
         </>
       )}
     </AnimatePresence>
