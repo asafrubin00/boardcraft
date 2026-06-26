@@ -300,7 +300,7 @@ export default function OutcomeDisplay({
             </p>
           </motion.div>
 
-          <AnimatePresence>
+          <AnimatePresence onExitComplete={onDismiss}>
             {debriefOpen && outcome && (
               <DebriefModal
                 outcome={outcome}
@@ -308,7 +308,7 @@ export default function OutcomeDisplay({
                 deployedDirectors={deployedDirectors ?? []}
                 event={event ?? null}
                 directorDynamics={directorDynamics ?? []}
-                onClose={() => { setDebriefOpen(false); onDismiss(); }}
+                onClose={() => setDebriefOpen(false)}
               />
             )}
           </AnimatePresence>
