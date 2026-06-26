@@ -88,10 +88,12 @@ function FocusPlayModal({ onClose }: { onClose: () => void }) {
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ email, message: message || 'No message provided.', _subject: 'BoardCraft Focus Play — early access request' }),
       });
+      const data = await res.json().catch(() => null);
       if (res.ok) {
         setView('submitted');
       } else {
-        setError('Something went wrong. Please try again.');
+        const msg = data?.error ?? data?.errors?.[0]?.message ?? `Error ${res.status}`;
+        setError(`Submission failed: ${msg}`);
       }
     } catch {
       setError('Something went wrong. Please try again.');
