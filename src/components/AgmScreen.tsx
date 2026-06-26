@@ -551,6 +551,7 @@ export default function AgmScreen({
       },
       boardSeats: gameState.board.seats,
       directors: gameState.directors,
+      deployedDirectorIds: deployedIds,
     };
 
     const agmDebriefNarratives = resolutions.map((res) =>

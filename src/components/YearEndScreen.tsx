@@ -20,10 +20,17 @@ import {
 import { playYearEnd } from '@/engine/soundEngine';
 import SiteFooter from './SiteFooter';
 
+interface AgmResults {
+  resolution1Pass: boolean;
+  resolution2Pass: boolean;
+  resolution3Pass: boolean;
+}
+
 interface YearEndScreenProps {
   gameState: GameState;
   onRestart: () => void;
   onChangeCompany?: () => void;
+  agmResults?: AgmResults;
 }
 
 const OUTCOME_COLORS: Record<string, { bg: string; text: string }> = {
@@ -126,6 +133,188 @@ function generateVerdict(gameState: GameState, careerTitle: string, eventNameMap
   const closing = ` You leave this board as a ${careerTitle}. ${closings[careerTitle] || ''}`;
 
   return opening + bestLine + worstLine + ghLine + closing;
+}
+
+// ── Year End Analysis ──
+
+function generateYearEndAnalysis(
+  gameState: GameState,
+  eventNameMap: Record<string, string>,
+  careerStats: CareerStats | null,
+  agmResults?: AgmResults,
+): string {
+  const sv = gameState.svIndex;
+  const isMeridian = gameState.company.id === 'company_meridian';
+  const valueLabel = isMeridian ? 'mission integrity' : 'shareholder value';
+  const resolved = gameState.resolvedEvents;
+  const paragraphs: string[] = [];
+
+  // ── OPENING ──
+  let opening: string;
+  if (sv >= 115) {
+    opening = `A ${sv} SV Index is close to the ceiling of what this board structure allows — governance pressure absorbed, capital protected, and no quarter lost to a catastrophic call.`;
+  } else if (sv >= 108) {
+    opening = `${sv} on the SV Index puts this year in the top tier: every event that mattered was handled, and the board's composition held up when it was tested.`;
+  } else if (sv >= 100) {
+    opening = `${sv} on the SV Index means the board delivered a positive year, but by a margin that leaves little room for error on the next run.`;
+  } else if (sv >= 95) {
+    opening = `A ${sv} SV Index — fractionally above the survival line, but that gap between 95 and 108 is where most of this year's decisions were lost.`;
+  } else if (sv >= 85) {
+    opening = `${sv} on the SV Index. The board underperformed — not catastrophically, but enough that the company enters the next cycle with reduced credibility.`;
+  } else {
+    opening = `A ${sv} SV Index is a governance failure by any institutional standard. The board was consistently outpaced by the events it was built to handle.`;
+  }
+  paragraphs.push(opening);
+
+  // ── BOARD CONSTRUCTION JUDGMENT ──
+  const seats = gameState.board.seats;
+  const seatedDirectors = seats
+    .map((s) => gameState.directors.find((d) => d.id === s.directorId))
+    .filter((d): d is GameState['directors'][number] => d !== undefined);
+
+  const domains = ['stakeholderComms', 'regulatoryLegal', 'financialOversight', 'esgSustainability', 'strategyMarkets', 'peopleCulture'] as const;
+  type Domain = typeof domains[number];
+  const domainAvg = (domain: Domain): number => {
+    if (seatedDirectors.length === 0) return 0;
+    return Math.round(seatedDirectors.reduce((s, d) => s + ((d.domainRatings as Record<string, number>)[domain] ?? 0), 0) / seatedDirectors.length);
+  };
+  const domainLabelsLocal: Record<Domain, string> = {
+    stakeholderComms: 'stakeholder communications',
+    regulatoryLegal: 'regulatory and legal understanding',
+    financialOversight: 'financial oversight',
+    esgSustainability: 'ESG and sustainability',
+    strategyMarkets: 'strategy and markets',
+    peopleCulture: 'people and culture',
+  };
+  const weakestDomain = domains.reduce((worst, d) => domainAvg(d) < domainAvg(worst) ? d : worst, domains[0]);
+  const weakestAvg = domainAvg(weakestDomain);
+
+  // boardIndependence is out of 20; map to a percentage for narrative
+  const independenceRate = Math.round((gameState.governanceHealthBreakdown.boardIndependence / 20) * 100);
+
+  const committeeCompleteness = gameState.governanceHealthBreakdown.committeeCompleteness;
+  const committeeNote = committeeCompleteness >= 16
+    ? 'the committee structure was properly staffed and chaired'
+    : committeeCompleteness >= 10
+      ? 'committee coverage was partial — some committees were either unstaffed or missing a chair'
+      : 'the committee structure had significant gaps';
+
+  const notableWeakDirectors = seatedDirectors.filter((d) => ((d.domainRatings as Record<string, number>)[weakestDomain] ?? 0) < 40);
+  let boardLine = `${independenceRate}% of the board was independent. The weakest area across the roster was ${domainLabelsLocal[weakestDomain]}, averaging ${weakestAvg} — ${committeeNote}.`;
+  if (notableWeakDirectors.length > 0 && resolved.some((ev) => ev.breakdown?.primaryDomain === weakestDomain)) {
+    boardLine += ` ${notableWeakDirectors.map((d) => d.name).join(' and ')} ${notableWeakDirectors.length === 1 ? 'was' : 'were'} below 40 in that domain yet seated for the full season.`;
+  }
+  paragraphs.push(boardLine);
+
+  // ── DECISION PATTERN ──
+  if (resolved.length > 0) {
+    const sorted = [...resolved].sort((a, b) => b.svDelta - a.svDelta);
+    const best = sorted[0];
+    const worst = sorted[sorted.length - 1];
+    const bestName = eventNameMap[best.eventId] ?? best.eventId;
+    const worstName = eventNameMap[worst.eventId] ?? worst.eventId;
+
+    const avgDeployedRating = (ev: ResolvedEvent): number => {
+      const dirs = gameState.directors.filter((d) => ev.deployedDirectorIds.includes(d.id));
+      if (!dirs.length || !ev.breakdown) return 0;
+      const domain = ev.breakdown.primaryDomain as Domain;
+      return Math.round(dirs.reduce((s, d) => s + ((d.domainRatings as Record<string, number>)[domain] ?? 0), 0) / dirs.length);
+    };
+
+    const bestRating = avgDeployedRating(best);
+    const worstRating = avgDeployedRating(worst);
+
+    let decisionLine = `The season's high point was ${bestName} — a ${best.outcomeTier.replace('_', ' ').toLowerCase()} adding ${best.svDelta > 0 ? '+' : ''}${best.svDelta.toFixed(1)} to ${valueLabel}`;
+    decisionLine += bestRating >= 60 ? ', supported by directors well-matched to what the event demanded.' : ', though the director deployment was not the primary reason it went well.';
+
+    if (worst.svDelta < -0.5) {
+      decisionLine += ` The low point was ${worstName}, costing ${Math.abs(worst.svDelta).toFixed(1)} in ${valueLabel}`;
+      decisionLine += worstRating < 50 ? ' — a mismatch between the event\'s demands and the expertise deployed.' : ', despite reasonable director selection.';
+    }
+
+    // Pattern across all events
+    const mismatches = resolved.filter((ev) => {
+      if (!ev.breakdown) return false;
+      const r = avgDeployedRating(ev);
+      return r < 45 && (ev.outcomeTier === 'FAILURE' || ev.outcomeTier === 'CRITICAL_FAILURE' || ev.outcomeTier === 'PARTIAL_SUCCESS');
+    });
+    if (mismatches.length >= 3) {
+      decisionLine += ` Across the season, ${mismatches.length} events saw weak director-to-event matches — a systematic deployment problem, not bad luck.`;
+    } else if (mismatches.length === 0 && resolved.length >= 4) {
+      decisionLine += ` Director deployment was consistently well-targeted — the right expertise was in the room for most events.`;
+    }
+
+    paragraphs.push(decisionLine);
+  }
+
+  // ── AGM PERFORMANCE ──
+  if (agmResults) {
+    const { resolution1Pass, resolution2Pass, resolution3Pass } = agmResults;
+    const passed = [resolution1Pass, resolution2Pass, resolution3Pass].filter(Boolean).length;
+    const agmLine = passed === 3
+      ? `At the AGM, all three resolutions passed — a clean meeting that signals institutional confidence in the governance position built across the year.`
+      : passed === 2
+        ? `Two of three AGM resolutions passed. The failed vote is a signal that one dimension of the board's governance case didn't hold under shareholder scrutiny.`
+        : passed === 1
+          ? `Only one AGM resolution passed — a difficult meeting that reflects the governance weaknesses accumulated during the year.`
+          : `All three AGM resolutions failed. That outcome is a public rebuke from shareholders and the clearest signal that the governance position was untenable.`;
+    paragraphs.push(agmLine);
+  }
+
+  // ── CLOSING CTA ──
+  const companyId = gameState.company.id;
+  let cta: string;
+  if (sv >= 108) {
+    if (companyId === 'company_harwick') {
+      cta = `The next step is Vantage Capital or Rheinfeld AG. This board will be simpler by comparison.`;
+    } else if (companyId === 'company_vantage') {
+      cta = `The next step is Rheinfeld AG. This board will be simpler by comparison.`;
+    } else if (companyId === 'company_rheinfeld') {
+      cta = `The next step is Vantage Capital. This board will be simpler by comparison.`;
+    } else {
+      cta = `The next step is Harwick PLC. This board will be simpler by comparison.`;
+    }
+  } else if (sv >= 95) {
+    cta = `One more run at ${gameState.company.name} with what you now know would look very different.`;
+  } else {
+    cta = `Run it again. The decisions that cost you here are clearer in hindsight.`;
+  }
+  paragraphs.push(cta);
+
+  return paragraphs.join('\n\n');
+}
+
+function YearEndAnalysis({
+  gameState,
+  eventNameMap,
+  careerStats,
+  agmResults,
+}: {
+  gameState: GameState;
+  eventNameMap: Record<string, string>;
+  careerStats: CareerStats | null;
+  agmResults?: AgmResults;
+}) {
+  const text = generateYearEndAnalysis(gameState, eventNameMap, careerStats, agmResults);
+  const paragraphs = text.split('\n\n');
+
+  return (
+    <motion.div
+      className="bg-card-bg border border-card-border rounded-lg p-6 mb-10"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.35, duration: 0.5 }}
+    >
+      <p className="text-gold text-xs uppercase tracking-wide mb-4">Board Review</p>
+      <div className="space-y-4">
+        {paragraphs.map((para, i) => (
+          <p key={i} className="font-narrative italic text-foreground/80 text-base leading-relaxed">
+            {para}
+          </p>
+        ))}
+      </div>
+    </motion.div>
+  );
 }
 
 function SvSparkline({ data }: { data: { turn: string; sv: number }[] }) {
@@ -484,7 +673,7 @@ function LeaderboardModal({ isOpen, onClose, currentEntryId }: { isOpen: boolean
 
 // ── Main Component ──
 
-export default function YearEndScreen({ gameState, onRestart, onChangeCompany }: YearEndScreenProps) {
+export default function YearEndScreen({ gameState, onRestart, onChangeCompany, agmResults }: YearEndScreenProps) {
   // Play year-end sound on mount
   useEffect(() => { playYearEnd(gameState.svIndex); }, []);
 
@@ -595,6 +784,14 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
             <span className={`text-lg font-bold font-narrative ${getProxyColor(proxyRating)}`}>{proxyRating}</span>
           </div>
         </motion.div>
+
+        {/* Year End Analysis */}
+        <YearEndAnalysis
+          gameState={gameState}
+          eventNameMap={eventNameMap}
+          careerStats={careerStats}
+          agmResults={agmResults}
+        />
 
         {/* Governance Capital Earned */}
         {gcResult && careerStats && (
@@ -715,16 +912,6 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
           </table>
         </motion.div>
 
-        {/* Season Postmortem */}
-        <SeasonPostmortem
-          resolvedEvents={gameState.resolvedEvents}
-          eventNameMap={eventNameMap}
-          directors={gameState.directors}
-          isMeridian={isMeridian}
-          allEvents={allEventsData}
-          directorDynamics={gameState.directorDynamics}
-        />
-
         {/* Governance Health Breakdown */}
         <motion.div
           className="bg-card-bg border border-card-border rounded-lg p-5 mb-10"
@@ -745,18 +932,6 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany }:
               </div>
             ))}
           </div>
-        </motion.div>
-
-        {/* Narrative Assessment */}
-        <motion.div
-          className="text-center mb-10"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-        >
-          <p className="font-narrative italic text-foreground/80 text-lg leading-relaxed max-w-3xl mx-auto">
-            {generateVerdict(gameState, careerStats ? getCareerTitle(careerStats.totalGc) : 'Board Apprentice', eventNameMap)}
-          </p>
         </motion.div>
 
         {/* Action Buttons */}

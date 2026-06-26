@@ -1,7 +1,4 @@
-import type { BoardSeat, Director, GovernanceHealthBreakdown, CompetencyDomain } from '@/types/game';
-
-// CompetencyDomain is imported but used indirectly through Director type
-void (undefined as unknown as CompetencyDomain);
+import type { BoardSeat, Director, GovernanceHealthBreakdown } from '@/types/game';
 
 interface AgmDebriefParams {
   resolutionLabel: string;
@@ -12,6 +9,7 @@ interface AgmDebriefParams {
   contextFlags: Record<string, boolean | number | string | null | undefined>;
   boardSeats: BoardSeat[];
   directors: Director[];
+  deployedDirectorIds: string[];
 }
 
 function ghNarrative(gh: number): string {
@@ -20,14 +18,86 @@ function ghNarrative(gh: number): string {
   return 'a board under real scrutiny from institutional holders';
 }
 
+type RelevantDomain = 'stakeholderComms' | 'regulatoryLegal' | 'financialOversight' | 'esgSustainability' | 'strategyMarkets' | 'peopleCulture';
+
+function resolutionDomains(label: string): RelevantDomain[] {
+  if (label.includes('Re-Election') || label.includes('Re-Elections') || label.includes('Director Election') || label.includes('Ratification') || label.includes('Appointment') || label.includes('Entlastung') || label.includes('Discharge')) {
+    return ['stakeholderComms', 'regulatoryLegal'];
+  }
+  if (label.includes('Say-on-Pay') || label.includes('Remuneration') || label.includes('Compensation') || label.includes('ARUG')) {
+    return ['financialOversight'];
+  }
+  if (label.includes('ESG') || label.includes('Sustainability') || label.includes('Disclosure')) {
+    return ['esgSustainability'];
+  }
+  if (label.includes('Chair') || label.includes('Strategic Review') || label.includes('Meridian')) {
+    return ['strategyMarkets', 'regulatoryLegal'];
+  }
+  if (label.includes('Mission') || label.includes('Alignment') || label.includes('Audit') || label.includes('Accountability')) {
+    return ['peopleCulture', 'stakeholderComms'];
+  }
+  return ['stakeholderComms'];
+}
+
+function buildDirectorParagraph(p: AgmDebriefParams, deployedDirectors: Director[]): string {
+  if (deployedDirectors.length === 0) {
+    return `No directors were sent to the meeting floor — this signals an absence of boardroom coordination at the moment the vote was called.`;
+  }
+
+  const domains = resolutionDomains(p.resolutionLabel);
+  const primaryDomain = domains[0];
+
+  const getRating = (d: Director) => {
+    const ratings = d.domainRatings as Record<string, number>;
+    return Math.max(...domains.map((dom) => ratings[dom] ?? 0));
+  };
+
+  const sorted = [...deployedDirectors].sort((a, b) => getRating(b) - getRating(a));
+  const best = sorted[0];
+  const bestRating = getRating(best);
+  const weak = deployedDirectors.filter((d) => {
+    const ratings = d.domainRatings as Record<string, number>;
+    return domains.every((dom) => (ratings[dom] ?? 0) < 50);
+  });
+
+  const domainLabel: Record<RelevantDomain, string> = {
+    stakeholderComms: 'stakeholder communications',
+    regulatoryLegal: 'regulatory and legal understanding',
+    financialOversight: 'financial oversight',
+    esgSustainability: 'ESG and sustainability expertise',
+    strategyMarkets: 'strategic markets acumen',
+    peopleCulture: 'people and culture instincts',
+  };
+
+  const parts: string[] = [];
+
+  if (bestRating >= 60) {
+    parts.push(`${best.name} was the strongest voice on the floor for this vote, bringing ${domainLabel[primaryDomain]} that directly matched what the resolution demanded.`);
+  } else {
+    parts.push(`None of the directors deployed were a strong match for what this resolution required — ${domainLabel[primaryDomain]} was the key domain, and the floor team was thin on it.`);
+  }
+
+  if (weak.length > 0 && weak.some((d) => d.id !== best.id)) {
+    const misfits = weak.filter((d) => d.id !== best.id);
+    if (misfits.length > 0) {
+      parts.push(`${misfits.map((d) => d.name).join(' and ')} ${misfits.length === 1 ? 'was' : 'were'} not the right fit for this specific vote.`);
+    }
+  }
+
+  if (p.passed && bestRating >= 60) {
+    parts.push(`The deployment matched the moment — the right expertise was in the room.`);
+  } else if (!p.passed && bestRating >= 60) {
+    parts.push(`The board composition was a structural factor the directors on the floor couldn't overcome alone.`);
+  } else if (p.passed && bestRating < 60) {
+    parts.push(`The resolution passed on governance health alone — not on the strength of the floor team.`);
+  }
+
+  return parts.join(' ');
+}
+
 export function generateAgmResolutionDebrief(p: AgmDebriefParams): string {
   const sentences: string[] = [];
-  const seatedDirectors = p.boardSeats
-    .map((s) => p.directors.find((d) => d.id === s.directorId))
-    .filter((d): d is Director => d !== undefined);
-
-  // seatedDirectors used for future extensibility
-  void seatedDirectors;
+  const deployedDirectors = p.directors.filter((d) => p.deployedDirectorIds.includes(d.id));
 
   if (p.companyId === 'company_harwick') {
     if (p.resolutionLabel.includes('Re-Election') || p.resolutionLabel.includes('Re-Elections')) {
@@ -155,6 +225,8 @@ export function generateAgmResolutionDebrief(p: AgmDebriefParams): string {
       : `Resolution failed. ${ghNarrative(p.governanceHealth).charAt(0).toUpperCase() + ghNarrative(p.governanceHealth).slice(1)} — not enough to carry institutional confidence on this specific question.`
     );
   }
+
+  sentences.push(buildDirectorParagraph(p, deployedDirectors));
 
   return sentences.join(' ');
 }

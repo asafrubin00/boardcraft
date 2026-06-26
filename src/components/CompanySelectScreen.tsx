@@ -59,8 +59,71 @@ function getFirstTwoSentences(text: string): string {
   return sentences.slice(0, 2).join(' ').trim();
 }
 
+const FOCUS_PACKS = [
+  'Geopolitical Risk',
+  'Cybersecurity & Technology Governance',
+  'AI Governance',
+  'Financial Markets & Capital Allocation',
+  'Stakeholder Engagement & Activist Defence',
+  'ESG, DEI & Sustainability Reporting',
+  'Talent, Succession & Board Renewal',
+  'Crisis Management & Reputational Risk',
+];
+
+function FocusPlayModal({ onClose }: { onClose: () => void }) {
+  const mailtoHref =
+    'mailto:asafrubin00@gmail.com?subject=BoardCraft%20Focus%20Play%20%E2%80%94%20notify%20me&body=Please%20add%20me%20to%20the%20early%20access%20list%20for%20BoardCraft%20Focus%20Play.';
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#070f1a]/97">
+      {/* Header */}
+      <div className="flex-shrink-0 px-6 pt-8 pb-4 border-b border-card-border flex items-start justify-between">
+        <div>
+          <p className="text-xs text-foreground/40 uppercase tracking-widest mb-1">In development</p>
+          <h2 className="text-2xl font-narrative font-bold text-gold">Focus Play</h2>
+        </div>
+        <button
+          onClick={onClose}
+          className="text-foreground/40 hover:text-foreground text-2xl leading-none cursor-pointer mt-1"
+          aria-label="Close"
+        >
+          &times;
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto px-6 py-6 max-w-2xl">
+        <p className="font-narrative italic text-foreground/80 text-base leading-relaxed mb-6">
+          Focus Play lets you run targeted scenario sessions around a specific governance domain. Instead of a full annual cycle, you work through a curated sequence of scenarios that test one area in depth — the kind of intensive practice that maps directly to how boards actually build expertise.
+        </p>
+        <p className="text-xs text-foreground/40 uppercase tracking-widest mb-3">Topic packs in development</p>
+        <ul className="space-y-2">
+          {FOCUS_PACKS.map((pack) => (
+            <li key={pack} className="flex items-center gap-2 text-foreground/70 text-sm">
+              <span className="text-gold/50 text-xs">•</span>
+              {pack}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Footer */}
+      <div className="flex-shrink-0 px-6 pb-8 pt-4 border-t border-card-border">
+        <a
+          href={mailtoHref}
+          className="block w-full py-4 rounded-xl bg-gold/10 border border-gold/40 hover:bg-gold/20 transition-colors text-gold font-semibold text-base text-center cursor-pointer"
+        >
+          Notify me when available
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default function CompanySelectScreen({ onSelectCompany }: CompanySelectScreenProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [playMode, setPlayMode] = useState<'general' | 'focus'>('general');
+  const [focusModalOpen, setFocusModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-navy flex flex-col items-center px-6 py-12">
@@ -81,6 +144,37 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
       >
         Select Your Company
       </motion.p>
+
+      {/* Play Mode Selector */}
+      <div className="flex items-center gap-3 mb-8">
+        <button
+          onClick={() => setPlayMode('general')}
+          className={`px-5 py-2 rounded-lg border text-sm font-semibold transition-colors cursor-pointer ${
+            playMode === 'general'
+              ? 'bg-gold/15 border-gold text-gold'
+              : 'bg-card-bg border-card-border text-foreground/60 hover:border-foreground/40'
+          }`}
+        >
+          General Play
+        </button>
+        <button
+          onClick={() => { setPlayMode('focus'); setFocusModalOpen(true); }}
+          className={`flex items-center gap-1.5 px-5 py-2 rounded-lg border text-sm font-semibold transition-colors cursor-pointer ${
+            playMode === 'focus'
+              ? 'bg-gold/15 border-gold text-gold'
+              : 'bg-card-bg border-card-border text-foreground/60 hover:border-foreground/40'
+          }`}
+        >
+          Focus Play
+          <span
+            onClick={(e) => { e.stopPropagation(); setFocusModalOpen(true); }}
+            className="text-foreground/40 hover:text-foreground/70 text-xs leading-none"
+            title="What is Focus Play?"
+          >
+            ⓘ
+          </span>
+        </button>
+      </div>
 
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl w-full">
@@ -229,6 +323,20 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
       </div>
 
       <SiteFooter className="fixed bottom-4 left-1/2 -translate-x-1/2 z-10" />
+
+      <AnimatePresence>
+        {focusModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-50"
+          >
+            <FocusPlayModal onClose={() => { setFocusModalOpen(false); setPlayMode('general'); }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

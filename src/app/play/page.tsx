@@ -643,7 +643,7 @@ function PlayPageInner() {
   }
 
   if (phase === 'year_end' && gameState) {
-    return <YearEndScreen gameState={gameState} onRestart={handleRestart} onChangeCompany={handleChangeCompany} />;
+    return <YearEndScreen gameState={gameState} onRestart={handleRestart} onChangeCompany={handleChangeCompany} agmResults={agmResults ?? undefined} />;
   }
 
   if (phase === 'gameplay' && gameState) {
