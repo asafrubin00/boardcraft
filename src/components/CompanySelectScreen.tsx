@@ -217,10 +217,30 @@ function FocusPlayModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+type SkillLevel = 'newcomer' | 'practitioner' | 'experienced';
+
+const SKILL_LEVELS: { value: SkillLevel; label: string; description: string; recommended: string }[] = [
+  { value: 'newcomer', label: 'Newcomer', description: 'New to board dynamics and governance', recommended: 'company_meridian' },
+  { value: 'practitioner', label: 'Practitioner', description: 'Some governance experience or background', recommended: 'company_harwick' },
+  { value: 'experienced', label: 'Experienced NED', description: 'Seasoned director or governance professional', recommended: 'company_vantage' },
+];
+
 export default function CompanySelectScreen({ onSelectCompany }: CompanySelectScreenProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [playMode, setPlayMode] = useState<'general' | 'focus'>('general');
   const [focusModalOpen, setFocusModalOpen] = useState(false);
+  const [skillLevel, setSkillLevel] = useState<SkillLevel | null>(() => {
+    try { return (localStorage.getItem('boardcraft_skill_level') as SkillLevel) || null; } catch { return null; }
+  });
+  const [onboardingOpen, setOnboardingOpen] = useState(() => {
+    try { return !localStorage.getItem('boardcraft_skill_level'); } catch { return false; }
+  });
+
+  function handleSkillSelect(level: SkillLevel) {
+    setSkillLevel(level);
+    try { localStorage.setItem('boardcraft_skill_level', level); } catch {}
+    setOnboardingOpen(false);
+  }
 
   return (
     <div className="min-h-screen bg-navy flex flex-col items-center px-6 py-12">
@@ -343,10 +363,15 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
                 )}
 
                 {/* Difficulty Badge & Event count */}
-                <div className="flex items-center gap-3 mt-1">
+                <div className="flex items-center gap-3 mt-1 flex-wrap">
                   <span className={`text-xs ${difficultyColor(company.difficultyTier)}`}>
                     Difficulty: {difficultyLabel(company.difficultyTier)}
                   </span>
+                  {skillLevel && SKILL_LEVELS.find((s) => s.value === skillLevel)?.recommended === company.id && (
+                    <span className="text-xs bg-gold/10 text-gold border border-gold/30 px-2 py-0.5 rounded font-semibold">
+                      Recommended for you
+                    </span>
+                  )}
                   {company.id === 'company_meridian' && (
                     <span className="text-xs bg-emerald-900/50 text-emerald-300 border border-emerald-700/40 px-2 py-0.5 rounded">
                       UK Charity (CIO)
@@ -431,6 +456,49 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
             className="fixed inset-0 z-50"
           >
             <FocusPlayModal onClose={() => { setFocusModalOpen(false); setPlayMode('general'); }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Onboarding skill-level modal */}
+      <AnimatePresence>
+        {onboardingOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.25 }}
+              className="bg-navy border border-card-border rounded-xl p-6 w-full max-w-md"
+            >
+              <p className="text-xs text-foreground/40 uppercase tracking-widest mb-1">Welcome to BoardCraft</p>
+              <h2 className="text-xl font-narrative font-bold text-gold mb-2">Where are you in your governance journey?</h2>
+              <p className="text-sm text-foreground/60 mb-5">We&apos;ll suggest the best company to start with.</p>
+              <div className="space-y-3">
+                {SKILL_LEVELS.map((level) => (
+                  <button
+                    key={level.value}
+                    onClick={() => handleSkillSelect(level.value)}
+                    className="w-full text-left px-4 py-3 rounded-lg bg-card-bg border border-card-border hover:border-gold/50 hover:bg-gold/5 transition-colors cursor-pointer"
+                  >
+                    <p className="text-sm font-semibold text-foreground">{level.label}</p>
+                    <p className="text-xs text-foreground/50 mt-0.5">{level.description}</p>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setOnboardingOpen(false)}
+                className="mt-4 w-full text-xs text-foreground/30 hover:text-foreground/50 transition-colors cursor-pointer text-center"
+              >
+                Skip
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

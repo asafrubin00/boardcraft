@@ -662,6 +662,7 @@ function PlayPageInner() {
           onForcedDismissAndReplace={handleForcedDismissAndReplace}
           onForcedRetain={handleForcedRetain}
           showForcedModal={!!gameState.forcedChange && !replacementConfirmed.current}
+          onQuit={handleChangeCompany}
         />
         {gameState.pendingBoardNotification && (
           <div style={{

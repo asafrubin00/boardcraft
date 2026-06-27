@@ -40,6 +40,7 @@ interface GameBoardScreenProps {
   onForcedRetain?: () => void;
   /** Controls whether the forced change modal is visible (allows parent to suppress after confirm) */
   showForcedModal?: boolean;
+  onQuit?: () => void;
 }
 
 // Volume level indicator bars component
@@ -73,7 +74,9 @@ export default function GameBoardScreen({
   onForcedDismissAndReplace,
   onForcedRetain,
   showForcedModal = true,
+  onQuit,
 }: GameBoardScreenProps) {
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
   const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
   const [showDeployment, setShowDeployment] = useState(false);
@@ -349,6 +352,15 @@ export default function GameBoardScreen({
               {volumeLevel === 'muted' ? '🔇' : volumeLevel === 'quiet' ? '🔈' : volumeLevel === 'normal' ? '🔉' : '🔊'}
               <VolumeBars level={volumeLevel} />
             </button>
+            {onQuit && (
+              <button
+                onClick={() => setShowQuitConfirm(true)}
+                className="text-xs text-foreground/30 hover:text-foreground/60 transition-colors cursor-pointer"
+                title="Quit game"
+              >
+                Quit
+              </button>
+            )}
           </div>
         </div>
 
@@ -415,7 +427,7 @@ export default function GameBoardScreen({
           </div>
         </div>
 
-        {/* ── Desktop Right: Company name + volume ── */}
+        {/* ── Desktop Right: Company name + volume + quit ── */}
         <div className="hidden md:flex items-center gap-3 shrink-0">
           <span className="text-sm text-foreground/50">{gameState.company.name}</span>
           <button
@@ -426,6 +438,15 @@ export default function GameBoardScreen({
             {volumeLevel === 'muted' ? '🔇' : volumeLevel === 'quiet' ? '🔈' : volumeLevel === 'normal' ? '🔉' : '🔊'}
             <VolumeBars level={volumeLevel} />
           </button>
+          {onQuit && (
+            <button
+              onClick={() => setShowQuitConfirm(true)}
+              className="text-xs text-foreground/30 hover:text-foreground/60 transition-colors cursor-pointer ml-1"
+              title="Quit game"
+            >
+              Quit
+            </button>
+          )}
         </div>
 
       </header>
@@ -701,6 +722,32 @@ export default function GameBoardScreen({
 
       {/* Financial News Ticker */}
       <NewsTicker headlines={headlines} />
+
+      {/* Quit confirmation */}
+      {showQuitConfirm && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-navy border border-card-border rounded-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-lg font-narrative font-bold text-foreground mb-2">Quit game?</h3>
+            <p className="text-sm text-foreground/60 mb-6">
+              All progress will be lost. Closing the tab instead will save your progress so you can return later.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowQuitConfirm(false); onQuit?.(); }}
+                className="flex-1 py-2.5 rounded-lg bg-error/15 border border-error/40 hover:bg-error/25 transition-colors text-error font-semibold text-sm cursor-pointer"
+              >
+                Quit
+              </button>
+              <button
+                onClick={() => setShowQuitConfirm(false)}
+                className="flex-1 py-2.5 rounded-lg bg-card-bg border border-card-border hover:border-foreground/30 transition-colors text-foreground/70 font-semibold text-sm cursor-pointer"
+              >
+                Keep playing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
