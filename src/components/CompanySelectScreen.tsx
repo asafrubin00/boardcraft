@@ -219,10 +219,10 @@ function FocusPlayModal({ onClose }: { onClose: () => void }) {
 
 type SkillLevel = 'newcomer' | 'practitioner' | 'experienced';
 
-const SKILL_LEVELS: { value: SkillLevel; label: string; description: string; recommended: string }[] = [
-  { value: 'newcomer', label: 'Newcomer', description: 'New to board dynamics and governance', recommended: 'company_meridian' },
-  { value: 'practitioner', label: 'Practitioner', description: 'Some governance experience or background', recommended: 'company_harwick' },
-  { value: 'experienced', label: 'Experienced NED', description: 'Seasoned director or governance professional', recommended: 'company_vantage' },
+const SKILL_LEVELS: { value: SkillLevel; label: string; description: string; recommended: string[] }[] = [
+  { value: 'newcomer', label: 'Newcomer', description: 'New to board dynamics and governance', recommended: ['company_harwick'] },
+  { value: 'practitioner', label: 'Practitioner', description: 'Some governance experience or background', recommended: ['company_vantage'] },
+  { value: 'experienced', label: 'Experienced NED', description: 'Seasoned director or governance professional', recommended: ['company_rheinfeld', 'company_meridian'] },
 ];
 
 export default function CompanySelectScreen({ onSelectCompany }: CompanySelectScreenProps) {
@@ -231,6 +231,7 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
   const [focusModalOpen, setFocusModalOpen] = useState(false);
   const [skillLevel, setSkillLevel] = useState<SkillLevel | null>(null);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [jiggleKey, setJiggleKey] = useState(0);
 
   useEffect(() => {
     const saved = localStorage.getItem('boardcraft_skill_level') as SkillLevel | null;
@@ -243,6 +244,7 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
 
   function handleSkillSelect(level: SkillLevel) {
     setSkillLevel(level);
+    setJiggleKey((k) => k + 1);
     localStorage.setItem('boardcraft_skill_level', level);
     setOnboardingOpen(false);
   }
@@ -303,9 +305,10 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
         {/* Playable Company Tiles */}
         {companies.map((company) => {
           const isExpanded = selectedId === company.id;
+          const isRecommended = !!skillLevel && (SKILL_LEVELS.find((s) => s.value === skillLevel)?.recommended ?? []).includes(company.id);
           return (
             <motion.div
-              key={company.id}
+              key={isRecommended ? `${company.id}-${jiggleKey}` : company.id}
               layoutId={`company-tile-${company.id}`}
               onClick={() => setSelectedId(isExpanded ? null : company.id)}
               className={`relative rounded-xl border cursor-pointer transition-colors
@@ -314,7 +317,10 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
                   : 'bg-card-bg border-card-border hover:border-gold hover:bg-navy-light'
                 }
                 p-5`}
-              transition={{ layout: { duration: 0.4, type: 'spring', stiffness: 200, damping: 25 } }}
+              animate={isRecommended ? { x: [0, -6, 6, -4, 4, -2, 2, 0] } : { x: 0 }}
+              transition={isRecommended
+                ? { duration: 0.45, ease: 'easeInOut', delay: 0.1 }
+                : { layout: { duration: 0.4, type: 'spring', stiffness: 200, damping: 25 } }}
             >
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3">
@@ -372,7 +378,7 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
                   <span className={`text-xs ${difficultyColor(company.difficultyTier)}`}>
                     Difficulty: {difficultyLabel(company.difficultyTier)}
                   </span>
-                  {skillLevel && SKILL_LEVELS.find((s) => s.value === skillLevel)?.recommended === company.id && (
+                  {isRecommended && (
                     <span className="text-xs bg-gold/10 text-gold border border-gold/30 px-2 py-0.5 rounded font-semibold">
                       Recommended for you
                     </span>
