@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { companies } from '@/data/company';
 import SiteFooter from './SiteFooter';
@@ -229,16 +229,21 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [playMode, setPlayMode] = useState<'general' | 'focus'>('general');
   const [focusModalOpen, setFocusModalOpen] = useState(false);
-  const [skillLevel, setSkillLevel] = useState<SkillLevel | null>(() => {
-    try { return (localStorage.getItem('boardcraft_skill_level') as SkillLevel) || null; } catch { return null; }
-  });
-  const [onboardingOpen, setOnboardingOpen] = useState(() => {
-    try { return !localStorage.getItem('boardcraft_skill_level'); } catch { return false; }
-  });
+  const [skillLevel, setSkillLevel] = useState<SkillLevel | null>(null);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('boardcraft_skill_level') as SkillLevel | null;
+    if (saved) {
+      setSkillLevel(saved);
+    } else {
+      setOnboardingOpen(true);
+    }
+  }, []);
 
   function handleSkillSelect(level: SkillLevel) {
     setSkillLevel(level);
-    try { localStorage.setItem('boardcraft_skill_level', level); } catch {}
+    localStorage.setItem('boardcraft_skill_level', level);
     setOnboardingOpen(false);
   }
 
