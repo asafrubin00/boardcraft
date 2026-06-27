@@ -242,7 +242,6 @@ export default function AgmScreen({
   const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
   const [deployedIds, setDeployedIds] = useState<string[]>([]);
   const [revealedCount, setRevealedCount] = useState(0);
-  const [agmDebriefOpen, setAgmDebriefOpen] = useState<number | null>(null);
 
   // Play AGM bell + applause on mount
   useEffect(() => {
@@ -604,12 +603,12 @@ export default function AgmScreen({
                   <p className={`text-xs mt-2 font-narrative italic ${res.pass ? 'text-success/70' : 'text-error/70'}`}>
                     {res.explanation}
                   </p>
-                  <button
-                    onClick={() => setAgmDebriefOpen(idx + 1)}
-                    className="mt-2 text-xs text-gold/70 hover:text-gold underline cursor-pointer bg-transparent border-none"
-                  >
-                    The Debrief →
-                  </button>
+                  <div className="mt-3 pt-3 border-t border-card-border">
+                    <p className="text-xs text-foreground/40 uppercase tracking-widest mb-1.5">The Debrief</p>
+                    <p className="font-narrative italic text-foreground/70 text-sm leading-relaxed">
+                      {agmDebriefNarratives[idx]}
+                    </p>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -640,15 +639,6 @@ export default function AgmScreen({
         </AnimatePresence>
       <SiteFooter vertical className="fixed bottom-4 right-4 z-10" />
 
-        <AnimatePresence>
-          {agmDebriefOpen !== null && (
-            <AgmDebriefModal
-              narrative={agmDebriefNarratives[agmDebriefOpen - 1]}
-              label={resolutions[agmDebriefOpen - 1].label}
-              onClose={() => setAgmDebriefOpen(null)}
-            />
-          )}
-        </AnimatePresence>
     </div>
     );
   }
