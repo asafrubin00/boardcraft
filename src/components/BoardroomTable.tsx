@@ -68,6 +68,10 @@ const BASE_ROLE_TOOLTIPS: RoleTooltipMap = {
     description: 'Oversees safety management systems and environmental compliance.',
     requirements: ['ESG & Sustainability ≥ 70'],
   },
+  sustainabilityChair: {
+    description: 'Chairs the Sustainability Committee overseeing ESG reporting, climate risk, and sustainability governance.',
+    requirements: ['ESG & Sustainability ≥ 70'],
+  },
 };
 
 // Per-jurisdiction overrides for roles whose requirements differ from the UK defaults
@@ -233,9 +237,10 @@ export function deriveTablePositions(
 ): (string | null)[] {
   // Committee chairs live in opt-slots only — exclude from baseSeatCount so they
   // don't inflate the perimeter grid and create spurious empty seats.
-  const committeeChairRoles = new Set<string>(['csrdChair', 'strategyChair', 'energyTransitionChair']);
+  const committeeChairRoles = new Set<string>(['csrdChair', 'strategyChair', 'energyTransitionChair', 'sustainabilityChair']);
   const baseSeatCount = seats.filter(s => !committeeChairRoles.has(s.role)).length;
-  const optSlots = (hasEnergyTransition ? 1 : 0) + (hasCsrd ? 1 : 0) + (hasStrategy ? 1 : 0);
+  const hasSustainabilityChair = seats.some((s) => s.role === 'sustainabilityChair');
+  const optSlots = (hasEnergyTransition ? 1 : 0) + (hasCsrd ? 1 : 0) + (hasStrategy ? 1 : 0) + (hasSustainabilityChair ? 1 : 0);
 
   // All companies use square-perimeter grid layout.
   // Rheinfeld (forceGridLayout): min 10 slots so AuditChair (3) + RemChair (4) stay visible.
@@ -285,6 +290,7 @@ export function deriveTablePositions(
   if (hasEnergyTransition) roleToOptSlot['energyTransitionChair'] = optSlotIdx++;
   if (hasCsrd) roleToOptSlot['csrdChair'] = optSlotIdx++;
   if (hasStrategy) roleToOptSlot['strategyChair'] = optSlotIdx++;
+  if (hasSustainabilityChair) roleToOptSlot['sustainabilityChair'] = optSlotIdx++;
 
   for (const seat of seats) {
     const idx = roleToOptSlot[seat.role];
@@ -420,7 +426,7 @@ export default function BoardroomTable({
   // All companies use square-perimeter grid layout.
   // isRheinfeld: uses computeGridPositions (Worker Rep labels, min 10 slots).
   // Standard:    uses computeStandardGridPositions (SID/NomChair slots, min 9 slots).
-  const committeeChairRoleSet = new Set<string>(['csrdChair', 'strategyChair', 'energyTransitionChair']);
+  const committeeChairRoleSet = new Set<string>(['csrdChair', 'strategyChair', 'energyTransitionChair', 'sustainabilityChair']);
   const baseSeatCount = seats.filter(s => !committeeChairRoleSet.has(s.role)).length;
   const isRheinfeld = workerRepIds.length >= 5;
   const effectiveGridSize = isRheinfeld

@@ -89,6 +89,15 @@ export function initializeGameState(
       active: co.committees.some((c) => c.id === 'strategy' && c.status === 'active') || (optionalCommittees?.includes('strategy') ?? false),
       chairDirectorId: findChair('strategyChair'),
     },
+    // SFG-specific committees
+    risk: {
+      active: co.committees.some((c) => c.id === 'risk' && c.status === 'active'),
+      chairDirectorId: findChair('riskChair'),
+    },
+    sustainability: {
+      active: co.committees.some((c) => c.id === 'sustainability' && c.status === 'active') || (optionalCommittees?.includes('sustainability') ?? false),
+      chairDirectorId: findChair('sustainabilityChair'),
+    },
   };
 
   const totalBudget = co.boardBudget;
@@ -142,6 +151,10 @@ export function initializeGameState(
     founderSyndromeScore: co.id === 'company_meridian' ? 55 : 0,
     charityCommissionInquiryActive: false,
     solvencyRisk: false,
+    // SFG-specific fields (neutral defaults for non-SFG companies)
+    acChairVacant: co.id === 'company_sfg',
+    masLetterOpen: co.id === 'company_sfg',
+    ceoWhistleblower: co.id === 'company_sfg' ? 'pending' : null,
     pendingBoardNotification: null,
   };
 }
@@ -396,6 +409,50 @@ function checkEventCondition(event: GameEvent, state: GameState): boolean {
       );
       return state.governanceHealth < 50 && greenvaleActive;
     }
+
+    // ── SFG-specific preconditions ──
+    case 'sfg_helena_on_board': {
+      return state.board.seats.some((s) => s.directorId === 'sfgdir_02_soong');
+    }
+    case 'sfg_no_sustainability_committee': {
+      return !state.committees.sustainability?.active;
+    }
+    case 'sfg_temasek_concern_active': {
+      // Fires if Helena or Winston still have tenure issues, or BRC dual-role unresolved
+      const helenaOnBoard = state.board.seats.some((s) => s.directorId === 'sfgdir_02_soong');
+      const winstonOnBoard = state.board.seats.some((s) => s.directorId === 'sfgdir_03_goh');
+      const limOnBRC = state.committees.risk?.chairDirectorId === 'sfgdir_01_lim';
+      return helenaOnBoard || winstonOnBoard || limOnBRC;
+    }
+    case 'sfg_renewal_not_addressed': {
+      // Fires if no independence/tenure event was resolved with a positive outcome
+      const ev02 = state.resolvedEvents.find((r) => r.eventId === 'sfgevent_02');
+      if (!ev02) return true;
+      return ev02.outcomeTier === 'FAILURE' || ev02.outcomeTier === 'CRITICAL_FAILURE';
+    }
+    case 'sfg_ceo_whistleblower_substantiated': {
+      return state.ceoWhistleblower === 'substantiated';
+    }
+    case 'sfg_governance_weak_sv_low': {
+      return state.governanceHealth < 55 && state.svIndex < 90;
+    }
+    case 'sfg_enforcement_precondition': {
+      // Fires if BRC event (SFG-05) failed OR CEO conduct event (SFG-10) was critically mishandled
+      const brcFailed = state.resolvedEvents.some(
+        (r) => r.eventId === 'sfgevent_05' && (r.outcomeTier === 'FAILURE' || r.outcomeTier === 'CRITICAL_FAILURE')
+      );
+      const ceoMishandled = state.resolvedEvents.some(
+        (r) => r.eventId === 'sfgevent_10' && (r.outcomeTier === 'FAILURE' || r.outcomeTier === 'CRITICAL_FAILURE')
+      );
+      return brcFailed || ceoMishandled;
+    }
+    case 'sfg_lim_chair_unresolved': {
+      return (
+        state.board.seats.some((s) => s.directorId === 'sfgdir_01_lim' && s.role === 'chair') &&
+        state.committees.risk?.chairDirectorId === 'sfgdir_01_lim'
+      );
+    }
+
     default:
       return true;
   }

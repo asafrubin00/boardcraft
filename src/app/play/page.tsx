@@ -29,6 +29,7 @@ import type { BoardRole as _DevBoardRole } from '@/types/game';
 import { harwickEnergy } from '@/data/company';
 import { vantageConsumer } from '@/data/vantage/company';
 import { rheinfeldAG } from '@/data/rheinfeld/company';
+import { straitsFinancialGroup } from '@/data/sfg/company';
 import { rheinfeldDirectors } from '@/data/rheinfeld/directors';
 import {
   checkHealthCrisis,
@@ -75,6 +76,17 @@ const DEV_BOARD_RHEINFELD: { id: string; role: _DevBoardRole }[] = [
   { id: 'rdir_w_gruber', role: 'ned' },
   { id: 'rdir_01_lehrmann', role: 'remChair' },
   { id: 'rdir_02_fleischer', role: 'ned' },
+];
+
+// SFG dev board: Helena Soong (10yr) still seated — triggers two-tier AGM vote
+const DEV_BOARD_SFG: { id: string; role: _DevBoardRole }[] = [
+  { id: 'sfgdir_01_lim', role: 'chair' },
+  { id: 'sfgdir_02_soong', role: 'sid' },       // 10yr tenure → triggers two-tier vote
+  { id: 'sfgdir_08_tan_margaret', role: 'auditChair' },
+  { id: 'sfgdir_07_anwar', role: 'riskChair' },
+  { id: 'sfgdir_03_goh', role: 'remChair' },
+  { id: 'sfgdir_04_rahman', role: 'nomChair' },
+  { id: 'sfgdir_05_png', role: 'ned' },
 ];
 
 function buildDevBoard(board: { id: string; role: _DevBoardRole }[]): BoardSeat[] {
@@ -141,15 +153,20 @@ function PlayPageInner() {
     const devKey = devParam === 'true' ? 'q1' : devParam.toLowerCase();
     const validKeys = ['q1', 'q2', 'q3', 'q4', 'agm', 'yearend',
       'vantage-q1', 'vantage-q2', 'vantage-q3', 'vantage-q4', 'vantage-agm', 'vantage-yearend',
-      'rheinfeld-q1', 'rheinfeld-q2', 'rheinfeld-q3', 'rheinfeld-q4', 'rheinfeld-agm', 'rheinfeld-yearend'];
+      'rheinfeld-q1', 'rheinfeld-q2', 'rheinfeld-q3', 'rheinfeld-q4', 'rheinfeld-agm', 'rheinfeld-yearend',
+      'sfg-q1', 'sfg-q2', 'sfg-q3', 'sfg-q4', 'sfg-agm', 'sfg-yearend'];
     if (!validKeys.includes(devKey)) return;
 
     setDevBooted(true);
     const isVantage = devKey.startsWith('vantage-');
     const isRheinfeld = devKey.startsWith('rheinfeld-');
-    const phaseKey = isVantage ? devKey.replace('vantage-', '') : isRheinfeld ? devKey.replace('rheinfeld-', '') : devKey;
-    const devCompany = isVantage ? vantageConsumer : isRheinfeld ? rheinfeldAG : harwickEnergy;
-    const seats = buildDevBoard(isVantage ? DEV_BOARD_VANTAGE : isRheinfeld ? DEV_BOARD_RHEINFELD : DEV_BOARD_HARWICK);
+    const isSfgDev = devKey.startsWith('sfg-');
+    const phaseKey = isVantage ? devKey.replace('vantage-', '')
+      : isRheinfeld ? devKey.replace('rheinfeld-', '')
+      : isSfgDev ? devKey.replace('sfg-', '')
+      : devKey;
+    const devCompany = isVantage ? vantageConsumer : isRheinfeld ? rheinfeldAG : isSfgDev ? straitsFinancialGroup : harwickEnergy;
+    const seats = buildDevBoard(isVantage ? DEV_BOARD_VANTAGE : isRheinfeld ? DEV_BOARD_RHEINFELD : isSfgDev ? DEV_BOARD_SFG : DEV_BOARD_HARWICK);
     setSelectedCompany(devCompany);
     const state = initializeGameState(seats, false, devCompany);
 
@@ -374,6 +391,22 @@ function PlayPageInner() {
         }
       }
 
+      // ── sfgevent_04: CEO whistleblower — set investigation outcome flag ──
+      if (currentEvent.id === 'sfgevent_04') {
+        const isSuccess =
+          output.outcomeTier === 'SUCCESS' || output.outcomeTier === 'CRITICAL_SUCCESS';
+        const chosenStrategyId = strategyChoice;
+        // Strategies A and B = commission independent investigation → substantiated track
+        // Strategies C and D = internal handling / silence → cleared (suppressed)
+        const isInvestigationCommissioned =
+          chosenStrategyId === 'sfgevent_04_a' || chosenStrategyId === 'sfgevent_04_b';
+        if (isSuccess && isInvestigationCommissioned) {
+          newState.ceoWhistleblower = 'substantiated';
+        } else {
+          newState.ceoWhistleblower = 'cleared';
+        }
+      }
+
       // ── revent_12 CRITICAL_SUCCESS: Meridian Capital wins one supervisory board seat ──
       if (currentEvent.id === 'revent_12' && output.outcomeTier === 'CRITICAL_SUCCESS') {
         // Idempotency guard — Reuter should never be added twice
@@ -521,7 +554,39 @@ function PlayPageInner() {
         output.outcomeTier === 'CRITICAL_SUCCESS';
       const isPartial = output.outcomeTier === 'PARTIAL_SUCCESS';
 
-      const resolution1Pass = isSuccess || isPartial;
+      // ── SFG two-tier vote for Res1 ──
+      let resolution1Pass: boolean;
+      if (newState.company.id === 'company_sfg') {
+        const sfgLongTenure = newState.board.seats
+          .map((s) => newState.directors.find((d) => d.id === s.directorId))
+          .filter((d) => d !== undefined && (d.tenure ?? 0) > 9);
+        if (sfgLongTenure.length === 0) {
+          // No contested re-elections — standard vote
+          resolution1Pass = isSuccess || isPartial;
+        } else {
+          // Renewal roadmap: strategy A = roadmap disclosed → Glass Lewis Asia "for"
+          const glAssLewisFor = strategyChoice === 'sfgevent_13_a';
+          const tenurePenalty = sfgLongTenure.length * -6;
+          const baseVoteFor = 50 + (newState.governanceHealth - 50) * 0.3;
+          const tier1For = Math.max(5, Math.min(95, baseVoteFor + tenurePenalty));
+          const tier1Pass = tier1For > 50;
+          const glPenalty = glAssLewisFor ? 0 : -18;
+          const tier2For = Math.max(5, Math.min(95, baseVoteFor + tenurePenalty + glPenalty - 10));
+          const tier2Pass = tier2For > 50;
+          resolution1Pass = tier1Pass && tier2Pass;
+          // Force the long-tenured directors off the board if the two-tier vote fails
+          if (!resolution1Pass) {
+            for (const dir of sfgLongTenure) {
+              if (dir && newState.board.seats.some((s) => s.directorId === dir.id)) {
+                Object.assign(newState, applyForcedRemoval(newState, dir.id));
+              }
+            }
+          }
+        }
+      } else {
+        resolution1Pass = isSuccess || isPartial;
+      }
+
       const resolution2Pass = isSuccess;
       // Resolution 3 on partial outcomes hinges on the company-specific lever:
       // Harwick/default — ET committee demonstrates ESG credibility
@@ -961,6 +1026,14 @@ function BoardConstructionWrapper({
       strategy: {
         active: company.committees.some((c) => c.id === 'strategy' && c.status === 'active') || hasStrategy,
         chairDirectorId: fc('strategyChair'),
+      },
+      risk: {
+        active: company.committees.some((c) => c.id === 'risk' && c.status === 'active'),
+        chairDirectorId: fc('riskChair'),
+      },
+      sustainability: {
+        active: company.committees.some((c) => c.id === 'sustainability' && c.status === 'active'),
+        chairDirectorId: fc('sustainabilityChair'),
       },
     };
   }, [seats, hasEnergyTransition, hasSafetyEnv, hasCsrd, hasStrategy, company]);

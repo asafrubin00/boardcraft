@@ -19,6 +19,8 @@ const ROLE_PREMIUMS: Partial<Record<BoardRole, number>> = {
   energyTransitionChair: 0.20,
   csrdChair: 0.20,
   strategyChair: 0.20,
+  riskChair: 0.25,          // BRC Chair carries significant MAS accountability premium
+  sustainabilityChair: 0.20,
 };
 
 export function computeFeeWithPremium(baseFee: number, role: BoardRole): number {
@@ -44,6 +46,8 @@ export function checkCompliance(
     errors = checkComplianceUS(seats, directors, committees, combinedChairCeo);
   } else if (jurisdiction === 'EU') {
     errors = checkComplianceEU(seats, directors, committees);
+  } else if (jurisdiction === 'SG') {
+    errors = checkComplianceSG(seats, directors, committees);
   } else {
     errors = checkComplianceUK(seats, directors, committees);
   }
@@ -578,6 +582,151 @@ function checkComplianceUS(
 }
 
 // ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// MAS / SGX Code of Corporate Governance rules (Straits Financial Group)
+// ══════════════════════════════════════════════════════════════
+
+function checkComplianceSG(
+  seats: BoardSeat[],
+  directors: Director[],
+  committees: Record<CommitteeId, CommitteeState>,
+): ComplianceError[] {
+  const errors: ComplianceError[] = [];
+  const dirById = new Map(directors.map((d) => [d.id, d]));
+  const seatedIds = seats.map((s) => s.directorId);
+  const seatedDirectors = seatedIds.map((id) => dirById.get(id)).filter(Boolean) as Director[];
+
+  const chair = seats.find((s) => s.role === 'chair');
+  const chairDir = chair ? dirById.get(chair.directorId) : undefined;
+  const hasSid = seats.some((s) => s.role === 'sid');
+
+  // Board size: MAS expects minimum 5 directors for financial institutions
+  if (seats.length < 5) {
+    errors.push({
+      code: 'SG-MAS-001',
+      message: 'MAS expects a minimum of 5 directors on the board of a financial institution.',
+      severity: 'error',
+      source: 'code',
+    });
+  }
+
+  // Independent director majority: SGX Code
+  const independentCount = seatedDirectors.filter((d) => d.independence === 'independent').length;
+  if (independentCount < Math.ceil(seats.length / 2)) {
+    errors.push({
+      code: 'SG-SGX-001',
+      message: 'SGX Code requires a majority of board members to be independent directors.',
+      severity: 'error',
+      source: 'code',
+    });
+  }
+
+  // 9-year independence cap: SGX — hard cap, not comply-or-explain
+  for (const d of seatedDirectors) {
+    const tenure = d.tenureYears ?? d.tenure;
+    if (tenure >= 9 && d.independence === 'independent') {
+      errors.push({
+        code: 'SG-SGX-002',
+        message: `${d.name} has served ${tenure} years — at or exceeding the SGX 9-year independence cap. Re-election as independent requires a two-tier shareholder resolution.`,
+        severity: tenure > 9 ? 'error' : 'warning',
+        source: 'code',
+      });
+    }
+  }
+
+  // Chair independence: SGX recommends Chair be independent; if non-independent, SID required
+  if (chairDir && chairDir.independence !== 'independent' && !hasSid) {
+    errors.push({
+      code: 'SG-SGX-003',
+      message: "The Board Chair is non-independent. SGX Code requires a Senior Independent Director (SID) to be appointed when the Chair is not independent.",
+      severity: 'error',
+      source: 'code',
+    });
+  }
+
+  // Audit Committee: min 3 members all independent, Chair must have financial expertise (SGX/MAS)
+  const auditChairId = committees.audit?.chairDirectorId;
+  if (!auditChairId) {
+    errors.push({
+      code: 'SG-MAS-002',
+      message: 'Audit Committee Chair is vacant — a compliance breach under MAS Guidelines for Financial Institutions. MAS expects immediate resolution.',
+      severity: 'error',
+      source: 'code',
+    });
+  } else {
+    const acChairDir = dirById.get(auditChairId);
+    if (acChairDir && (acChairDir.domainRatings.financialOversight ?? 0) < 70) {
+      errors.push({
+        code: 'SG-MAS-LOW_AC_EXPERTISE',
+        message: 'AC Chair should have strong financial expertise (Financial Oversight ≥ 70) per MAS guidelines for financial institutions.',
+        severity: 'warning',
+        source: 'game',
+      });
+    }
+    if (acChairDir && acChairDir.independence !== 'independent') {
+      errors.push({
+        code: 'SG-SGX-004',
+        message: 'Audit Committee Chair must be independent under SGX Listing Rules.',
+        severity: 'error',
+        source: 'code',
+      });
+    }
+  }
+
+  // Board Risk Committee: mandatory for banks (MAS). Chair must not also be Board Chair.
+  const brcChairId = committees.risk?.chairDirectorId;
+  if (!committees.risk?.active) {
+    errors.push({
+      code: 'SG-MAS-003',
+      message: 'A Board Risk Committee is mandatory for financial institutions under MAS guidelines.',
+      severity: 'error',
+      source: 'code',
+    });
+  } else if (brcChairId && chair && brcChairId === chair.directorId) {
+    errors.push({
+      code: 'SG-MAS-004',
+      message: 'The Board Chair also chairs the Board Risk Committee — a dual role explicitly flagged by MAS as non-compliant for financial institutions.',
+      severity: 'error',
+      source: 'code',
+    });
+  }
+
+  // Nominating Committee: min 3 members, majority independent
+  if (!seats.some((s) => s.role === 'nomChair')) {
+    errors.push({
+      code: 'SG-SGX-005',
+      message: 'A Nominating Committee Chair must be designated (SGX Code — mandatory committee).',
+      severity: 'error',
+      source: 'code',
+    });
+  }
+
+  // Remuneration Committee: min 3 members, majority independent
+  if (!committees.remuneration?.chairDirectorId) {
+    errors.push({
+      code: 'SG-SGX-006',
+      message: 'A Remuneration Committee Chair must be designated (SGX Code — mandatory committee).',
+      severity: 'error',
+      source: 'code',
+    });
+  }
+
+  // Skill coverage: SGD financial markets expertise
+  const hasBankingExpertise = seatedDirectors.some(
+    (d) => (d.domainRatings.financialOversight ?? 0) >= 75
+  );
+  if (!hasBankingExpertise) {
+    errors.push({
+      code: 'SG-MAS-LOW_BANKING',
+      message: 'No director on the board has sufficient Financial Oversight expertise (≥ 75) for a financial institution of this scale.',
+      severity: 'warning',
+      source: 'game',
+    });
+  }
+
+  return errors;
+}
+
 // UK Charity Commission / Charity Governance Code rules (Meridian Foundation)
 // ══════════════════════════════════════════════════════════════
 

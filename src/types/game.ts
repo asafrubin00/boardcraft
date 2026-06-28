@@ -12,7 +12,7 @@ export type CompetencyDomain =
   | 'technologyDigital'
   | 'stakeholderComms';
 
-export type Jurisdiction = 'UK' | 'US' | 'EU' | 'AU' | 'Valdoria';
+export type Jurisdiction = 'UK' | 'US' | 'EU' | 'AU' | 'Valdoria' | 'SG';
 
 export type AvailabilityTier = 'A' | 'B' | 'C';
 
@@ -31,6 +31,7 @@ export type BoardRole =
   | 'energyTransitionChair'
   | 'csrdChair'
   | 'strategyChair'
+  | 'sustainabilityChair'
   | 'ned';
 
 export type MarketCapTier = 'nano_small' | 'mid' | 'large' | 'mega';
@@ -55,7 +56,9 @@ export type CommitteeId =
   | 'safetyEnvironment'
   | 'energyTransition'
   | 'csrd'
-  | 'strategy';
+  | 'strategy'
+  | 'risk'
+  | 'sustainability';
 
 // ── Domain Ratings ──
 
@@ -429,6 +432,12 @@ export interface GameState {
   charityCommissionInquiryActive: boolean;
   /** Meridian Foundation-specific: whether the organisation faces a formal solvency concern */
   solvencyRisk: boolean;
+  /** SFG-specific: whether the Audit Committee Chair seat is vacant (compliance breach) */
+  acChairVacant: boolean;
+  /** SFG-specific: whether the MAS supervisory letter is still open (-10% BRC events until resolved) */
+  masLetterOpen: boolean;
+  /** SFG-specific: CEO whistleblower investigation chain (SFG-04 → SFG-10) */
+  ceoWhistleblower: 'pending' | 'substantiated' | 'cleared' | null;
   /** Transient notification from an event consequence (e.g. involuntary board removals).
    *  Shown as a dismissible banner; cleared when player acknowledges. */
   pendingBoardNotification?: string | null;

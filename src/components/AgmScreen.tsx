@@ -172,6 +172,35 @@ const STRATEGIES_RHEINFELD = [
   },
 ];
 
+// ── Straits Financial Group AGM strategies ────────────────────────────────────
+
+const STRATEGIES_SFG = [
+  {
+    id: 'sfgevent_13_a',
+    label: 'Disclose board renewal roadmap; seek Glass Lewis Asia support',
+    description:
+      'Publish a formal multi-year board renewal schedule addressing SGX tenure independence rules. Glass Lewis Asia upgrades to "for" recommendation — critical for Tier 2 minority vote.',
+  },
+  {
+    id: 'sfgevent_13_b',
+    label: 'Engage Temasek directly; rely on Tier 1 majority',
+    description:
+      'Hold private dialogue with Temasek to secure their 34% for Tier 1. Without Glass Lewis Asia support, Tier 2 minority vote is exposed.',
+  },
+  {
+    id: 'sfgevent_13_c',
+    label: 'Let contested directors stand down before AGM',
+    description:
+      'Voluntarily remove directors with >9yr tenure from the re-election slate. Avoids the two-tier vote risk entirely but accelerates board composition change.',
+  },
+  {
+    id: 'sfgevent_13_d',
+    label: 'Do nothing — contest the independence interpretation',
+    description:
+      'Argue the independence assessment is a matter for the NC, not shareholder vote. High risk: Glass Lewis Asia "against" recommendation. Likely Tier 2 failure.',
+  },
+];
+
 // ── Shared components ──────────────────────────────────────────────────────────
 
 function VoteBar({ forPercent, againstPercent }: { forPercent: number; againstPercent: number }) {
@@ -194,6 +223,46 @@ function VoteBar({ forPercent, againstPercent }: { forPercent: number; againstPe
           animate={{ width: `${againstPercent}%` }}
           transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
         />
+      </div>
+    </div>
+  );
+}
+
+function TwoTierVoteDisplay({
+  tier1For, tier1Against,
+  tier2For, tier2Against,
+  tier1Pass, tier2Pass,
+}: {
+  tier1For: number; tier1Against: number;
+  tier2For: number; tier2Against: number;
+  tier1Pass: boolean; tier2Pass: boolean;
+}) {
+  const bothPass = tier1Pass && tier2Pass;
+  return (
+    <div className="mt-3 space-y-3">
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[11px] text-foreground/60 uppercase tracking-wide">Tier 1 — All Shareholders</span>
+          <span className={`text-[11px] font-bold ${tier1Pass ? 'text-success' : 'text-error'}`}>
+            {tier1Pass ? 'PASSED' : 'FAILED'}
+          </span>
+        </div>
+        <VoteBar forPercent={tier1For} againstPercent={tier1Against} />
+      </div>
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[11px] text-foreground/60 uppercase tracking-wide">Tier 2 — Minority Shareholders</span>
+          <span className={`text-[11px] font-bold ${tier2Pass ? 'text-success' : 'text-error'}`}>
+            {tier2Pass ? 'PASSED' : 'FAILED'}
+          </span>
+        </div>
+        <p className="text-[10px] text-foreground/40 mb-1">Temasek (34%) excluded from denominator</p>
+        <VoteBar forPercent={tier2For} againstPercent={tier2Against} />
+      </div>
+      <div className={`rounded px-3 py-1.5 text-[11px] font-semibold text-center ${
+        bothPass ? 'bg-success/15 text-success border border-success/30' : 'bg-error/15 text-error border border-error/30'
+      }`}>
+        {bothPass ? 'Resolution passes — both tiers approved' : 'Resolution fails — both tiers must pass under SGX two-tier rules'}
       </div>
     </div>
   );
@@ -236,6 +305,7 @@ export default function AgmScreen({
   const isMeridian = gameState.company.id === 'company_meridian';
   const isVantage = gameState.company.id === 'company_vantage';
   const isRheinfeld = gameState.company.id === 'company_rheinfeld';
+  const isSfg = gameState.company.id === 'company_sfg';
   const meetingName = isMeridian ? 'Annual Members Meeting' : isRheinfeld ? 'Hauptversammlung' : 'AGM';
   const meetingNameShort = isMeridian ? 'AMM' : isRheinfeld ? 'HV' : 'AGM';
 
@@ -283,7 +353,9 @@ export default function AgmScreen({
       ? STRATEGIES_VANTAGE
       : isRheinfeld
         ? STRATEGIES_RHEINFELD
-        : craneOnBoard ? STRATEGIES_WITH_CRANE : STRATEGIES_WITHOUT_CRANE;
+        : isSfg
+          ? STRATEGIES_SFG
+          : craneOnBoard ? STRATEGIES_WITH_CRANE : STRATEGIES_WITHOUT_CRANE;
 
   const baseVotes = estimateAgmVotes(gameState);
   const proxyRating = getProxyAdviserRating(gameState.governanceHealth);
@@ -350,6 +422,53 @@ export default function AgmScreen({
     ? 15
     : gameState.meridianStatus === 'escalating' ? 10 : 4;
 
+  // ── SFG two-tier vote calculations ────────────────────────────────────────
+  // Directors with >9yr tenure on the SFG board must stand for re-election
+  // under the SGX two-tier vote rule (Tier 1 = all; Tier 2 = minority only)
+  const sfgLongTenureDirectors = isSfg
+    ? gameState.board.seats
+        .map((s) => gameState.directors.find((d) => d.id === s.directorId))
+        .filter((d): d is Director => d !== undefined && (d.tenure ?? 0) > 9)
+    : [];
+  const sfgHasTwoTierVote = sfgLongTenureDirectors.length > 0;
+
+  // Glass Lewis Asia recommends "against" by default unless a renewal roadmap was disclosed
+  // sfgevent_13_a strategy = renewal roadmap disclosed → GL upgrades to "for"
+  const sfgRenewalRoadmapDisclosed = gameState.resolvedEvents.some(
+    (r) => r.eventId === 'sfgevent_13' && r.strategyChosen === 'sfgevent_13_a'
+  );
+  const sfgGlassLewisFor = sfgRenewalRoadmapDisclosed;
+
+  // Tenure penalty: each director >9yr on the re-election slate costs votes
+  const sfgTenurePenalty = sfgLongTenureDirectors.length * -6;
+
+  // Tier 1: all shareholders including Temasek's 34%
+  // Base votes, adjusted by tenure penalty and strategy
+  const sfgRes1Tier1For = Math.max(5, Math.min(95, baseVotes.forPercent + sfgTenurePenalty));
+  const sfgRes1Tier1Against = 100 - sfgRes1Tier1For;
+  const sfgTier1Pass = sfgRes1Tier1For > 50;
+
+  // Tier 2: minority shareholders only — Temasek (34%) excluded from denominator
+  // Temasek's 34% stake voted "for" (they support management slate) is removed,
+  // so the remaining vote split shifts. Minority votes are ~66% of total.
+  // If GL Asia recommends "against", minority institutional weight swings against.
+  const sfgGlPenalty = sfgGlassLewisFor ? 0 : -18;
+  const sfgRes1Tier2For = Math.max(5, Math.min(95, baseVotes.forPercent + sfgTenurePenalty + sfgGlPenalty - 10));
+  const sfgRes1Tier2Against = 100 - sfgRes1Tier2For;
+  const sfgTier2Pass = sfgRes1Tier2For > 50;
+  const sfgRes1Pass = sfgTier1Pass && sfgTier2Pass;
+
+  // SFG Res2: MAS/SGX compliance — AC vacancy resolved; penalised if acChairVacant still open
+  const sfgRes2Adj = gameState.acChairVacant ? -15 : 8;
+  // SFG Res3: Executive remuneration — ceoWhistleblower outcome affects vote
+  const sfgRes3Adj = gameState.ceoWhistleblower === 'substantiated' ? -12
+    : gameState.ceoWhistleblower === 'cleared' ? 4 : 0;
+
+  const sfgRes2For = Math.max(5, Math.min(95, baseVotes.forPercent + sfgRes2Adj));
+  const sfgRes2Against = 100 - sfgRes2For;
+  const sfgRes3For = Math.max(5, Math.min(95, baseVotes.forPercent + sfgRes3Adj));
+  const sfgRes3Against = 100 - sfgRes3For;
+
   // ── Vote bar percentages ───────────────────────────────────────────────────
   const res1Adj = isMeridian ? mRes1Adjustment : isVantage ? vRes1Adjustment : isRheinfeld ? rRes1Adjustment : res1TenurePenalty;
   const res2Adj = isMeridian ? mRes2Adjustment : isVantage ? vRes2Adjustment : isRheinfeld ? rRes2Adjustment : res2Adjustment;
@@ -363,6 +482,148 @@ export default function AgmScreen({
 
   const res3For = Math.max(5, Math.min(95, baseVotes.forPercent + res3Adj));
   const res3Against = 100 - res3For;
+
+  // ── Resolution panels (pre-vote) — computed outside JSX to avoid Turbopack ternary depth issue
+  let resolutionPanels: React.ReactNode = null;
+  if (isMeridian) {
+    resolutionPanels = (
+      <>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 1: Trustee Appointment Ratification</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">Members vote to ratify the trustee appointments made during the year. Standard constitutional requirement for a CIO with a supporter membership structure.</p>
+          <VoteBar forPercent={res1For} againstPercent={res1Against} />
+        </motion.div>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 2: Beneficiary Accountability Audit</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">A coalition of major donors has tabled a motion requesting an independent audit of beneficiary outcomes and programme impact methodology.</p>
+          <VoteBar forPercent={res2For} againstPercent={res2Against} />
+        </motion.div>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 3: Mission Alignment Review</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">Members propose a formal independent review of whether Meridian&apos;s current programme portfolio remains consistent with its charitable objects.</p>
+          <VoteBar forPercent={res3For} againstPercent={res3Against} />
+        </motion.div>
+      </>
+    );
+  } else if (isVantage) {
+    resolutionPanels = (
+      <>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 1: Director Elections</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+            {gameState.apexActive ? 'The full slate stands for election. Apex Capital is running a withhold campaign against three incumbents.' : 'The full slate stands for election. With Apex Capital neutralised, no organised opposition remains.'}
+          </p>
+          <VoteBar forPercent={res1For} againstPercent={res1Against} />
+        </motion.div>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 2: Say-on-Pay (Advisory)</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">Sandra Okafor&apos;s $14.2m package faces the advisory vote carrying ISS&apos;s red flag.</p>
+          <VoteBar forPercent={res2For} againstPercent={res2Against} />
+        </motion.div>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 3: Independent Board Chair (Shareholder Proposal)</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+            {gameState.chairCeoSeparationProgress >= 50 ? 'The board has already begun separating the roles. Shareholders are voting to make this binding.' : 'Institutional shareholders are pushing for a mandatory separation of Chair and CEO roles.'}
+          </p>
+          <VoteBar forPercent={res3For} againstPercent={res3Against} />
+        </motion.div>
+      </>
+    );
+  } else if (isRheinfeld) {
+    resolutionPanels = (
+      <>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 1: Discharge of the Supervisory Board (Entlastung)</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">Shareholders vote to formally ratify the Supervisory Board&apos;s conduct for the financial year — the broadest governance vote in German corporate law.</p>
+          <VoteBar forPercent={res1For} againstPercent={res1Against} />
+        </motion.div>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 2: Remuneration System Approval (ARUG II)</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">Under Germany&apos;s ARUG II, the remuneration system must be put to a shareholder vote every four years and after any material change.</p>
+          <VoteBar forPercent={res2For} againstPercent={res2Against} />
+        </motion.div>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 3: Meridian Capital&apos;s Independent Strategic Review</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">Meridian Capital has tabled a binding resolution calling for an independent review of Rheinfeld&apos;s strategic direction and capital allocation.</p>
+          <VoteBar forPercent={res3For} againstPercent={res3Against} />
+        </motion.div>
+      </>
+    );
+  } else if (isSfg) {
+    resolutionPanels = (
+      <>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
+            Resolution 1: Director Re-Elections{sfgHasTwoTierVote ? ' (Two-Tier Vote)' : ''}
+          </h3>
+          {sfgHasTwoTierVote ? (
+            <>
+              <p className="text-foreground/70 text-sm leading-relaxed mb-2">
+                {sfgLongTenureDirectors.map((d) => d.name).join(', ')} {sfgLongTenureDirectors.length === 1 ? 'has' : 'have'} served more than 9 years — the SGX hard cap. Their re-election requires both tiers to pass.
+              </p>
+              <div className="text-xs text-foreground/50 mb-1">
+                Glass Lewis Asia: <span className={sfgGlassLewisFor ? 'text-success font-semibold' : 'text-error font-semibold'}>
+                  {sfgGlassLewisFor ? 'FOR (renewal roadmap disclosed)' : 'AGAINST (no renewal roadmap)'}
+                </span>
+              </div>
+              <p className="text-[11px] text-foreground/40 mb-3">Temasek (34%) included in Tier 1 · excluded from Tier 2 denominator</p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-[11px] text-foreground/60 uppercase tracking-wide mb-1">Tier 1 — All Shareholders</p>
+                  <VoteBar forPercent={sfgRes1Tier1For} againstPercent={sfgRes1Tier1Against} />
+                </div>
+                <div>
+                  <p className="text-[11px] text-foreground/60 uppercase tracking-wide mb-1">Tier 2 — Minority Shareholders Only</p>
+                  <VoteBar forPercent={sfgRes1Tier2For} againstPercent={sfgRes1Tier2Against} />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-foreground/70 text-sm leading-relaxed mb-3">All directors are within the SGX 9-year independence limit. Standard shareholder vote applies.</p>
+              <VoteBar forPercent={sfgRes1Tier1For} againstPercent={sfgRes1Tier1Against} />
+            </>
+          )}
+        </motion.div>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 2: MAS Compliance &amp; Governance Disclosures</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+            Shareholders vote to receive MAS-mandated governance disclosures, including AC composition and BRC adequacy.
+            {gameState.acChairVacant ? ' The outstanding AC Chair vacancy is a material item.' : ''}
+          </p>
+          <VoteBar forPercent={sfgRes2For} againstPercent={sfgRes2Against} />
+        </motion.div>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 3: Executive Remuneration (Say-on-Pay)</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">
+            Advisory vote on the CEO remuneration framework.
+            {gameState.ceoWhistleblower === 'substantiated' ? ' The CEO conduct investigation has raised shareholder concern about the LTIP structure.' : ''}
+          </p>
+          <VoteBar forPercent={sfgRes3For} againstPercent={sfgRes3Against} />
+        </motion.div>
+      </>
+    );
+  } else {
+    resolutionPanels = (
+      <>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 1: Director Re-Elections</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">{craneOnBoard ? 'Greenvale Partners has called for shareholders to vote against Geoffrey Crane\'s re-election, citing his 12-year board tenure.' : 'Director re-elections. No long-tenure flags have been raised by proxy advisers.'}</p>
+          <VoteBar forPercent={res1For} againstPercent={res1Against} />
+        </motion.div>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 2: Say-on-Pay (Advisory)</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">Marcus Blaine&apos;s &pound;4.1m package will face a shareholder advisory vote.</p>
+          <VoteBar forPercent={res2For} againstPercent={res2Against} />
+        </motion.div>
+        <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }}>
+          <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 3: Shareholder Resolution on ESG Disclosure</h3>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-3">A coalition of institutional shareholders has tabled a binding resolution on net-zero disclosure.</p>
+          <VoteBar forPercent={res3For} againstPercent={res3Against} />
+        </motion.div>
+      </>
+    );
+  }
 
   // ── Directors on board for deployment ─────────────────────────────────────
   const boardDirectors: Director[] = gameState.board.seats
@@ -485,6 +746,48 @@ export default function AgmScreen({
         res3Explanation = `Failed — the review was defeated; Meridian's analysts left the hall already drafting the EGM requisition.`;
       }
 
+    } else if (isSfg) {
+      // ── SFG result labels (two-tier for Res1 if applicable) ───────────────
+      res1Label = sfgHasTwoTierVote
+        ? 'Resolution 1: Director Re-Elections (Two-Tier Vote)'
+        : 'Resolution 1: Director Re-Elections';
+      res2Label = 'Resolution 2: MAS Compliance & Governance Disclosures';
+      res3Label = 'Resolution 3: Executive Remuneration (Say-on-Pay)';
+
+      if (results.resolution1Pass) {
+        res1Explanation = sfgHasTwoTierVote
+          ? sfgRenewalRoadmapDisclosed
+            ? `Passed — the renewal roadmap secured Glass Lewis Asia's support, carrying the minority Tier 2 vote.`
+            : `Passed — both tiers approved the re-election despite Glass Lewis Asia's concerns.`
+          : `Passed — the director slate was re-elected with ${ghLevel} governance health and no SGX tenure concerns.`;
+      } else {
+        res1Explanation = sfgHasTwoTierVote
+          ? !sfgTier2Pass
+            ? `Failed — the Tier 2 minority vote fell below 50%; without Glass Lewis Asia's support, minority shareholders rejected the re-election. The director(s) must stand down.`
+            : `Failed — the Tier 1 all-shareholder vote failed to carry the re-election.`
+          : `Failed — ${ghLevel} governance health undermined institutional confidence in the director slate.`;
+      }
+
+      if (results.resolution2Pass) {
+        res2Explanation = gameState.acChairVacant
+          ? `Passed — despite the outstanding AC Chair vacancy, shareholders accepted the MAS compliance disclosures.`
+          : `Passed — with the AC Chair vacancy resolved, shareholders endorsed the governance disclosure package.`;
+      } else {
+        res2Explanation = gameState.acChairVacant
+          ? `Failed — the unresolved AC Chair vacancy was cited as a material deficiency in the compliance disclosure vote.`
+          : `Failed — ${ghLevel} governance health left shareholders unconvinced on MAS compliance disclosures.`;
+      }
+
+      if (results.resolution3Pass) {
+        res3Explanation = gameState.ceoWhistleblower === 'substantiated'
+          ? `Passed — shareholders supported the revised remuneration framework despite the CEO conduct investigation.`
+          : `Passed — the executive remuneration package passed the advisory vote.`;
+      } else {
+        res3Explanation = gameState.ceoWhistleblower === 'substantiated'
+          ? `Failed — the CEO conduct investigation fatally undermined shareholder confidence in the remuneration framework.`
+          : `Failed — ${ghLevel} governance health and minority shareholder concerns defeated the Say-on-Pay resolution.`;
+      }
+
     } else {
       // ── Default (Harwick) result labels ───────────────────────────────────
       res1Label = 'Resolution 1: Director Re-Elections';
@@ -532,10 +835,15 @@ export default function AgmScreen({
       }
     }
 
+    const sfgTwoTierData = isSfg && sfgHasTwoTierVote ? {
+      tier1For: sfgRes1Tier1For, tier1Against: sfgRes1Tier1Against, tier1Pass: sfgTier1Pass,
+      tier2For: sfgRes1Tier2For, tier2Against: sfgRes1Tier2Against, tier2Pass: sfgTier2Pass,
+    } : null;
+
     const resolutions = [
-      { label: res1Label, pass: results.resolution1Pass, explanation: res1Explanation },
-      { label: res2Label, pass: results.resolution2Pass, explanation: res2Explanation },
-      { label: res3Label, pass: results.resolution3Pass, explanation: res3Explanation },
+      { label: res1Label, pass: results.resolution1Pass, explanation: res1Explanation, twoTier: sfgTwoTierData },
+      { label: res2Label, pass: results.resolution2Pass, explanation: res2Explanation, twoTier: null },
+      { label: res3Label, pass: results.resolution3Pass, explanation: res3Explanation, twoTier: null },
     ];
 
     const agmDebriefParams = {
@@ -596,10 +904,15 @@ export default function AgmScreen({
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-foreground font-medium">{res.label}</span>
-                    <span className={`text-lg font-bold ${res.pass ? 'text-success' : 'text-error'}`}>
-                      {res.pass ? 'PASSED ✓' : 'FAILED ✗'}
-                    </span>
+                    {!res.twoTier && (
+                      <span className={`text-lg font-bold ${res.pass ? 'text-success' : 'text-error'}`}>
+                        {res.pass ? 'PASSED ✓' : 'FAILED ✗'}
+                      </span>
+                    )}
                   </div>
+                  {res.twoTier && (
+                    <TwoTierVoteDisplay {...res.twoTier} />
+                  )}
                   <p className={`text-xs mt-2 font-narrative italic ${res.pass ? 'text-success/70' : 'text-error/70'}`}>
                     {res.explanation}
                   </p>
@@ -669,7 +982,11 @@ export default function AgmScreen({
               ? `The AGM has arrived. Three resolutions are contested. Institutional voting will be shaped by the proxy advisers' recommendations, ISS's red flag on executive pay, and your governance health score — with Apex Capital's representatives watching from the third row.`
               : isRheinfeld
                 ? `The Hauptversammlung has arrived in Düsseldorf. Three resolutions are contested. Institutional voting will be shaped by Meridian Capital's campaign, the proxy advisers' recommendations, and your governance health score. The worker representatives hold their five seats regardless — co-determination is not on the ballot.`
-                : `The AGM has arrived. Three resolutions are contested. Institutional shareholder voting will be influenced by Meridian Governance's recommendations and your governance health score.`}
+                : isSfg
+                  ? sfgHasTwoTierVote
+                    ? `The SFG AGM has arrived. Three resolutions are on the agenda. ${sfgLongTenureDirectors.map((d) => d.name).join(' and ')} — with tenure exceeding the SGX 9-year independence limit — must face a two-tier shareholder vote under the SGX Code. Temasek's 34% stake counts in Tier 1 but is excluded from the Tier 2 minority vote. Both tiers must pass for re-election to proceed. Glass Lewis Asia has issued its recommendation.`
+                    : `The SFG AGM has arrived. Three resolutions are on the agenda. All directors are within SGX independence tenure limits — no two-tier vote required this year.`
+                  : `The AGM has arrived. Three resolutions are contested. Institutional shareholder voting will be influenced by Meridian Governance's recommendations and your governance health score.`}
         </motion.p>
 
         {/* Rating badge */}
@@ -691,214 +1008,9 @@ export default function AgmScreen({
         </div>
 
         {/* Three resolution panels */}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-          {isMeridian ? (
-            <>
-              {/* Meridian Resolution 1 */}
-              <motion.div
-                className="bg-card-bg border border-card-border rounded-lg p-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-              >
-                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-                  Resolution 1: Trustee Appointment Ratification
-                </h3>
-                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-                  Members vote to ratify the trustee appointments made during the year. Standard constitutional requirement for a CIO with a supporter membership structure.
-                </p>
-                <VoteBar forPercent={res1For} againstPercent={res1Against} />
-              </motion.div>
-
-              {/* Meridian Resolution 2 */}
-              <motion.div
-                className="bg-card-bg border border-card-border rounded-lg p-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-              >
-                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-                  Resolution 2: Beneficiary Accountability Audit
-                </h3>
-                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-                  A coalition of major donors has tabled a motion requesting an independent audit of beneficiary outcomes and programme impact methodology.
-                </p>
-                <VoteBar forPercent={res2For} againstPercent={res2Against} />
-              </motion.div>
-
-              {/* Meridian Resolution 3 */}
-              <motion.div
-                className="bg-card-bg border border-card-border rounded-lg p-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-              >
-                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-                  Resolution 3: Mission Alignment Review
-                </h3>
-                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-                  Members propose a formal independent review of whether Meridian&apos;s current programme portfolio remains consistent with its charitable objects.
-                </p>
-                <VoteBar forPercent={res3For} againstPercent={res3Against} />
-              </motion.div>
-            </>
-          ) : isVantage ? (
-            <>
-              {/* Vantage Resolution 1 */}
-              <motion.div
-                className="bg-card-bg border border-card-border rounded-lg p-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-              >
-                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-                  Resolution 1: Director Elections
-                </h3>
-                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-                  {gameState.apexActive
-                    ? 'The full slate stands for election. Apex Capital is running a withhold campaign against three incumbents.'
-                    : 'The full slate stands for election. With Apex Capital neutralised, no organised opposition remains.'}
-                </p>
-                <VoteBar forPercent={res1For} againstPercent={res1Against} />
-              </motion.div>
-
-              {/* Vantage Resolution 2 */}
-              <motion.div
-                className="bg-card-bg border border-card-border rounded-lg p-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-              >
-                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-                  Resolution 2: Say-on-Pay (Advisory)
-                </h3>
-                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-                  Sandra Okafor&apos;s $14.2m package faces the advisory vote carrying ISS&apos;s red flag.
-                </p>
-                <VoteBar forPercent={res2For} againstPercent={res2Against} />
-              </motion.div>
-
-              {/* Vantage Resolution 3 */}
-              <motion.div
-                className="bg-card-bg border border-card-border rounded-lg p-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-              >
-                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-                  Resolution 3: Independent Board Chair
-                </h3>
-                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-                  A shareholder proposal to separate the combined Chair/CEO role and appoint an independent Chair.
-                </p>
-                <VoteBar forPercent={res3For} againstPercent={res3Against} />
-              </motion.div>
-            </>
-          ) : isRheinfeld ? (
-            <>
-              {/* Rheinfeld Resolution 1 */}
-              <motion.div
-                className="bg-card-bg border border-card-border rounded-lg p-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-              >
-                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-                  Resolution 1: Discharge of the Supervisory Board
-                </h3>
-                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-                  The customary Entlastung vote ratifying the Supervisory Board&apos;s acts for the year.
-                  {gameState.heinrichConflictRevealed ? ' Heinrich’s conflict disclosures hang over the vote.' : ''}
-                </p>
-                <VoteBar forPercent={res1For} againstPercent={res1Against} />
-              </motion.div>
-
-              {/* Rheinfeld Resolution 2 */}
-              <motion.div
-                className="bg-card-bg border border-card-border rounded-lg p-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-              >
-                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-                  Resolution 2: Remuneration System Approval
-                </h3>
-                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-                  The advisory vote on the Management Board remuneration system required under ARUG II.
-                </p>
-                <VoteBar forPercent={res2For} againstPercent={res2Against} />
-              </motion.div>
-
-              {/* Rheinfeld Resolution 3 */}
-              <motion.div
-                className="bg-card-bg border border-card-border rounded-lg p-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-              >
-                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-                  Resolution 3: Independent Strategic Review
-                </h3>
-                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-                  Meridian Capital&apos;s shareholder proposal demanding an independent review of Rheinfeld&apos;s strategy and capital allocation.
-                </p>
-                <VoteBar forPercent={res3For} againstPercent={res3Against} />
-              </motion.div>
-            </>
-          ) : (
-            <>
-              {/* Default Resolution 1 */}
-              <motion.div
-                className="bg-card-bg border border-card-border rounded-lg p-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-              >
-                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-                  Resolution 1: Director Re-Elections
-                </h3>
-                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-                  {craneOnBoard
-                    ? "All NEDs stand for annual re-election. Geoffrey Crane’s 12-year tenure will be scrutinised."
-                    : "All NEDs stand for annual re-election. No significant tenure concerns on the current board."}
-                </p>
-                <VoteBar forPercent={res1For} againstPercent={res1Against} />
-              </motion.div>
-
-              {/* Default Resolution 2 */}
-              <motion.div
-                className="bg-card-bg border border-card-border rounded-lg p-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-              >
-                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-                  Resolution 2: Say-on-Pay (Advisory)
-                </h3>
-                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-                  Marcus Blaine&apos;s &pound;4.1m package will face a shareholder advisory vote.
-                </p>
-                <VoteBar forPercent={res2For} againstPercent={res2Against} />
-              </motion.div>
-
-              {/* Default Resolution 3 */}
-              <motion.div
-                className="bg-card-bg border border-card-border rounded-lg p-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-              >
-                <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-                  Resolution 3: Shareholder Resolution on ESG Disclosure
-                </h3>
-                <p className="text-foreground/70 text-sm leading-relaxed mb-3">
-                  A coalition of institutional shareholders has tabled a binding resolution on net-zero
-                  disclosure.
-                </p>
-                <VoteBar forPercent={res3For} againstPercent={res3Against} />
-              </motion.div>
-            </>
-          )}
+          {resolutionPanels}
         </div>
 
         {/* Strategy Selection */}

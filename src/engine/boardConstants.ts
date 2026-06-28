@@ -35,6 +35,7 @@ export const ROLE_LABELS: Record<BoardRole, string> = {
   energyTransitionChair: 'Energy Transition Chair',
   csrdChair: 'CSRD Committee Chair',
   strategyChair: 'Strategy Committee Chair',
+  sustainabilityChair: 'Sustainability Committee Chair',
   ned: 'Non-Executive Director',
 };
 
@@ -76,6 +77,15 @@ export const ROLE_LABELS_EU: Partial<Record<BoardRole, string>> = {
   ned: 'Supervisory Board Member',
 };
 
+/** Singapore / MAS-SGX role label overrides — Straits Financial Group */
+export const ROLE_LABELS_SG: Partial<Record<BoardRole, string>> = {
+  riskChair: 'Board Risk Committee Chair',
+  strategyChair: 'Board Credit Committee Chair',
+  sustainabilityChair: 'Sustainability Committee Chair',
+  energyTransitionChair: 'Sustainability Committee Chair',
+  safetyEnvChair: 'Board Risk Committee Chair',
+};
+
 /** UK Charity (CIO) role label overrides — Meridian Foundation */
 export const ROLE_LABELS_CHARITY: Partial<Record<BoardRole, string>> = {
   chair: 'Chair of Trustees',
@@ -112,6 +122,9 @@ export function getRoleLabel(role: BoardRole, jurisdiction: Jurisdiction = 'UK',
   }
   if (jurisdiction === 'EU') {
     return ROLE_LABELS_EU[role] ?? ROLE_LABELS[role];
+  }
+  if (jurisdiction === 'SG') {
+    return ROLE_LABELS_SG[role] ?? ROLE_LABELS[role];
   }
   return ROLE_LABELS[role];
 }

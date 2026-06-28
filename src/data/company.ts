@@ -147,6 +147,7 @@ export const harwickEnergy: Company = {
 import { vantageConsumer } from './vantage/company';
 import { rheinfeldAG } from './rheinfeld/company';
 import { meridianFoundation } from './meridian/company';
+import { straitsFinancialGroup } from './sfg/company';
 
 /** All available companies */
-export const companies: Company[] = [harwickEnergy, vantageConsumer, rheinfeldAG, meridianFoundation];
+export const companies: Company[] = [harwickEnergy, vantageConsumer, rheinfeldAG, meridianFoundation, straitsFinancialGroup];
