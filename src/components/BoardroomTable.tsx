@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { BoardSeat, Director, BoardRole } from '@/types/game';
 import { ROLE_LABELS, getRoleLabel } from '@/engine/boardConstants';
 import type { Jurisdiction } from '@/types/game';
 import DirectorPortrait from './DirectorPortrait';
+import { computeSeatLayout } from './boardroom/useSeatLayout';
+import './boardroom/boardroom.css';
 
 // ── Seat role tooltips ──
 
@@ -208,12 +210,21 @@ export function computeGridPositions(N: number): TablePosition[] {
   ];
 
   const all = [...top, ...right, ...bottom, ...left];
-  return all.slice(0, N);
   // Slot assignment by N:
   //  N= 9: 3 top + 3 right + 3 bottom + 0 left = 9
   //  N=10: 3 top + 3 right + 3 bottom + 1 left = 10
   //  N=11: 3 top + 3 right + 3 bottom + 2 left = 11
   //  N=12: 3 top + 3 right + 3 bottom + 3 left = 12
+
+  // Beyond the fixed 12-slot perimeter (a large board — e.g. a full 13+ seat
+  // pool), append generic NED slots so every director still gets a real seat.
+  // leftPct/topPct are inert here — the ring-based renderer computes on-screen
+  // position from N and index alone, not from these percentages.
+  while (all.length < N) {
+    all.push({ defaultRole: 'ned', label: 'NED', leftPct: 50, topPct: 50, isChair: false, labelAbove: false });
+  }
+
+  return all.slice(0, N);
 }
 
 // Standard company grid: same visual as computeGridPositions but slot 1 = SID and
@@ -271,6 +282,27 @@ export function deriveTablePositions(
   const namedSlots = new Set(
     Object.values(gridRoleToSlot).filter((v): v is number => v < effectiveGridSize)
   );
+
+  // Seats with an explicit slotIndex claim that exact slot first — this is what
+  // makes NED-seat placement stable: once a director has been placed (by drag,
+  // click-assign, etc.), moving or adding any OTHER seat can't silently bump
+  // them elsewhere. Only the fallback "next available" fill below is order-
+  // dependent, and it now only ever applies to seats that were never assigned
+  // a stable slot (e.g. legacy saves, initial company-seeded boards).
+  for (const seat of seats) {
+    if (
+      seat.slotIndex !== undefined &&
+      seat.slotIndex >= 0 &&
+      seat.slotIndex < effectiveGridSize &&
+      !namedSlots.has(seat.slotIndex) &&
+      !committeeChairRoles.has(seat.role) &&
+      positions[seat.slotIndex] === null &&
+      !placed.has(seat.directorId)
+    ) {
+      positions[seat.slotIndex] = seat.directorId;
+      placed.add(seat.directorId);
+    }
+  }
 
   let nextFill = 0;
   for (const seat of seats) {
@@ -371,6 +403,8 @@ interface BoardroomTableProps {
   companyId?: string;
   /** Callback to start a touch drag from a seated director (mobile/tablet DnD) */
   onTouchDragStart?: (dirId: string, touchX: number, touchY: number) => void;
+  /** Slot indices to render with a pulsing gold "event references this seat" glow */
+  highlightedSeatIndices?: number[];
 }
 
 // Optional committee chair positions — all in the left column (leftPct=10).
@@ -400,6 +434,13 @@ const GRID_STRATEGY_POSITION: TablePosition = {
   labelAbove: false,
 };
 
+function truncateForWidth(text: string, maxWidth: number, fontSize: number): string {
+  const avgCharWidth = fontSize * 0.62;
+  const maxChars = Math.max(3, Math.floor(maxWidth / avgCharWidth));
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, maxChars - 1)}…`;
+}
+
 export default function BoardroomTable({
   seats,
   directors,
@@ -418,12 +459,19 @@ export default function BoardroomTable({
   conflictDirectorIds = [],
   companyId,
   onTouchDragStart,
+  highlightedSeatIndices = [],
 }: BoardroomTableProps) {
+  const uid = useId();
   const workerRepSet = new Set(workerRepIds);
   const lockedSet = new Set(lockedDirectorIds);
   const conflictSet = new Set(conflictDirectorIds);
+  const highlightSet = new Set(highlightedSeatIndices);
 
-  // All companies use square-perimeter grid layout.
+  // Slot derivation is unchanged from before: same role/label metadata, same
+  // directorId → slot-index mapping the callers already build their own logic
+  // around (play/page.tsx computes this independently via the same exported
+  // functions). Only the on-screen placement below is new — index semantics
+  // (0 = Chair, etc.) are untouched.
   // isRheinfeld: uses computeGridPositions (Worker Rep labels, min 10 slots).
   // Standard:    uses computeStandardGridPositions (SID/NomChair slots, min 9 slots).
   const committeeChairRoleSet = new Set<string>(['csrdChair', 'strategyChair', 'energyTransitionChair', 'sustainabilityChair']);
@@ -447,314 +495,394 @@ export default function BoardroomTable({
   const positions = deriveTablePositions(seats, hasEnergyTransition, hasCsrd, hasStrategy, isRheinfeld);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const [hoveredSeatIdx, setHoveredSeatIdx] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Rendered avatar node per seat index, used to give the native drag a real
+  // ghost image (a transparent drag-source div has nothing to snapshot on its own).
+  const avatarRefs = useRef<Map<number, SVGGElement>>(new Map());
+  const [containerWidth, setContainerWidth] = useState(1000);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width) setContainerWidth(width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const getDirector = (id: string) => directors.find((d) => d.id === id);
   const getSeat = (directorId: string) => seats.find((s) => s.directorId === directorId);
 
-  // All layouts: square 1:1 canvas, 400×400 viewBox, 168×168 centred table
-  const tableRect = { x: 116, y: 116, w: 168, h: 168, rx: 26 };
-  const svgViewBox = '0 0 400 400';
-  const containerAspectRatio = '1/1';
-  // Text centred on the table
-  const textCx = tableRect.x + tableRect.w / 2;
-  const textCy1 = tableRect.y + tableRect.h / 2 - 7;
-  const textCy2 = tableRect.y + tableRect.h / 2 + 9;
+  // N is derived from the slot count above, never hardcoded.
+  const { seats: seatPoints, radius: r } = computeSeatLayout(effectivePositions.length);
+
+  const labelMode: 'full' | 'compact' | 'hidden' =
+    containerWidth < 300 ? 'hidden' : containerWidth < 420 ? 'compact' : 'full';
+  const needsBigHitArea = (r * containerWidth) / 1000 < 20;
+
+  // Lock label text to a real on-screen size (matching the candidate pool card's
+  // name text, text-[9px] in PoolCard) rather than a fixed viewBox-unit size —
+  // the viewBox is much larger than the old 400-unit canvas, so a fixed unit
+  // size would render far smaller on screen than the pool card's text.
+  const pxPerUnit = containerWidth / 1000;
+  const unitsForPx = (px: number) => px / pxPerUnit;
+
+  const cx = 500;
+  const cy = 500;
+  const tableRect = { x: cx - 200, y: cy - 200, w: 400, h: 400, rx: 56 };
+  const nameMaxWidth = 150;
 
   return (
-    <div className="relative w-full" style={{ aspectRatio: containerAspectRatio }}>
-      {/* SVG Table Background */}
+    <div ref={containerRef} className="relative w-full" style={{ aspectRatio: '1/1' }}>
       <svg
-        viewBox={svgViewBox}
-        className="absolute inset-0 w-full h-full"
+        viewBox="0 0 1000 1000"
         preserveAspectRatio="xMidYMid meet"
+        className="absolute inset-0 w-full h-full"
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
           {/* Wood-grain texture */}
-          <pattern
-            id="woodGrain"
-            width="8"
-            height="8"
-            patternUnits="userSpaceOnUse"
-            patternTransform="rotate(30)"
-          >
-            <line x1="0" y1="4" x2="8" y2="4" stroke="#2A5580" strokeWidth="0.3" opacity="0.2" />
+          <pattern id={`${uid}-woodGrain`} width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+            <line x1="0" y1="10" x2="20" y2="10" stroke="#2A5580" strokeWidth="0.75" opacity="0.2" />
           </pattern>
           {/* Radial gradient - lighter centre */}
-          <radialGradient id="tableGrad" cx="50%" cy="50%" r="50%">
+          <radialGradient id={`${uid}-tableGrad`} cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#1A3A5C" stopOpacity="0.35" />
             <stop offset="100%" stopColor="#0D1B2A" stopOpacity="0" />
           </radialGradient>
+          <radialGradient id={`${uid}-selectedGlow`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#E0B044" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#E0B044" stopOpacity="0" />
+          </radialGradient>
+          <filter id={`${uid}-seatShadow`} x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.25" />
+          </filter>
         </defs>
 
         {/* Outer table surface - rounded rectangle */}
-        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill="#0D1B2A" stroke="#C8960C" strokeWidth="2" />
+        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill="#0D1B2A" stroke="#C8960C" strokeWidth={3} />
         {/* Wood-grain overlay */}
-        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill="url(#woodGrain)" />
+        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill={`url(#${uid}-woodGrain)`} />
         {/* Gradient overlay */}
-        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill="url(#tableGrad)" />
+        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill={`url(#${uid}-tableGrad)`} />
         {/* Inner edge highlight */}
         <rect
-          x={tableRect.x + 5}
-          y={tableRect.y + 5}
-          width={tableRect.w - 10}
-          height={tableRect.h - 10}
-          rx={tableRect.rx - 5}
+          x={tableRect.x + 8}
+          y={tableRect.y + 8}
+          width={tableRect.w - 16}
+          height={tableRect.h - 16}
+          rx={tableRect.rx - 8}
           fill="none"
           stroke="#C8960C"
-          strokeWidth="0.5"
-          opacity="0.25"
+          strokeWidth={1}
+          opacity={0.4}
         />
 
-        {/* Company name in centre */}
+        {/* Company wordmark, centred in the table */}
         <text
-          x={textCx}
-          y={textCy1}
+          x={cx}
+          y={cy - 8}
           textAnchor="middle"
           fill="#C8960C"
-          fontSize="10"
-          fontFamily="Georgia, serif"
-          fontWeight="bold"
-          opacity="0.45"
+          fontSize={34}
+          fontFamily="var(--font-serif, Georgia, serif)"
+          fontWeight={700}
+          letterSpacing="2"
+          opacity={0.75}
         >
           {companyShortName}
         </text>
         <text
-          x={textCx}
-          y={textCy2}
+          x={cx}
+          y={cy + 20}
           textAnchor="middle"
           fill="#C8960C"
-          fontSize="7"
-          fontFamily="Georgia, serif"
-          opacity="0.3"
+          fontSize={15}
+          fontFamily="var(--font-serif, Georgia, serif)"
+          letterSpacing="1.5"
+          fontVariant="small-caps"
+          opacity={0.55}
         >
           {companyShortNameSuffix}
         </text>
+
+        {/* Seats — equal arc-length spacing around a rounded-rect ring, N = effectivePositions.length */}
+        {effectivePositions.map((pos, index) => {
+          const directorId = positions[index];
+          const director = directorId ? getDirector(directorId) : null;
+          const isActive = activeSeatIndex === index;
+          const point = seatPoints[index] ?? { x: cx, y: cy };
+          const isLockedChairCeo = combinedChairCeo && pos.isChair;
+          const isWorkerRep = directorId ? workerRepSet.has(directorId) : false;
+          const isLockedSeat = directorId ? lockedSet.has(directorId) : false;
+          const hasConflict = directorId ? conflictSet.has(directorId) : false;
+          const isNonInteractive = isLockedChairCeo || isWorkerRep || isLockedSeat;
+          const isHovered = hoveredSeatIdx === index && !isNonInteractive;
+          const isHighlighted = highlightSet.has(index);
+          const roleLabelFull = getRoleLabel(pos.defaultRole, jurisdiction, companyId);
+          const ariaLabel = director ? `${director.name}, ${roleLabelFull}` : `Empty seat: ${roleLabelFull}`;
+          const ringColor = isWorkerRep ? '#5B9BD5' : '#C8960C';
+
+          return (
+            <g
+              key={`seat-${index}`}
+              data-seat-index={index}
+              data-seat-interactive={isNonInteractive ? 'false' : 'true'}
+              className={`bcraft-seat-pos bcraft-seat-group ${isNonInteractive ? '' : 'cursor-pointer'}`}
+              style={{ transform: `translate(${point.x}px, ${point.y}px)` }}
+              role="button"
+              tabIndex={isNonInteractive ? -1 : 0}
+              aria-label={ariaLabel}
+              aria-disabled={isNonInteractive || undefined}
+              opacity={isNonInteractive ? 0.75 : 1}
+              onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHoveredSeatIdx(index); }}
+              onPointerLeave={(e) => { if (e.pointerType === 'mouse') setHoveredSeatIdx(null); }}
+              onFocus={() => setHoveredSeatIdx(index)}
+              onBlur={() => setHoveredSeatIdx((cur) => (cur === index ? null : cur))}
+              onClick={() => { setHoveredSeatIdx(null); if (!isNonInteractive) onSeatClick(index); }}
+              onKeyDown={(e) => {
+                if (isNonInteractive) return;
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSeatClick(index); }
+              }}
+            >
+              <title>{ariaLabel}</title>
+
+              {isHighlighted && (
+                <circle className="bcraft-seat-event-highlight" r={r + 10} fill="none" stroke="#C8960C" strokeWidth={4} />
+              )}
+              {isActive && <circle r={r + 9} fill={`url(#${uid}-selectedGlow)`} />}
+              {dragOverIdx === index && (
+                <circle r={r + 4} fill="none" stroke="#C8960C" strokeWidth={2} strokeDasharray="5 5" />
+              )}
+              <circle
+                className="bcraft-seat-focus-ring"
+                r={r + 6}
+                fill="none"
+                stroke="#E0B044"
+                strokeWidth={2}
+                opacity={0}
+                style={{ transition: 'opacity 150ms' }}
+              />
+
+              <g className="bcraft-seat-scale" style={{ transform: isHovered ? 'scale(1.06)' : 'scale(1)' }}>
+                {director && isLockedChairCeo ? (
+                  <>
+                    {/* Combined Chair/CEO (Vantage): locked, no portrait — a light
+                        red tint + lock glyph, matching the pre-rewrite treatment. */}
+                    <circle r={r} fill="#D94040" fillOpacity={0.05} />
+                    <circle r={r} fill="none" stroke="#D94040" strokeOpacity={0.6} strokeWidth={3} />
+                    <text textAnchor="middle" dominantBaseline="central" fontSize={r * 0.7} fill="#D94040" fillOpacity={0.5}>🔒</text>
+                  </>
+                ) : director ? (
+                  <>
+                    <clipPath id={`${uid}-clip-${index}`}>
+                      <circle r={r} />
+                    </clipPath>
+                    <circle r={r} fill="#0D1B2A" />
+                    <g
+                      ref={(el) => { if (el) avatarRefs.current.set(index, el); else avatarRefs.current.delete(index); }}
+                      clipPath={`url(#${uid}-clip-${index})`}
+                    >
+                      <g transform={`translate(${-r}, ${-r})`}>
+                        <DirectorPortrait directorId={director.id} size={r * 2} />
+                      </g>
+                    </g>
+                    <circle
+                      r={r}
+                      fill="none"
+                      stroke={ringColor}
+                      strokeWidth={3}
+                      filter={`url(#${uid}-seatShadow)`}
+                    />
+                    {hasConflict && (
+                      <>
+                        <circle cx={r * 0.72} cy={-r * 0.72} r={r * 0.28} fill="#D94040" />
+                        <text x={r * 0.72} y={-r * 0.72} textAnchor="middle" dominantBaseline="central" fontSize={r * 0.32} fill="white" fontWeight={700}>
+                          !
+                        </text>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <circle r={r} fill="rgba(13, 27, 42, 0.4)" stroke="#E8E4DC" strokeOpacity={0.2} strokeWidth={2} strokeDasharray="6 6" />
+                    <text textAnchor="middle" dominantBaseline="central" fontSize={r * 0.55} fill="#E8E4DC" opacity={0.45}>
+                      +
+                    </text>
+                  </>
+                )}
+                {/* Native HTML5 drag-and-drop is unreliable when one end of the
+                    drag is a plain SVG element — browsers are inconsistent about
+                    dispatching dragover/drop across the SVG↔HTML boundary. Both
+                    the drop target (always) and the drag source (when filled)
+                    live in one real HTML div via foreignObject, matching how
+                    drag-and-drop worked before this component was rewritten. */}
+                {(() => {
+                  const hitR = needsBigHitArea ? r * 1.4 : r;
+                  return (
+                    <foreignObject x={-hitR} y={-hitR} width={hitR * 2} height={hitR * 2}>
+                      <div
+                        onDragOver={(e) => {
+                          if (isNonInteractive) return;
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                          setDragOverIdx(index);
+                        }}
+                        onDragLeave={() => setDragOverIdx((cur) => (cur === index ? null : cur))}
+                        onDrop={(e) => {
+                          if (isNonInteractive) return;
+                          e.preventDefault();
+                          setDragOverIdx(null);
+                          const dirId = e.dataTransfer.getData('text/plain');
+                          if (dirId && onDropOnSeat) onDropOnSeat(dirId, index);
+                        }}
+                        style={{ width: '100%', height: '100%', borderRadius: '50%' }}
+                      >
+                        {director && !isNonInteractive && (
+                          <div
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('text/plain', director.id);
+                              e.dataTransfer.effectAllowed = 'move';
+                              const avatarEl = avatarRefs.current.get(index);
+                              if (avatarEl) {
+                                const rect = avatarEl.getBoundingClientRect();
+                                e.dataTransfer.setDragImage(avatarEl, rect.width / 2, rect.height / 2);
+                              }
+                            }}
+                            onTouchStart={(e) => {
+                              if (!onTouchDragStart) return;
+                              const touch = e.touches[0];
+                              onTouchDragStart(director.id, touch.clientX, touch.clientY);
+                            }}
+                            style={{ width: '100%', height: '100%', borderRadius: '50%', cursor: 'grab' }}
+                          />
+                        )}
+                      </div>
+                    </foreignObject>
+                  );
+                })()}
+              </g>
+            </g>
+          );
+        })}
+
+        {/* Labels — every seat identical pattern, always centred below, never above */}
+        {labelMode !== 'hidden' && effectivePositions.map((pos, index) => {
+          const directorId = positions[index];
+          const director = directorId ? getDirector(directorId) : null;
+          const seat = directorId ? getSeat(directorId) : null;
+          const point = seatPoints[index] ?? { x: cx, y: cy };
+          const isLockedChairCeo = combinedChairCeo && pos.isChair;
+
+          const actualLabel = isLockedChairCeo
+            ? 'CEO/Chair'
+            : seat && seat.role !== pos.defaultRole
+              ? shortRoleLabel(seat.role, jurisdiction, directorId, workerRepSet, companyId)
+              : shortRoleLabel(pos.defaultRole, jurisdiction, directorId, workerRepSet, companyId);
+
+          // Match the candidate pool card's name text size (text-[9px]) in real
+          // CSS pixels, independent of how large the seat ring renders on screen.
+          const nameFontSize = unitsForPx(labelMode === 'compact' ? 12 : 10);
+          const roleFontSize = unitsForPx(labelMode === 'compact' ? 11 : 9);
+          const nameY = r + 14 + nameFontSize;
+          const roleY = nameY + roleFontSize + 3;
+
+          return (
+            <g key={`label-${index}`} className="bcraft-seat-pos" style={{ transform: `translate(${point.x}px, ${point.y}px)` }}>
+              {director ? (
+                <>
+                  <text y={nameY} textAnchor="middle" fontSize={nameFontSize} fontFamily="var(--font-mono, monospace)" fontWeight={600} fill="#E8E4DC">
+                    {truncateForWidth(director.name.split(' ').pop() ?? director.name, nameMaxWidth, nameFontSize)}
+                  </text>
+                  {labelMode === 'full' && (
+                    <text y={roleY} textAnchor="middle" fontSize={roleFontSize} fontFamily="var(--font-mono, monospace)" fill="#E8E4DC" opacity={0.5}>
+                      {truncateForWidth(actualLabel, nameMaxWidth, roleFontSize)}
+                      <title>{actualLabel}</title>
+                    </text>
+                  )}
+                </>
+              ) : (() => {
+                const emptyRoleLabel = shortRoleLabel(pos.defaultRole, jurisdiction, null, undefined, companyId);
+                return (
+                  <text y={nameY} textAnchor="middle" fontSize={roleFontSize} fontFamily="var(--font-mono, monospace)" fill="#E8E4DC" opacity={0.5}>
+                    {truncateForWidth(emptyRoleLabel, nameMaxWidth, roleFontSize)}
+                    <title>{emptyRoleLabel}</title>
+                  </text>
+                );
+              })()}
+            </g>
+          );
+        })}
       </svg>
 
-      {/* Seat circles - positioned over SVG */}
-      {effectivePositions.map((pos, index) => {
+      {/* Role tooltip on hover (empty seats only, desktop only). Kept as an HTML
+          overlay rather than SVG text so it can wrap/lay out like a real card;
+          positioned by percentage from the same ring coordinates as the seat. */}
+      {hoveredSeatIdx !== null && (() => {
+        const index = hoveredSeatIdx;
         const directorId = positions[index];
-        const director = directorId ? getDirector(directorId) : null;
-        const isActive = activeSeatIndex === index;
-        const seatPx = 52;
-        const isLockedChairCeo = combinedChairCeo && pos.isChair;
-        const isWorkerRep = directorId ? workerRepSet.has(directorId) : false;
-        const isLockedSeat = directorId ? lockedSet.has(directorId) : false;
-        const hasConflict = directorId ? conflictSet.has(directorId) : false;
-        const isNonInteractive = isLockedChairCeo || isWorkerRep || isLockedSeat;
-
+        if (directorId) return null;
+        const point = seatPoints[index];
+        const pos = effectivePositions[index];
+        if (!point || !pos) return null;
+        const role = pos.defaultRole;
+        const tooltip = getRoleTooltip(role, jurisdiction, companyId);
+        if (!tooltip) return null;
+        const showAbove = point.y > cy;
+        const leftPct = (point.x / 1000) * 100;
+        const topPct = (point.y / 1000) * 100;
+        const rPct = (r / 1000) * 100;
+        // Shift inward for left/right column seats so tooltip stays within bounds
+        const horizStyle: React.CSSProperties =
+          leftPct <= 20
+            ? { left: 0, transform: 'none' }
+            : leftPct >= 80
+              ? { right: 0, left: 'auto', transform: 'none' }
+              : { left: `${leftPct}%`, transform: 'translateX(-50%)' };
         return (
           <div
-            key={`seat-${index}`}
-            data-seat-index={index}
-            data-seat-interactive={isNonInteractive ? 'false' : 'true'}
-            className={`absolute group ${isNonInteractive ? 'cursor-default' : 'cursor-pointer'}`}
+            className="pointer-events-none absolute z-50 hidden md:block"
             style={{
-              left: `${pos.leftPct}%`,
-              top: `${pos.topPct}%`,
-              transform: 'translate(-50%, -50%)',
-              width: seatPx,
-              height: seatPx,
-              zIndex: hoveredSeatIdx === index ? 50 : undefined,
-            }}
-            onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHoveredSeatIdx(index); }}
-            onPointerLeave={(e) => { if (e.pointerType === 'mouse') setHoveredSeatIdx(null); }}
-            onClick={() => { setHoveredSeatIdx(null); if (!isNonInteractive) onSeatClick(index); }}
-            onDragOver={(e) => {
-              if (isNonInteractive) return;
-              e.preventDefault();
-              e.dataTransfer.dropEffect = 'move';
-              setDragOverIdx(index);
-            }}
-            onDragLeave={() => setDragOverIdx(null)}
-            onDrop={(e) => {
-              if (isNonInteractive) return;
-              e.preventDefault();
-              setDragOverIdx(null);
-              const dirId = e.dataTransfer.getData('text/plain');
-              if (dirId && onDropOnSeat) onDropOnSeat(dirId, index);
+              ...horizStyle,
+              ...(showAbove
+                ? { bottom: `${100 - topPct + rPct + 1}%` }
+                : { top: `${topPct + rPct + 1}%` }),
+              width: 180,
             }}
           >
             <div
-              draggable={!!director && !isNonInteractive}
-              onDragStart={(e) => {
-                if (!director || isNonInteractive) { e.preventDefault(); return; }
-                e.dataTransfer.setData('text/plain', director.id);
-                e.dataTransfer.effectAllowed = 'move';
-                (e.currentTarget as HTMLElement).style.opacity = '0.5';
+              className="rounded-lg border border-gold/30 shadow-xl text-left"
+              style={{
+                background: 'rgba(10, 22, 40, 0.97)',
+                padding: '8px 10px',
               }}
-              onDragEnd={(e) => {
-                (e.currentTarget as HTMLElement).style.opacity = '1';
-              }}
-              onTouchStart={(e) => {
-                if (!director || isNonInteractive || !onTouchDragStart) return;
-                const touch = e.touches[0];
-                onTouchDragStart(director.id, touch.clientX, touch.clientY);
-              }}
-              className={`rounded-full flex items-center justify-center transition-all duration-200 w-full h-full ${
-                isLockedChairCeo
-                  ? 'border-2 border-error/60 bg-error/5 opacity-70'
-                  : isWorkerRep
-                    ? 'border-2 opacity-80'
-                    : dragOverIdx === index
-                      ? 'border-2 border-dashed border-gold ring-2 ring-gold/40 bg-gold/10'
-                      : director
-                        ? `border-2 border-gold ${
-                            isActive
-                              ? 'ring-2 ring-gold/60 ring-offset-2 ring-offset-navy'
-                              : isLockedSeat
-                                ? ''
-                                : 'group-hover:ring-1 group-hover:ring-gold/30 group-hover:ring-offset-1 group-hover:ring-offset-navy'
-                          }`
-                        : `border-2 border-dashed ${
-                            isActive
-                              ? 'border-gold animate-pulse bg-gold/5'
-                              : 'border-foreground/20 bg-navy-dark/40 group-hover:border-foreground/40'
-                          }`
-              }`}
-              style={isWorkerRep ? { borderColor: '#5B9BD5' } : undefined}
             >
-              {isLockedChairCeo ? (
-                <span className="text-error/50 text-lg select-none font-bold">🔒</span>
-              ) : director ? (
-                <DirectorPortrait
-                  directorId={director.id}
-                  size={seatPx - 4}
-                  className="rounded-full"
-                />
-              ) : (
-                <span className="text-foreground/20 text-lg select-none">+</span>
+              <div className="font-semibold text-gold mb-1" style={{ fontSize: '10px' }}>
+                {getRoleLabel(role, jurisdiction, companyId)}
+              </div>
+              <div className="text-foreground/70 mb-2 leading-snug" style={{ fontSize: '9px' }}>
+                {tooltip.description}
+              </div>
+              {tooltip.requirements.length > 0 && (
+                <div>
+                  <div className="text-foreground/40 uppercase tracking-wide mb-1" style={{ fontSize: '8px' }}>
+                    Requirements
+                  </div>
+                  {tooltip.requirements.map((req, i) => (
+                    <div key={i} className="flex items-start gap-1" style={{ fontSize: '9px' }}>
+                      <span className="text-gold/60 mt-px" style={{ fontSize: '8px' }}>›</span>
+                      <span className="text-foreground/60 leading-snug">{req}</span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-            {/* Conflict-of-interest indicator badge */}
-            {hasConflict && (
-              <div
-                className="absolute top-0 right-0 w-4 h-4 rounded-full bg-error flex items-center justify-center"
-                style={{ fontSize: '9px', color: 'white', fontWeight: 'bold', zIndex: 10 }}
-                title="Conflict of interest - Heinrich's side-deal revealed"
-              >
-                !
-              </div>
-            )}
-            {/* Role tooltip on hover (empty seats only, desktop only) */}
-            {hoveredSeatIdx === index && !director && (() => {
-              const role = pos.defaultRole;
-              const tooltip = getRoleTooltip(role, jurisdiction, companyId);
-              if (!tooltip) return null;
-              const showAbove = pos.topPct > 50;
-              // Shift inward for left/right column seats so tooltip stays within bounds
-              const horizStyle: React.CSSProperties =
-                pos.leftPct <= 20
-                  ? { left: 0, transform: 'none' }
-                  : pos.leftPct >= 80
-                    ? { right: 0, left: 'auto', transform: 'none' }
-                    : { left: '50%', transform: 'translateX(-50%)' };
-              return (
-                <div
-                  className="pointer-events-none absolute z-50 hidden md:block"
-                  style={{
-                    ...horizStyle,
-                    ...(showAbove
-                      ? { bottom: seatPx + 6 }
-                      : { top: seatPx + 6 }),
-                    width: 180,
-                  }}
-                >
-                  <div
-                    className="rounded-lg border border-gold/30 shadow-xl text-left"
-                    style={{
-                      background: 'rgba(10, 22, 40, 0.97)',
-                      padding: '8px 10px',
-                    }}
-                  >
-                    <div className="font-semibold text-gold mb-1" style={{ fontSize: '10px' }}>
-                      {getRoleLabel(role, jurisdiction, companyId)}
-                    </div>
-                    <div className="text-foreground/70 mb-2 leading-snug" style={{ fontSize: '9px' }}>
-                      {tooltip.description}
-                    </div>
-                    {tooltip.requirements.length > 0 && (
-                      <div>
-                        <div className="text-foreground/40 uppercase tracking-wide mb-1" style={{ fontSize: '8px' }}>
-                          Requirements
-                        </div>
-                        {tooltip.requirements.map((req, i) => (
-                          <div key={i} className="flex items-start gap-1" style={{ fontSize: '9px' }}>
-                            <span className="text-gold/60 mt-px" style={{ fontSize: '8px' }}>›</span>
-                            <span className="text-foreground/60 leading-snug">{req}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
           </div>
         );
-      })}
-
-      {/* Labels - absolutely-positioned HTML elements outside the seat circles */}
-      {effectivePositions.map((pos, index) => {
-        const directorId = positions[index];
-        const director = directorId ? getDirector(directorId) : null;
-        const seat = directorId ? getSeat(directorId) : null;
-        const seatPx = 52;
-        const isLockedChairCeo = combinedChairCeo && pos.isChair;
-
-        const actualLabel = isLockedChairCeo
-          ? 'Chair/CEO'
-          : seat && seat.role !== pos.defaultRole
-            ? shortRoleLabel(seat.role, jurisdiction, directorId, workerRepSet, companyId)
-            : shortRoleLabel(pos.defaultRole, jurisdiction, directorId, workerRepSet, companyId);
-
-        // All layouts use pos.labelAbove to determine placement (above or below portrait).
-        const isLabelAbove = pos.labelAbove ?? false;
-        const labelOffset = isLabelAbove
-          ? -(seatPx / 2 + 28) // above portrait
-          : (seatPx / 2 + 4);  // below portrait
-
-        return (
-          <div
-            key={`label-${index}`}
-            className="absolute pointer-events-none"
-            style={{
-              left: `${pos.leftPct}%`,
-              top: `${pos.topPct}%`,
-              transform: `translate(-50%, ${labelOffset}px)`,
-              maxWidth: 88,
-              textAlign: 'center',
-            }}
-          >
-            {director ? (
-              <>
-                <div
-                  className="font-semibold text-foreground leading-tight"
-                  style={{ fontSize: '9px', maxWidth: 88, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                  title={director.name}
-                >
-                  {director.name.split(' ').pop()}
-                </div>
-                <div
-                  className="text-foreground/50 leading-tight"
-                  style={{ fontSize: '9px', maxWidth: 88, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                  title={actualLabel}
-                >
-                  {actualLabel}
-                </div>
-              </>
-            ) : (
-              <div
-                className="text-foreground/50 leading-tight"
-                style={{ fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 88 }}
-              >
-                {shortRoleLabel(pos.defaultRole, jurisdiction, null, undefined, companyId)}
-              </div>
-            )}
-          </div>
-        );
-      })}
+      })()}
     </div>
   );
 }

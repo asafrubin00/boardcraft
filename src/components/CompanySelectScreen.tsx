@@ -20,7 +20,6 @@ interface LockedCompany {
 
 const lockedCompanies: LockedCompany[] = [
   { name: 'Valdorian National Grid', region: 'Emerging Market', industry: 'Utilities', difficulty: 3 },
-  { name: 'Pacific Minerals Corp', region: 'AU', industry: 'Mining', difficulty: 1 },
 ];
 
 const difficultyLabel = (tier: number) => {

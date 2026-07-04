@@ -141,6 +141,8 @@ const committees: Record<CommitteeId, CommitteeState> = {
   energyTransition: { active: false, chairDirectorId: null }, // NOT yet formed
   csrd: { active: false, chairDirectorId: null },
   strategy: { active: false, chairDirectorId: null },
+  risk: { active: false, chairDirectorId: null },
+  sustainability: { active: false, chairDirectorId: null },
 };
 
 describe('Resolution Engine', () => {

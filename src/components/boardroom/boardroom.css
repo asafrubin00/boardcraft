@@ -1,0 +1,33 @@
+.bcraft-seat-pos {
+  transition: transform 400ms ease-in-out;
+}
+
+.bcraft-seat-scale {
+  transition: transform 150ms ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.bcraft-seat-group:focus-visible .bcraft-seat-focus-ring {
+  opacity: 1;
+}
+
+.bcraft-seat-event-highlight {
+  animation: bcraft-pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes bcraft-pulse-glow {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.9; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bcraft-seat-pos,
+  .bcraft-seat-scale {
+    transition: none !important;
+  }
+  .bcraft-seat-event-highlight {
+    animation: none !important;
+    opacity: 0.6 !important;
+  }
+}

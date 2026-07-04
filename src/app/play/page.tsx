@@ -801,6 +801,11 @@ const TIER_BADGE: Record<Director['availabilityTier'], { label: string; cls: str
 
 const ALL_BOARD_ROLES: BoardRole[] = ['chair', 'sid', 'auditChair', 'remChair', 'nomChair', 'energyTransitionChair', 'csrdChair', 'strategyChair', 'ned'];
 
+// Roles placed by role-match (a fixed grid slot or a committee's opt-slot),
+// as opposed to plain NED seats whose visual slot must be tracked explicitly
+// via BoardSeat.slotIndex to stay stable across unrelated board edits.
+const NAMED_BOARD_ROLES: BoardRole[] = ['chair', 'auditChair', 'remChair', 'nomChair', 'sid', 'safetyEnvChair', 'energyTransitionChair', 'csrdChair', 'strategyChair'];
+
 // Optional committee seat positions — all companies use left-column grid positions
 // (leftPct=10). For N=9 companies the left column has no base seats, so these appear
 // in the open left-column area, matching the Rheinfeld visual style.
@@ -1083,7 +1088,7 @@ function BoardConstructionWrapper({
 
   const handleRoleChange = useCallback((directorId: string, newRole: BoardRole) => {
     pushAndSetSeats((prev) => {
-      const uniq: BoardRole[] = ['chair','auditChair','remChair','nomChair','sid','safetyEnvChair','energyTransitionChair','csrdChair','strategyChair'];
+      const uniq = NAMED_BOARD_ROLES;
       const currentSeat = prev.find((s) => s.directorId === directorId);
       const oldRole = currentSeat?.role ?? 'ned';
 
@@ -1121,6 +1126,20 @@ function BoardConstructionWrapper({
       });
     });
   }, [pushAndSetSeats, directorMap]);
+
+  // Freeze every NED seat's CURRENT visual slot into an explicit slotIndex
+  // before any seat-mutating action runs. Without this, a seat without a
+  // slotIndex yet (a fresh company-seeded board, an older save) is placed by
+  // "next available slot in array order" — a heuristic that silently moves
+  // OTHER directors' seats as a side effect of an unrelated move or add.
+  const backfillSlotIndices = useCallback((currentSeats: BoardSeat[]): BoardSeat[] => {
+    const positions = deriveTablePositions(currentSeats, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout);
+    return currentSeats.map((s) => {
+      if (s.slotIndex !== undefined || NAMED_BOARD_ROLES.includes(s.role)) return s;
+      const idx = positions.indexOf(s.directorId);
+      return idx >= 0 ? { ...s, slotIndex: idx } : s;
+    });
+  }, [hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout]);
 
   const handleToggleET = useCallback(() => {
     // Push history before ET toggle since it may change seats
@@ -1182,7 +1201,7 @@ function BoardConstructionWrapper({
     const d = directorMap.get(directorId);
     if (!d) return;
 
-    const uniqRoles: BoardRole[] = ['chair','auditChair','remChair','nomChair','sid','safetyEnvChair','energyTransitionChair','csrdChair','strategyChair'];
+    const uniqRoles = NAMED_BOARD_ROLES;
     const fee = budget === 0 ? 0 : computeFeeWithPremium(d.annualFee, pos.defaultRole);
     const isOnBoard = boardIdSet.has(directorId);
     // Who currently occupies this visual slot?
@@ -1198,58 +1217,56 @@ function BoardConstructionWrapper({
 
     } else if (isOnBoard) {
       // ── Case B: on-board director → NED/non-unique slot ──
-      // Must physically move the director in the seats array so their visual position changes.
-      // handleRoleChange only updates the role field — it cannot move a NED to a different
-      // visual slot because NED positions are determined by array order, not by role.
+      // Slot is explicit (slotIndex), not derived from array order, so this
+      // move can never silently move any other seat. Backfill first so every
+      // OTHER seat's current visual position is frozen before this one changes.
       pushAndSetSeats((p) => {
-        const xSeat = p.find(s => s.directorId === directorId);
+        const stable = backfillSlotIndices(p);
+        const xSeat = stable.find(s => s.directorId === directorId);
         if (!xSeat) return p;
 
-        // If source director currently has a named role (e.g. AuditChair → NED slot),
-        // just do a plain role update — they'll land at the first available NED slot.
-        if (uniqRoles.includes(xSeat.role)) {
-          return p.map(s => s.directorId !== directorId ? s
-            : { ...s, role: pos.defaultRole, feeWithPremium: fee });
-        }
+        const occupant = currentOccupantId ? stable.find(s => s.directorId === currentOccupantId) : undefined;
+        const xOldSlot = xSeat.slotIndex;
 
-        // Source is NED/non-unique → use array-position swap for a correct visual result.
-        const xIdx = p.findIndex(s => s.directorId === directorId);
-        const yIdx = currentOccupantId ? p.findIndex(s => s.directorId === currentOccupantId) : -1;
-        if (xIdx < 0) return p;
-
-        if (yIdx >= 0) {
-          // Target slot occupied → swap array positions so both directors exchange visual slots
-          const result = [...p];
-          result[yIdx] = { directorId, role: pos.defaultRole, feeWithPremium: fee };
-          result[xIdx] = { ...p[yIdx] }; // occupant keeps their role/fee, moves to X's old slot
-          return result;
-        } else {
-          // Target slot empty → remove director from current position and append to end;
-          // deriveTablePositions will place them at the next available NED slot.
-          const filtered = p.filter(s => s.directorId !== directorId);
-          return [...filtered, { directorId, role: pos.defaultRole, feeWithPremium: fee }];
-        }
+        return stable.map((s) => {
+          if (s.directorId === directorId) {
+            return { ...s, role: pos.defaultRole, feeWithPremium: fee, slotIndex: posIdx };
+          }
+          if (occupant && s.directorId === occupant.directorId) {
+            if (xOldSlot !== undefined) {
+              // True swap — occupant takes the mover's old NED slot.
+              const occupantDir = directorMap.get(occupant.directorId);
+              return { ...s, role: xSeat.role, feeWithPremium: effectiveFee(occupantDir?.annualFee ?? 0, xSeat.role), slotIndex: xOldSlot };
+            }
+            // Mover came from a named role — no NED slot to hand over; keep the
+            // occupant on the board, just no longer pinned to this exact slot.
+            return { ...s, slotIndex: undefined };
+          }
+          return s;
+        });
       });
 
     } else {
       // ── Case C: pool director → any slot ──
       if (budget > 0 && committed + fee > budget) return;
       pushAndSetSeats((p) => {
+        const stable = backfillSlotIndices(p);
         if (uniqRoles.includes(pos.defaultRole)) {
           // Remove any existing holder of this named role
-          const filtered = p.filter(s => s.role !== pos.defaultRole);
+          const filtered = stable.filter(s => s.role !== pos.defaultRole);
           return [...filtered, { directorId, role: pos.defaultRole, feeWithPremium: fee }];
         } else {
-          // NED slot: if occupied, evict the current director back to pool (they're removed)
-          const filtered = currentOccupantId ? p.filter(s => s.directorId !== currentOccupantId) : p;
-          return [...filtered, { directorId, role: pos.defaultRole, feeWithPremium: fee }];
+          // NED slot: if occupied, evict the current occupant back to the pool;
+          // the new director claims this exact slot.
+          const filtered = currentOccupantId ? stable.filter(s => s.directorId !== currentOccupantId) : stable;
+          return [...filtered, { directorId, role: pos.defaultRole, feeWithPremium: fee, slotIndex: posIdx }];
         }
       });
     }
 
     setActiveSeatIdx(null); setSelectedDirId(null);
     playBoardSeatDrop();
-  }, [boardIdSet, committed, budget, handleRoleChange, pushAndSetSeats, directorMap, tablePos, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize]);
+  }, [boardIdSet, committed, budget, handleRoleChange, pushAndSetSeats, directorMap, tablePos, hasEnergyTransition, hasCsrd, hasStrategy, forceGridLayout, effectiveGridSize, backfillSlotIndices]);
 
   const handleSeatClick = useCallback((idx: number) => {
     touchDragRef.current = null; // cancel any in-flight touch drag before opening overlay

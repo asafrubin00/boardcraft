@@ -34,6 +34,8 @@ const emptyCommittees: Record<CommitteeId, CommitteeState> = {
   energyTransition: { active: false, chairDirectorId: null },
   csrd: { active: false, chairDirectorId: null },
   strategy: { active: false, chairDirectorId: null },
+  risk: { active: false, chairDirectorId: null },
+  sustainability: { active: false, chairDirectorId: null },
 };
 
 describe('Nom/Gov Chair compliance check', () => {

@@ -248,6 +248,14 @@ export interface BoardSeat {
   directorId: string;
   role: BoardRole;
   feeWithPremium: number;
+  /**
+   * Stable visual seat slot (index into the boardroom's position list). Once
+   * set, a NED-role seat keeps this exact slot regardless of what other seats
+   * are added, removed, or moved — without it, slot assignment falls back to
+   * a "next available in array order" heuristic that can silently reassign
+   * other directors' seats as a side effect of an unrelated move.
+   */
+  slotIndex?: number;
 }
 
 export interface ComplianceError {

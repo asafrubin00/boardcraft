@@ -83,6 +83,8 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
       energyTransition: { active: false, chairDirectorId: null },
       csrd: { active: false, chairDirectorId: null },
       strategy: { active: false, chairDirectorId: null },
+      risk: { active: false, chairDirectorId: null },
+      sustainability: { active: false, chairDirectorId: null },
     },
     randomSeed: 42,
     apexStatus: 'monitoring',
@@ -100,6 +102,9 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     founderSyndromeScore: 0,
     charityCommissionInquiryActive: false,
     solvencyRisk: false,
+    acChairVacant: false,
+    masLetterOpen: false,
+    ceoWhistleblower: null,
     pendingBoardNotification: null,
     ...overrides,
   };
