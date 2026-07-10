@@ -391,6 +391,12 @@ function PlayPageInner() {
         }
       }
 
+      // ── sfgevent_01: MAS AC Chair vacancy notice — closes only on a genuine resolution ──
+      if (currentEvent.id === 'sfgevent_01') {
+        newState.acChairVacant =
+          output.outcomeTier !== 'SUCCESS' && output.outcomeTier !== 'CRITICAL_SUCCESS';
+      }
+
       // ── sfgevent_04: CEO whistleblower — set investigation outcome flag ──
       if (currentEvent.id === 'sfgevent_04') {
         const isSuccess =

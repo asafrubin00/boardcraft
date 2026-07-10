@@ -22,8 +22,15 @@ export function checkHealthCrisis(state: GameState): ForcedDirectorChange | null
   const roll = seededRandom(state.randomSeed + 9999);
   if (roll >= 0.15) return null;
 
-  // Select a random non-Chair director from the board
-  const eligibleSeats = state.board.seats.filter((s) => s.role !== 'chair');
+  // Select a random non-Chair, non-protected director from the board.
+  // Worker reps (rdir_w_*) and locked directors (e.g. rdir_heinrich) are
+  // protected — same pattern as revent_12's removal logic in page.tsx.
+  const eligibleSeats = state.board.seats.filter(
+    (s) =>
+      s.role !== 'chair' &&
+      !s.directorId.startsWith('rdir_w_') &&
+      s.directorId !== 'rdir_heinrich'
+  );
   if (eligibleSeats.length === 0) return null;
 
   const idx = Math.floor(seededRandom(state.randomSeed + 10000) * eligibleSeats.length);

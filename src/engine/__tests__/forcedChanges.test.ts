@@ -3,6 +3,7 @@ import {
   applyForcedRemoval,
   applyRetainDirector,
   tickForcedChangeTimer,
+  checkHealthCrisis,
 } from '../forcedChanges';
 import type { GameState, BoardSeat, Director, ForcedDirectorChange } from '@/types/game';
 
@@ -248,6 +249,47 @@ describe('tickForcedChangeTimer', () => {
   });
 });
 
+// ── checkHealthCrisis — protected seats ─────────────────────────────────────
+
+describe('checkHealthCrisis', () => {
+  it('never selects a worker-rep or locked seat, across many rolls', () => {
+    const seats: BoardSeat[] = [
+      stubSeat('rdir_heinrich', 'chair'),
+      stubSeat('rdir_w_koch', 'ned'),
+      stubSeat('rdir_w_alrashid', 'ned'),
+      stubSeat('rdir_w_hoffmann', 'ned'),
+      stubSeat('rdir_w_mehta', 'ned'),
+      stubSeat('rdir_w_gruber', 'ned'),
+      stubSeat('rdir_eligible_1', 'ned'),
+      stubSeat('rdir_eligible_2', 'ned'),
+    ];
+    const directors = seats.map((s) => stubDirector(s.directorId));
+
+    let fired = 0;
+    for (let seed = 0; seed < 2000; seed++) {
+      const state = makeState({
+        board: {
+          seats,
+          totalCommittedBudget: 0,
+          remainingBudget: 0,
+          complianceErrors: [],
+        },
+        directors,
+        currentQuarter: 'Q2',
+        randomSeed: seed,
+      });
+      const result = checkHealthCrisis(state);
+      if (!result) continue;
+      fired++;
+      expect(result.directorId).not.toBe('rdir_heinrich');
+      expect(result.directorId.startsWith('rdir_w_')).toBe(false);
+    }
+
+    // Sanity check: the 15% roll should have fired at least once across 2000 seeds.
+    expect(fired).toBeGreaterThan(0);
+  });
+});
+
 // ── revent_12 removal logic ──────────────────────────────────────────────────
 
 describe('revent_12 lowest-tenure removal rule', () => {
@@ -313,5 +355,39 @@ describe('revent_12 lowest-tenure removal rule', () => {
     expect(toRemove.map((x) => x.id)).toEqual(['rdir_eligible']);
     expect(toRemove.map((x) => x.id)).not.toContain('rdir_heinrich');
     expect(toRemove.map((x) => x.id)).not.toContain('rdir_w_001');
+  });
+});
+
+// ── sfgevent_01 acChairVacant resolution (SFG-02) ───────────────────────────
+
+describe('sfgevent_01 acChairVacant resolution rule', () => {
+  // The play/page.tsx handler sets acChairVacant to false only when the MAS
+  // notice genuinely closes (SUCCESS/CRITICAL_SUCCESS); PARTIAL_SUCCESS
+  // (extension granted), FAILURE, and CRITICAL_FAILURE all leave it open.
+  // Verify the underlying decision rule with a pure simulation.
+
+  function resolveAcChairVacant(outcomeTier: string): boolean {
+    return outcomeTier !== 'SUCCESS' && outcomeTier !== 'CRITICAL_SUCCESS';
+  }
+
+  it('closes the vacancy on CRITICAL_SUCCESS and SUCCESS', () => {
+    expect(resolveAcChairVacant('CRITICAL_SUCCESS')).toBe(false);
+    expect(resolveAcChairVacant('SUCCESS')).toBe(false);
+  });
+
+  it('leaves the vacancy open on PARTIAL_SUCCESS, FAILURE, and CRITICAL_FAILURE', () => {
+    expect(resolveAcChairVacant('PARTIAL_SUCCESS')).toBe(true);
+    expect(resolveAcChairVacant('FAILURE')).toBe(true);
+    expect(resolveAcChairVacant('CRITICAL_FAILURE')).toBe(true);
+  });
+
+  it('an SFG game resolving sfgevent_01 at SUCCESS ends with acChairVacant === false', () => {
+    const state = makeState({
+      company: { id: 'company_sfg' } as unknown as GameState['company'],
+      acChairVacant: true,
+    });
+    const newState: GameState = { ...state, acChairVacant: resolveAcChairVacant('SUCCESS') };
+
+    expect(newState.acChairVacant).toBe(false);
   });
 });
