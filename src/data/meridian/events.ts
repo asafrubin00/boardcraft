@@ -105,7 +105,7 @@ export const meridianEvents: GameEvent[] = [
       },
     },
     isConditional: false,
-    precondition: null,
+    precondition: 'meridian_cavendish_chairs_finance_risk',
   },
 
   // ── Event 02 — Grant or Mission? ──
@@ -285,7 +285,7 @@ export const meridianEvents: GameEvent[] = [
       },
     },
     isConditional: false,
-    precondition: null,
+    precondition: 'meridian_osei_bonsu_on_board',
   },
 
   // ── Event 04 — Safeguarding Alert ──
@@ -372,7 +372,7 @@ export const meridianEvents: GameEvent[] = [
       },
     },
     isConditional: false,
-    precondition: null,
+    precondition: 'meridian_people_culture_chair_filled',
   },
 
   // ── Event 05 — Annual Report Crisis ──
@@ -1287,7 +1287,7 @@ export const meridianEvents: GameEvent[] = [
       },
     },
     isConditional: false,
-    precondition: null,
+    precondition: 'meridian_mensah_chair_osei_bonsu_seated',
   },
 
   // ── Event 15 — AGM: Donor Accountability Motion ──

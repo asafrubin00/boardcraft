@@ -84,7 +84,7 @@ export const rheinfeldEvents: GameEvent[] = [
       },
     },
     isConditional: false,
-    precondition: null,
+    precondition: 'rheinfeld_audit_chair_vacant',
   },
 
   // ── R-02 - Institutional Shareholder Demands Independent Review ──

@@ -197,6 +197,29 @@ export function getCurrentEvent(state: GameState): GameEvent | null {
   return event;
 }
 
+// ── Generic board-state precondition helpers ──
+// Shared building blocks for event preconditions that depend on board
+// composition, following the pattern originally established ad hoc by
+// vantage_nguyen_on_board below.
+
+function isDirectorSeated(state: GameState, directorId: string): boolean {
+  return state.board.seats.some((s) => s.directorId === directorId);
+}
+
+function directorHoldsRole(
+  state: GameState,
+  directorId: string,
+  role: BoardSeat['role']
+): boolean {
+  return state.board.seats.some(
+    (s) => s.directorId === directorId && s.role === role
+  );
+}
+
+function isCommitteeChairVacant(state: GameState, committeeId: CommitteeId): boolean {
+  return state.committees[committeeId]?.chairDirectorId == null;
+}
+
 // ── Check board-state preconditions before an event fires ──
 
 export function checkEventPrecondition(
@@ -310,8 +333,11 @@ export function checkEventPrecondition(
       );
     }
 
-    // M-08: Statutory Inquiry — fires only if Event 01 (Undisclosed Conflict) was partial/fail.
+    // M-08: Statutory Inquiry — fires only if Event 01 (Undisclosed Conflict) was partial/fail,
+    // AND Cavendish is still seated (mevent_08's narrative is entirely about him personally;
+    // if he was removed after mevent_01 fired but before mevent_08's slot, it shouldn't fire).
     case 'mevent_01_partial_or_worse': {
+      if (!isDirectorSeated(state, 'mdir_cavendish')) return false;
       const ev01 = state.resolvedEvents.find((r) => r.eventId === 'mevent_01');
       if (!ev01) return false;
       return (
@@ -321,10 +347,38 @@ export function checkEventPrecondition(
       );
     }
 
+    // M-01: The Undisclosed Conflict — entire premise requires Cavendish to be seated
+    // and chairing Finance & Risk (audit committee); otherwise there is no conflict to narrate.
+    case 'meridian_cavendish_chairs_finance_risk': {
+      return directorHoldsRole(state, 'mdir_cavendish', 'auditChair');
+    }
+
+    // M-03: The Founder's Memo — entire premise is Osei-Bonsu bypassing the CEO.
+    case 'meridian_osei_bonsu_on_board': {
+      return isDirectorSeated(state, 'mdir_osei_bonsu');
+    }
+
+    // M-04: Safeguarding Alert — narrative presupposes an active, staffed People & Culture
+    // (remuneration) committee whose chair can be "on holiday".
+    case 'meridian_people_culture_chair_filled': {
+      return !isCommitteeChairVacant(state, 'remuneration');
+    }
+
+    // M-14: Chair Succession — entire event assumes Mensah currently chairs the board
+    // and Osei-Bonsu is seated (both strategies and the hardcoded role-swap depend on this).
+    case 'meridian_mensah_chair_osei_bonsu_seated': {
+      return (
+        directorHoldsRole(state, 'mdir_mensah', 'chair') &&
+        isDirectorSeated(state, 'mdir_osei_bonsu')
+      );
+    }
+
     // M-09: CEO Ultimatum — auto-fires if Founder Syndrome Score > 60; otherwise requires
-    // Event 03 (Founder's Memo) to have resolved at partial or worse.
+    // Event 03 (Founder's Memo) to have resolved at partial or worse. Either way, Osei-Bonsu
+    // must still be seated — the event is entirely about her.
     // checkEventCondition also has a mevent_09 override for the FSS path.
     case 'mevent_09_fss_or_event03': {
+      if (!isDirectorSeated(state, 'mdir_osei_bonsu')) return false;
       if (state.founderSyndromeScore > 60) return true;
       const ev03 = state.resolvedEvents.find((r) => r.eventId === 'mevent_03');
       if (!ev03) return false;
@@ -333,6 +387,28 @@ export function checkEventPrecondition(
         ev03.outcomeTier === 'FAILURE' ||
         ev03.outcomeTier === 'CRITICAL_FAILURE'
       );
+    }
+
+    // R-01: Audit Committee has no effective chair — the entire premise is that the
+    // seat is vacant; if the player filled it pre-lock, there's nothing to report.
+    case 'rheinfeld_audit_chair_vacant': {
+      return isCommitteeChairVacant(state, 'audit');
+    }
+
+    // SFG-09: Minority Shareholder Requisition — fires only if at least one currently
+    // seated director actually has tenure > 9 (the thing the resolution is about), AND
+    // board renewal hasn't already been addressed via SFG-02's outcome. This case was
+    // previously only defined (dead) inside checkEventCondition's event.id-keyed switch,
+    // where it could never match since 'sfg_renewal_not_addressed' is not an event id.
+    case 'sfg_renewal_not_addressed': {
+      const anyLongTenureSeated = state.board.seats.some((s) => {
+        const director = state.directors.find((d) => d.id === s.directorId);
+        return (director?.tenure ?? 0) > 9;
+      });
+      if (!anyLongTenureSeated) return false;
+      const ev02 = state.resolvedEvents.find((r) => r.eventId === 'sfgevent_02');
+      if (!ev02) return true;
+      return ev02.outcomeTier === 'FAILURE' || ev02.outcomeTier === 'CRITICAL_FAILURE';
     }
 
     default:
