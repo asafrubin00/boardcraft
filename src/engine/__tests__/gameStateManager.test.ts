@@ -311,3 +311,104 @@ describe('SFG board-state preconditions', () => {
     expect(checkEventPrecondition(sfgevent09, state)).toBe(false);
   });
 });
+
+// ── SFG: relocated cases (previously dead in checkEventCondition) ──────────────
+
+describe('SFG relocated preconditions (sfg_helena_on_board etc.)', () => {
+  const sfgevent02 = findEvent(sfgEvents, 'sfgevent_02');
+  const sfgevent07 = findEvent(sfgEvents, 'sfgevent_07');
+  const sfgevent08 = findEvent(sfgEvents, 'sfgevent_08');
+  const sfgevent10 = findEvent(sfgEvents, 'sfgevent_10');
+  const sfgevent11 = findEvent(sfgEvents, 'sfgevent_11');
+  const sfgevent12 = findEvent(sfgEvents, 'sfgevent_12');
+  const sfgevent15 = findEvent(sfgEvents, 'sfgevent_15');
+
+  it('sfgevent_02 (sfg_helena_on_board) does not fire when Helena Soong is removed pre-lock', () => {
+    const state = makeState({
+      board: { seats: [stubSeat('sfgdir_04_rahman')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    });
+    expect(checkEventPrecondition(sfgevent02, state)).toBe(false);
+  });
+
+  it('sfgevent_02 (sfg_helena_on_board) fires when Helena Soong is seated', () => {
+    const state = makeState({
+      board: { seats: [stubSeat('sfgdir_02_soong', 'sid')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    });
+    expect(checkEventPrecondition(sfgevent02, state)).toBe(true);
+  });
+
+  it('sfgevent_07 (sfg_no_sustainability_committee) does not fire when the committee already exists', () => {
+    const state = makeState({
+      committees: { ...makeState().committees, sustainability: { active: true, chairDirectorId: null } },
+    });
+    expect(checkEventPrecondition(sfgevent07, state)).toBe(false);
+  });
+
+  it('sfgevent_07 (sfg_no_sustainability_committee) fires when the committee has not been formed', () => {
+    const state = makeState({
+      committees: { ...makeState().committees, sustainability: { active: false, chairDirectorId: null } },
+    });
+    expect(checkEventPrecondition(sfgevent07, state)).toBe(true);
+  });
+
+  it('sfgevent_08 (sfg_temasek_concern_active) does not fire when Helena/Winston are gone and Lim is off the BRC', () => {
+    const state = makeState({
+      board: { seats: [stubSeat('sfgdir_04_rahman')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      committees: { ...makeState().committees, risk: { active: true, chairDirectorId: 'sfgdir_04_rahman' } },
+    });
+    expect(checkEventPrecondition(sfgevent08, state)).toBe(false);
+  });
+
+  it('sfgevent_08 (sfg_temasek_concern_active) fires when Helena Soong is still seated', () => {
+    const state = makeState({
+      board: { seats: [stubSeat('sfgdir_02_soong', 'sid')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    });
+    expect(checkEventPrecondition(sfgevent08, state)).toBe(true);
+  });
+
+  it('sfgevent_10 (sfg_ceo_whistleblower_substantiated) does not fire while the investigation is only pending', () => {
+    const state = makeState({ ceoWhistleblower: 'pending' });
+    expect(checkEventPrecondition(sfgevent10, state)).toBe(false);
+  });
+
+  it('sfgevent_10 (sfg_ceo_whistleblower_substantiated) fires once the allegation is substantiated', () => {
+    const state = makeState({ ceoWhistleblower: 'substantiated' });
+    expect(checkEventPrecondition(sfgevent10, state)).toBe(true);
+  });
+
+  it('sfgevent_11 (sfg_governance_weak_sv_low) does not fire when governance and SV are healthy', () => {
+    const state = makeState({ governanceHealth: 70, svIndex: 95 });
+    expect(checkEventPrecondition(sfgevent11, state)).toBe(false);
+  });
+
+  it('sfgevent_11 (sfg_governance_weak_sv_low) fires when governance health and SV are both low', () => {
+    const state = makeState({ governanceHealth: 40, svIndex: 80 });
+    expect(checkEventPrecondition(sfgevent11, state)).toBe(true);
+  });
+
+  it('sfgevent_12 (sfg_enforcement_precondition) does not fire when SFG-05/SFG-10 are unresolved or clean', () => {
+    const state = makeState({ resolvedEvents: [] });
+    expect(checkEventPrecondition(sfgevent12, state)).toBe(false);
+  });
+
+  it('sfgevent_12 (sfg_enforcement_precondition) fires when the BRC crisis (SFG-05) was mishandled', () => {
+    const state = makeState({ resolvedEvents: [stubResolvedEvent('sfgevent_05', 'FAILURE')] });
+    expect(checkEventPrecondition(sfgevent12, state)).toBe(true);
+  });
+
+  it('sfgevent_15 (sfg_lim_chair_unresolved) does not fire once Lim is no longer chair', () => {
+    const state = makeState({
+      board: { seats: [stubSeat('sfgdir_01_lim', 'ned')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      committees: { ...makeState().committees, risk: { active: true, chairDirectorId: 'sfgdir_01_lim' } },
+    });
+    expect(checkEventPrecondition(sfgevent15, state)).toBe(false);
+  });
+
+  it('sfgevent_15 (sfg_lim_chair_unresolved) fires while Lim holds both the board chair and the BRC chair', () => {
+    const state = makeState({
+      board: { seats: [stubSeat('sfgdir_01_lim', 'chair')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      committees: { ...makeState().committees, risk: { active: true, chairDirectorId: 'sfgdir_01_lim' } },
+    });
+    expect(checkEventPrecondition(sfgevent15, state)).toBe(true);
+  });
+});

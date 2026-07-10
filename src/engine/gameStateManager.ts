@@ -411,6 +411,62 @@ export function checkEventPrecondition(
       return ev02.outcomeTier === 'FAILURE' || ev02.outcomeTier === 'CRITICAL_FAILURE';
     }
 
+    // SFG-02: Director Independence Review — the two-tier vote is only meaningful
+    // while Helena Soong (the director whose tenure triggers it) is still seated.
+    // Relocated from checkEventCondition's event.id-keyed switch, where
+    // 'sfg_helena_on_board' could never match an event id and was dead code.
+    case 'sfg_helena_on_board': {
+      return isDirectorSeated(state, 'sfgdir_02_soong');
+    }
+
+    // SFG-07: MAS ESG Deadline — fires only if the Sustainability Committee
+    // hasn't already been formed. Relocated (was dead, same reason as above).
+    case 'sfg_no_sustainability_committee': {
+      return !state.committees.sustainability?.active;
+    }
+
+    // SFG-08: Temasek Signals Concern — fires if Helena or Winston still have
+    // tenure issues, or Lim's Risk Committee dual-role is unresolved. Relocated.
+    case 'sfg_temasek_concern_active': {
+      const helenaOnBoard = isDirectorSeated(state, 'sfgdir_02_soong');
+      const winstonOnBoard = isDirectorSeated(state, 'sfgdir_03_goh');
+      const limOnBRC = state.committees.risk?.chairDirectorId === 'sfgdir_01_lim';
+      return helenaOnBoard || winstonOnBoard || limOnBRC;
+    }
+
+    // SFG-10: CEO Conduct — fires only once the whistleblower investigation
+    // (SFG-04) has substantiated the allegation. Relocated.
+    case 'sfg_ceo_whistleblower_substantiated': {
+      return state.ceoWhistleblower === 'substantiated';
+    }
+
+    // SFG-11: Hostile Signal — fires only when governance is visibly weak
+    // (low GH and SV). Relocated.
+    case 'sfg_governance_weak_sv_low': {
+      return state.governanceHealth < 55 && state.svIndex < 90;
+    }
+
+    // SFG-12: MAS Public Censure — fires if the BRC crisis (SFG-05) or CEO
+    // conduct investigation (SFG-10) was mishandled. Relocated.
+    case 'sfg_enforcement_precondition': {
+      const brcFailed = state.resolvedEvents.some(
+        (r) => r.eventId === 'sfgevent_05' && (r.outcomeTier === 'FAILURE' || r.outcomeTier === 'CRITICAL_FAILURE')
+      );
+      const ceoMishandled = state.resolvedEvents.some(
+        (r) => r.eventId === 'sfgevent_10' && (r.outcomeTier === 'FAILURE' || r.outcomeTier === 'CRITICAL_FAILURE')
+      );
+      return brcFailed || ceoMishandled;
+    }
+
+    // SFG-15: Chair Succession — fires only while Lim still holds both the
+    // board chair and the Risk Committee (BRC) chair. Relocated.
+    case 'sfg_lim_chair_unresolved': {
+      return (
+        directorHoldsRole(state, 'sfgdir_01_lim', 'chair') &&
+        state.committees.risk?.chairDirectorId === 'sfgdir_01_lim'
+      );
+    }
+
     default:
       return true;
   }
@@ -484,49 +540,6 @@ function checkEventCondition(event: GameEvent, state: GameState): boolean {
           (r.outcomeTier === 'FAILURE' || r.outcomeTier === 'CRITICAL_FAILURE')
       );
       return state.governanceHealth < 50 && greenvaleActive;
-    }
-
-    // ── SFG-specific preconditions ──
-    case 'sfg_helena_on_board': {
-      return state.board.seats.some((s) => s.directorId === 'sfgdir_02_soong');
-    }
-    case 'sfg_no_sustainability_committee': {
-      return !state.committees.sustainability?.active;
-    }
-    case 'sfg_temasek_concern_active': {
-      // Fires if Helena or Winston still have tenure issues, or BRC dual-role unresolved
-      const helenaOnBoard = state.board.seats.some((s) => s.directorId === 'sfgdir_02_soong');
-      const winstonOnBoard = state.board.seats.some((s) => s.directorId === 'sfgdir_03_goh');
-      const limOnBRC = state.committees.risk?.chairDirectorId === 'sfgdir_01_lim';
-      return helenaOnBoard || winstonOnBoard || limOnBRC;
-    }
-    case 'sfg_renewal_not_addressed': {
-      // Fires if no independence/tenure event was resolved with a positive outcome
-      const ev02 = state.resolvedEvents.find((r) => r.eventId === 'sfgevent_02');
-      if (!ev02) return true;
-      return ev02.outcomeTier === 'FAILURE' || ev02.outcomeTier === 'CRITICAL_FAILURE';
-    }
-    case 'sfg_ceo_whistleblower_substantiated': {
-      return state.ceoWhistleblower === 'substantiated';
-    }
-    case 'sfg_governance_weak_sv_low': {
-      return state.governanceHealth < 55 && state.svIndex < 90;
-    }
-    case 'sfg_enforcement_precondition': {
-      // Fires if BRC event (SFG-05) failed OR CEO conduct event (SFG-10) was critically mishandled
-      const brcFailed = state.resolvedEvents.some(
-        (r) => r.eventId === 'sfgevent_05' && (r.outcomeTier === 'FAILURE' || r.outcomeTier === 'CRITICAL_FAILURE')
-      );
-      const ceoMishandled = state.resolvedEvents.some(
-        (r) => r.eventId === 'sfgevent_10' && (r.outcomeTier === 'FAILURE' || r.outcomeTier === 'CRITICAL_FAILURE')
-      );
-      return brcFailed || ceoMishandled;
-    }
-    case 'sfg_lim_chair_unresolved': {
-      return (
-        state.board.seats.some((s) => s.directorId === 'sfgdir_01_lim' && s.role === 'chair') &&
-        state.committees.risk?.chairDirectorId === 'sfgdir_01_lim'
-      );
     }
 
     default:
