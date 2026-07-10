@@ -38,6 +38,8 @@ import {
   applyRetainDirector,
   applyReplacement,
   tickForcedChangeTimer,
+  applySfgAcChairResignation,
+  applySfgAcChairAppointment,
 } from '@/engine/forcedChanges';
 import { playBoardSeatDrop, playBoardSeatRemove, playBoardConfirm, playDirectorSelect, ensureAudioContext } from '@/engine/soundEngine';
 import HintModal from '@/components/HintModal';
@@ -180,12 +182,14 @@ function PlayPageInner() {
       yearend: { quarter: 'Q4', turn: 1, phase: 'year_end' },
     };
     const target = quarterMap[phaseKey];
-    const started: GameState = {
+    let started: GameState = {
       ...state,
       currentQuarter: target.quarter,
       currentTurn: target.turn,
       phase: target.phase === 'gameplay' ? 'gameplay' : target.phase === 'agm' ? 'agm' : 'year_end',
     };
+    // No-ops unless this is sfg-q1 — self-guarded on company/quarter/turn.
+    started = applySfgAcChairResignation(started);
     const breakdown = recalcGovernanceBreakdown(started);
     started.governanceHealthBreakdown = rescaleBreakdown(breakdown, 79);
     started.governanceHealth = 79;
@@ -242,12 +246,15 @@ function PlayPageInner() {
   const handleStartGame = useCallback(
     (seats: BoardSeat[], hasEnergyTransition: boolean, optionalCommittees?: CommitteeId[]) => {
       const state = initializeGameState(seats, hasEnergyTransition, selectedCompany ?? undefined, optionalCommittees);
-      const started: GameState = {
+      let started: GameState = {
         ...state,
         currentQuarter: 'Q1',
         currentTurn: 1,
         phase: 'gameplay',
       };
+      // SFG only: the sitting AC Chair resigns live at Q1T1, creating the
+      // vacancy sfgevent_01 is about. No-op for every other company.
+      started = applySfgAcChairResignation(started);
       const breakdown = recalcGovernanceBreakdown(started);
       started.governanceHealthBreakdown = breakdown;
       started.governanceHealth = breakdown.total;
@@ -391,10 +398,12 @@ function PlayPageInner() {
         }
       }
 
-      // ── sfgevent_01: MAS AC Chair vacancy notice — closes only on a genuine resolution ──
+      // ── sfgevent_01: AC Chair appointment — on SUCCESS/CRITICAL_SUCCESS the chosen
+      // strategy's appointee takes the seat; otherwise it stays vacant (a legitimate
+      // consequence now, not a stale flag — see forcedChanges.ts). Always clears the
+      // resignation forcedChange, since the crisis is settled either way this turn.
       if (currentEvent.id === 'sfgevent_01') {
-        newState.acChairVacant =
-          output.outcomeTier !== 'SUCCESS' && output.outcomeTier !== 'CRITICAL_SUCCESS';
+        Object.assign(newState, applySfgAcChairAppointment(newState, strategyChoice, output.outcomeTier));
       }
 
       // ── sfgevent_04: CEO whistleblower — set investigation outcome flag ──
@@ -732,7 +741,7 @@ function PlayPageInner() {
           onClearRegen={() => setRegenDirectorIds([])}
           onForcedDismissAndReplace={handleForcedDismissAndReplace}
           onForcedRetain={handleForcedRetain}
-          showForcedModal={!!gameState.forcedChange && !replacementConfirmed.current}
+          showForcedModal={!!gameState.forcedChange && !replacementConfirmed.current && gameState.forcedChange.type !== 'resignation'}
           onQuit={handleChangeCompany}
         />
         {gameState.pendingBoardNotification && (

@@ -1,6 +1,7 @@
 // ── Forced Mid-Game Director Changes ──
 
-import type { GameState, ForcedDirectorChange, BoardSeat, Director } from '@/types/game';
+import type { GameState, ForcedDirectorChange, BoardSeat, Director, OutcomeTier } from '@/types/game';
+import { computeFeeWithPremium } from '@/engine/compliance';
 
 // ── Seeded RNG helper ──
 function seededRandom(seed: number): number {
@@ -178,7 +179,6 @@ export function applyReplacement(
   const director = state.directors.find((d) => d.id === newDirectorId);
   if (!director) return state;
 
-  const { computeFeeWithPremium } = require('@/engine/compliance');
   const fee = computeFeeWithPremium(director.annualFee, role);
 
   const newSeat: BoardSeat = {
@@ -198,6 +198,133 @@ export function applyReplacement(
       totalCommittedBudget: totalFee,
       remainingBudget: state.company.boardBudget - totalFee,
     },
+    forcedChange: null,
+  };
+}
+
+// ── SFG-01: Audit Committee Chair resignation (event firing) ──
+// Triggered exactly once, when a fresh SFG game reaches Q1T1 — whoever the
+// player assigned as AC Chair pre-lock resigns live, creating the vacancy
+// sfgevent_01's narrative is actually about. Called from both
+// page.tsx's handleStartGame and the ?dev=sfg-q1 shortcut, since it
+// self-guards on company + quarter/turn it's safe to call unconditionally.
+//
+// Deliberately does NOT populate a forcedChange that drives the interactive
+// ForcedChangeModal ("dismiss and replace") — that modal's generic
+// pick-any-director flow would let the player fill the seat before ever
+// seeing sfgevent_01's four curated strategies. type: 'resignation' is
+// excluded from showForcedModal in page.tsx for exactly this reason; the
+// forcedChange here exists only for the passive board-display/banner
+// treatment (same visual language as health crisis) and is cleared the
+// moment the event resolves. turnsRemaining is inert — the event always
+// resolves same-turn, tickForcedChangeTimer never runs against it — set to
+// 1 purely so the banner copy ("within N turns") doesn't imply a multi-turn
+// window that doesn't exist.
+export function applySfgAcChairResignation(state: GameState): GameState {
+  if (state.company.id !== 'company_sfg') return state;
+  if (state.currentQuarter !== 'Q1' || state.currentTurn !== 1) return state;
+  if (state.forcedChange) return state;
+
+  const acChairSeat = state.board.seats.find((s) => s.role === 'auditChair');
+  if (!acChairSeat) return state; // defensive — SG-MAS-002 blocks locking without one
+
+  const director = state.directors.find((d) => d.id === acChairSeat.directorId);
+  if (!director) return state;
+
+  const afterRemoval = applyForcedRemoval(state, director.id);
+
+  return {
+    ...afterRemoval,
+    acChairVacant: true,
+    committees: {
+      ...afterRemoval.committees,
+      audit: { active: true, chairDirectorId: null },
+    },
+    forcedChange: {
+      type: 'resignation',
+      directorId: director.id,
+      directorName: director.name,
+      turnsRemaining: 1,
+      narrative: `${director.name} has resigned as Audit Committee Chair with immediate effect, citing a competing offer from a rival institution. MAS has been notified.`,
+      canRetain: false,
+    },
+  };
+}
+
+// ── SFG-01: Audit Committee Chair appointment (event resolution) ──
+
+/** Strategies with a single fixed appointee. sfgevent_01_b (Tan/Halliday) is
+ *  resolved dynamically below since it has a built-in fallback pair. */
+const SFG_AC_CHAIR_APPOINTEE_BY_STRATEGY: Partial<Record<string, string>> = {
+  sfgevent_01_a: 'sfgdir_06_lee',    // Lee Siew Geok
+  sfgevent_01_c: 'sfgdir_04_rahman', // Dr. Nadia Rahman — promoted from her existing seat
+};
+
+function resolveSfgEvent01Appointee(strategyId: string, state: GameState): string | null {
+  if (strategyId === 'sfgevent_01_b') {
+    // Margaret Tan or Robert Halliday — fall back to whichever wasn't the
+    // resignee (mirrors Halliday's own bio: "backup if Lee Siew Geok or
+    // Margaret Tan unavailable").
+    const resignedId = state.forcedChange?.type === 'resignation' ? state.forcedChange.directorId : null;
+    return resignedId === 'sfgdir_08_tan_margaret' ? 'sfgdir_21_halliday' : 'sfgdir_08_tan_margaret';
+  }
+  return SFG_AC_CHAIR_APPOINTEE_BY_STRATEGY[strategyId] ?? null;
+}
+
+/** Applies sfgevent_01's board consequence. On SUCCESS/CRITICAL_SUCCESS the
+ *  chosen strategy's appointee takes the AC Chair seat (reassigned in place
+ *  if already seated, otherwise added). On PARTIAL_SUCCESS/FAILURE/
+ *  CRITICAL_FAILURE — including strategy D's extension request — the seat
+ *  stays vacant: acChairVacant remains true and committees.audit.chairDirectorId
+ *  stays null, which is now a legitimate, board-state-true consequence (it
+ *  drives the AGM Resolution 2 penalty) rather than the old unconditional bug.
+ *  Always clears forcedChange — the resignation crisis is settled either way. */
+export function applySfgAcChairAppointment(
+  state: GameState,
+  strategyId: string,
+  outcomeTier: OutcomeTier
+): GameState {
+  const appointed = outcomeTier === 'SUCCESS' || outcomeTier === 'CRITICAL_SUCCESS';
+  const appointeeId = appointed ? resolveSfgEvent01Appointee(strategyId, state) : null;
+
+  if (!appointeeId) {
+    return {
+      ...state,
+      acChairVacant: true,
+      committees: { ...state.committees, audit: { active: true, chairDirectorId: null } },
+      forcedChange: null,
+    };
+  }
+
+  let next: GameState;
+  const existingSeat = state.board.seats.find((s) => s.directorId === appointeeId);
+
+  if (existingSeat) {
+    // Already seated (e.g. promoting Rahman) — reassign role in place rather
+    // than adding a duplicate seat.
+    const director = state.directors.find((d) => d.id === appointeeId);
+    const fee = director ? computeFeeWithPremium(director.annualFee, 'auditChair') : existingSeat.feeWithPremium;
+    const newSeats = state.board.seats.map((s) =>
+      s.directorId === appointeeId ? { ...s, role: 'auditChair' as const, feeWithPremium: fee } : s
+    );
+    const totalFee = newSeats.reduce((sum, s) => sum + s.feeWithPremium, 0);
+    next = {
+      ...state,
+      board: {
+        ...state.board,
+        seats: newSeats,
+        totalCommittedBudget: totalFee,
+        remainingBudget: state.company.boardBudget - totalFee,
+      },
+    };
+  } else {
+    next = applyReplacement(state, appointeeId, 'auditChair');
+  }
+
+  return {
+    ...next,
+    acChairVacant: false,
+    committees: { ...next.committees, audit: { active: true, chairDirectorId: appointeeId } },
     forcedChange: null,
   };
 }

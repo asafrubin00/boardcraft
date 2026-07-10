@@ -377,7 +377,7 @@ export interface ResolvedEvent {
 
 // ── Forced Mid-Game Director Changes ──
 
-export type ForcedChangeType = 'health_crisis' | 'misconduct' | 'regulatory_disqualification' | 'event_resolution';
+export type ForcedChangeType = 'health_crisis' | 'misconduct' | 'regulatory_disqualification' | 'event_resolution' | 'resignation';
 
 export interface ForcedDirectorChange {
   type: ForcedChangeType;

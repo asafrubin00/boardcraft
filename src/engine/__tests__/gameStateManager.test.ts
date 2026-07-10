@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkEventPrecondition, getCurrentEvent } from '../gameStateManager';
+import { checkEventPrecondition, getCurrentEvent, resolveSfgEvent01Event } from '../gameStateManager';
 import { meridianEvents } from '@/data/meridian/events';
 import { rheinfeldEvents } from '@/data/rheinfeld/events';
 import { sfgEvents } from '@/data/sfg/events';
@@ -410,5 +410,87 @@ describe('SFG relocated preconditions (sfg_helena_on_board etc.)', () => {
       committees: { ...makeState().committees, risk: { active: true, chairDirectorId: 'sfgdir_01_lim' } },
     });
     expect(checkEventPrecondition(sfgevent15, state)).toBe(true);
+  });
+});
+
+// ── SFG-01 redesign: live resignation narrative + strategy filtering ───────
+
+describe('resolveSfgEvent01Event', () => {
+  const sfgevent01 = findEvent(sfgEvents, 'sfgevent_01');
+  const rahmanSeated = { seats: [stubSeat('sfgdir_04_rahman', 'ned')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] };
+
+  it('substitutes {acChair.name} with the resigning director and keeps all four strategies for a generic resignee', () => {
+    const state = makeState({
+      board: rahmanSeated,
+      directors: [stubDirector('sfgdir_08_tan_margaret')],
+      forcedChange: { type: 'resignation', directorId: 'sfgdir_08_tan_margaret', directorName: 'Margaret Tan Swee Lin', turnsRemaining: 1, narrative: '' },
+    });
+    const resolved = resolveSfgEvent01Event(sfgevent01, state);
+
+    expect(resolved.narrativeCard).toContain('Director sfgdir_08_tan_margaret has resigned');
+    expect(resolved.narrativeCard).not.toContain('{acChair.name}');
+    expect(resolved.strategies.map((s) => s.id)).toEqual([
+      'sfgevent_01_a', 'sfgevent_01_b', 'sfgevent_01_c', 'sfgevent_01_d',
+    ]);
+  });
+
+  it('removes the Geok strategy (_a) when Lee Siew Geok is the resignee', () => {
+    const state = makeState({
+      board: rahmanSeated,
+      directors: [stubDirector('sfgdir_06_lee')],
+      forcedChange: { type: 'resignation', directorId: 'sfgdir_06_lee', directorName: 'Lee Siew Geok', turnsRemaining: 1, narrative: '' },
+    });
+    const resolved = resolveSfgEvent01Event(sfgevent01, state);
+
+    expect(resolved.narrativeCard).toContain('Director sfgdir_06_lee has resigned');
+    expect(resolved.strategies.map((s) => s.id)).not.toContain('sfgevent_01_a');
+    expect(resolved.strategies.map((s) => s.id)).toEqual(['sfgevent_01_b', 'sfgevent_01_c', 'sfgevent_01_d']);
+  });
+
+  it('removes the promote-Rahman strategy (_c) when Rahman was replaced pre-lock by someone else', () => {
+    const state = makeState({
+      board: { seats: [], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] }, // Rahman not seated
+      directors: [stubDirector('sfgdir_08_tan_margaret')],
+      forcedChange: { type: 'resignation', directorId: 'sfgdir_08_tan_margaret', directorName: 'Margaret Tan Swee Lin', turnsRemaining: 1, narrative: '' },
+    });
+    const resolved = resolveSfgEvent01Event(sfgevent01, state);
+
+    expect(resolved.strategies.map((s) => s.id)).not.toContain('sfgevent_01_c');
+    expect(resolved.strategies.map((s) => s.id)).toEqual(['sfgevent_01_a', 'sfgevent_01_b', 'sfgevent_01_d']);
+  });
+
+  it('removes the promote-Rahman strategy (_c) when Rahman herself is the resignee — implicit case via the seated-check, not special-cased', () => {
+    // Rahman resigned, so she's no longer in board.seats — isDirectorSeated(state, 'sfgdir_04_rahman')
+    // is false for the same reason as the pre-lock-replacement case above, not because of any
+    // resignee-identity check. This test pins that behavior so a future refactor (e.g. one that
+    // special-cases "is the resignee === Rahman?" the way it does for Geok) can't silently drop it.
+    const state = makeState({
+      board: { seats: [], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      directors: [stubDirector('sfgdir_04_rahman')],
+      forcedChange: { type: 'resignation', directorId: 'sfgdir_04_rahman', directorName: 'Dr. Nadia Rahman', turnsRemaining: 1, narrative: '' },
+    });
+    const resolved = resolveSfgEvent01Event(sfgevent01, state);
+
+    expect(resolved.narrativeCard).toContain('Director sfgdir_04_rahman has resigned');
+    expect(resolved.strategies.map((s) => s.id)).not.toContain('sfgevent_01_c');
+    expect(resolved.strategies.map((s) => s.id)).toEqual(['sfgevent_01_a', 'sfgevent_01_b', 'sfgevent_01_d']);
+  });
+
+  it('removes both _a and _c when Geok is the resignee and Rahman is unseated', () => {
+    const state = makeState({
+      board: { seats: [], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      directors: [stubDirector('sfgdir_06_lee')],
+      forcedChange: { type: 'resignation', directorId: 'sfgdir_06_lee', directorName: 'Lee Siew Geok', turnsRemaining: 1, narrative: '' },
+    });
+    const resolved = resolveSfgEvent01Event(sfgevent01, state);
+
+    expect(resolved.strategies.map((s) => s.id)).toEqual(['sfgevent_01_b', 'sfgevent_01_d']);
+  });
+
+  it('falls back to generic phrasing when no resignation forcedChange is present', () => {
+    const state = makeState({ board: rahmanSeated, directors: [] });
+    const resolved = resolveSfgEvent01Event(sfgevent01, state);
+
+    expect(resolved.narrativeCard).toContain('The outgoing Audit Committee Chair has resigned');
   });
 });

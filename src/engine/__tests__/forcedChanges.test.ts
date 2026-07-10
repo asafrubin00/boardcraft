@@ -4,6 +4,8 @@ import {
   applyRetainDirector,
   tickForcedChangeTimer,
   checkHealthCrisis,
+  applySfgAcChairResignation,
+  applySfgAcChairAppointment,
 } from '../forcedChanges';
 import type { GameState, BoardSeat, Director, ForcedDirectorChange } from '@/types/game';
 
@@ -358,36 +360,167 @@ describe('revent_12 lowest-tenure removal rule', () => {
   });
 });
 
-// ── sfgevent_01 acChairVacant resolution (SFG-02) ───────────────────────────
+// ── SFG-01: live AC Chair resignation + appointment (redesign) ─────────────
 
-describe('sfgevent_01 acChairVacant resolution rule', () => {
-  // The play/page.tsx handler sets acChairVacant to false only when the MAS
-  // notice genuinely closes (SUCCESS/CRITICAL_SUCCESS); PARTIAL_SUCCESS
-  // (extension granted), FAILURE, and CRITICAL_FAILURE all leave it open.
-  // Verify the underlying decision rule with a pure simulation.
+function sfgState(overrides: Partial<GameState> = {}): GameState {
+  return makeState({
+    company: { id: 'company_sfg' } as unknown as GameState['company'],
+    currentQuarter: 'Q1',
+    currentTurn: 1,
+    ...overrides,
+  });
+}
 
-  function resolveAcChairVacant(outcomeTier: string): boolean {
-    return outcomeTier !== 'SUCCESS' && outcomeTier !== 'CRITICAL_SUCCESS';
-  }
+describe('applySfgAcChairResignation', () => {
+  it('removes whoever holds auditChair and opens the vacancy, for any AC Chair identity', () => {
+    for (const id of ['sfgdir_08_tan_margaret', 'sfgdir_06_lee', 'sfgdir_04_rahman']) {
+      const state = sfgState({
+        board: {
+          seats: [stubSeat('sfgdir_01_lim', 'chair'), stubSeat(id, 'auditChair')],
+          totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [],
+        },
+        directors: [stubDirector('sfgdir_01_lim'), stubDirector(id)],
+      });
+      const result = applySfgAcChairResignation(state);
 
-  it('closes the vacancy on CRITICAL_SUCCESS and SUCCESS', () => {
-    expect(resolveAcChairVacant('CRITICAL_SUCCESS')).toBe(false);
-    expect(resolveAcChairVacant('SUCCESS')).toBe(false);
+      expect(result.board.seats.some((s) => s.directorId === id)).toBe(false);
+      expect(result.acChairVacant).toBe(true);
+      expect(result.committees.audit.chairDirectorId).toBeNull();
+      expect(result.forcedChange).toMatchObject({ type: 'resignation', directorId: id });
+    }
   });
 
-  it('leaves the vacancy open on PARTIAL_SUCCESS, FAILURE, and CRITICAL_FAILURE', () => {
-    expect(resolveAcChairVacant('PARTIAL_SUCCESS')).toBe(true);
-    expect(resolveAcChairVacant('FAILURE')).toBe(true);
-    expect(resolveAcChairVacant('CRITICAL_FAILURE')).toBe(true);
-  });
-
-  it('an SFG game resolving sfgevent_01 at SUCCESS ends with acChairVacant === false', () => {
-    const state = makeState({
-      company: { id: 'company_sfg' } as unknown as GameState['company'],
-      acChairVacant: true,
+  it('does not surface the interactive replacement modal (turnsRemaining is inert, not a countdown)', () => {
+    const state = sfgState({
+      board: {
+        seats: [stubSeat('sfgdir_08_tan_margaret', 'auditChair')],
+        totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [],
+      },
+      directors: [stubDirector('sfgdir_08_tan_margaret')],
     });
-    const newState: GameState = { ...state, acChairVacant: resolveAcChairVacant('SUCCESS') };
+    const result = applySfgAcChairResignation(state);
+    expect(result.forcedChange?.type).toBe('resignation');
+    // page.tsx's showForcedModal excludes type 'resignation' entirely — the
+    // event's own strategies are the only resolution path. turnsRemaining
+    // exists only so banner copy doesn't misstate an active countdown.
+    expect(result.forcedChange?.turnsRemaining).toBeGreaterThan(0);
+  });
 
-    expect(newState.acChairVacant).toBe(false);
+  it('is a no-op for non-SFG companies', () => {
+    const state = makeState({
+      board: { seats: [stubSeat('dir_x', 'auditChair')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      directors: [stubDirector('dir_x')],
+    });
+    const result = applySfgAcChairResignation(state);
+    expect(result).toBe(state);
+  });
+
+  it('is a no-op outside Q1T1', () => {
+    const state = sfgState({
+      currentQuarter: 'Q2',
+      currentTurn: 1,
+      board: { seats: [stubSeat('sfgdir_08_tan_margaret', 'auditChair')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      directors: [stubDirector('sfgdir_08_tan_margaret')],
+    });
+    const result = applySfgAcChairResignation(state);
+    expect(result).toBe(state);
+  });
+
+  it('is a defensive no-op when no auditChair seat exists', () => {
+    const state = sfgState({
+      board: { seats: [stubSeat('sfgdir_01_lim', 'chair')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      directors: [stubDirector('sfgdir_01_lim')],
+    });
+    const result = applySfgAcChairResignation(state);
+    expect(result.forcedChange).toBeNull();
+    expect(result.acChairVacant).toBe(false);
+  });
+});
+
+describe('applySfgAcChairAppointment', () => {
+  it('appoints Geok on SUCCESS/CRITICAL_SUCCESS for strategy A and clears the vacancy', () => {
+    for (const tier of ['SUCCESS', 'CRITICAL_SUCCESS'] as const) {
+      const state = sfgState({
+        board: { seats: [stubSeat('sfgdir_01_lim', 'chair')], totalCommittedBudget: 150_000, remainingBudget: 350_000, complianceErrors: [] },
+        directors: [stubDirector('sfgdir_01_lim'), stubDirector('sfgdir_06_lee')],
+        acChairVacant: true,
+        forcedChange: { type: 'resignation', directorId: 'sfgdir_08_tan_margaret', directorName: 'Tan', turnsRemaining: 1, narrative: '' },
+      });
+      const result = applySfgAcChairAppointment(state, 'sfgevent_01_a', tier);
+
+      expect(result.board.seats.some((s) => s.directorId === 'sfgdir_06_lee' && s.role === 'auditChair')).toBe(true);
+      expect(result.committees.audit.chairDirectorId).toBe('sfgdir_06_lee');
+      expect(result.acChairVacant).toBe(false);
+      expect(result.forcedChange).toBeNull();
+    }
+  });
+
+  it('leaves the seat vacant on PARTIAL_SUCCESS/FAILURE/CRITICAL_FAILURE even for an appointment strategy', () => {
+    // This is now the legitimate dead end SFG-01 always meant to describe:
+    // acChairVacant stays true, driving the AGM Res2 penalty honestly.
+    for (const tier of ['PARTIAL_SUCCESS', 'FAILURE', 'CRITICAL_FAILURE'] as const) {
+      const state = sfgState({
+        board: { seats: [stubSeat('sfgdir_01_lim', 'chair')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+        directors: [stubDirector('sfgdir_01_lim'), stubDirector('sfgdir_06_lee')],
+        acChairVacant: true,
+        forcedChange: { type: 'resignation', directorId: 'sfgdir_08_tan_margaret', directorName: 'Tan', turnsRemaining: 1, narrative: '' },
+      });
+      const result = applySfgAcChairAppointment(state, 'sfgevent_01_a', tier);
+
+      expect(result.board.seats.some((s) => s.directorId === 'sfgdir_06_lee')).toBe(false);
+      expect(result.committees.audit.chairDirectorId).toBeNull();
+      expect(result.acChairVacant).toBe(true);
+      expect(result.forcedChange).toBeNull(); // crisis is settled either way this turn
+    }
+  });
+
+  it('never appoints anyone for strategy D (request extension), regardless of tier', () => {
+    const state = sfgState({
+      board: { seats: [stubSeat('sfgdir_01_lim', 'chair')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      directors: [stubDirector('sfgdir_01_lim')],
+      acChairVacant: true,
+      forcedChange: { type: 'resignation', directorId: 'sfgdir_08_tan_margaret', directorName: 'Tan', turnsRemaining: 1, narrative: '' },
+    });
+    const result = applySfgAcChairAppointment(state, 'sfgevent_01_d', 'CRITICAL_SUCCESS');
+    expect(result.acChairVacant).toBe(true);
+    expect(result.committees.audit.chairDirectorId).toBeNull();
+  });
+
+  it('promotes Rahman in place (role reassignment, no duplicate seat) for strategy C', () => {
+    const state = sfgState({
+      board: {
+        seats: [stubSeat('sfgdir_01_lim', 'chair'), stubSeat('sfgdir_04_rahman', 'ned', 160_000)],
+        totalCommittedBudget: 160_000, remainingBudget: 340_000, complianceErrors: [],
+      },
+      directors: [stubDirector('sfgdir_01_lim'), stubDirector('sfgdir_04_rahman')],
+      acChairVacant: true,
+      forcedChange: { type: 'resignation', directorId: 'sfgdir_08_tan_margaret', directorName: 'Tan', turnsRemaining: 1, narrative: '' },
+    });
+    const result = applySfgAcChairAppointment(state, 'sfgevent_01_c', 'SUCCESS');
+
+    expect(result.board.seats).toHaveLength(2); // no duplicate seat added
+    const rahmanSeat = result.board.seats.find((s) => s.directorId === 'sfgdir_04_rahman');
+    expect(rahmanSeat?.role).toBe('auditChair');
+    expect(result.committees.audit.chairDirectorId).toBe('sfgdir_04_rahman');
+  });
+
+  it('strategy B appoints Margaret Tan by default', () => {
+    const state = sfgState({
+      board: { seats: [stubSeat('sfgdir_01_lim', 'chair')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      directors: [stubDirector('sfgdir_01_lim'), stubDirector('sfgdir_08_tan_margaret'), stubDirector('sfgdir_21_halliday')],
+      forcedChange: { type: 'resignation', directorId: 'sfgdir_06_lee', directorName: 'Lee Siew Geok', turnsRemaining: 1, narrative: '' },
+    });
+    const result = applySfgAcChairAppointment(state, 'sfgevent_01_b', 'SUCCESS');
+    expect(result.committees.audit.chairDirectorId).toBe('sfgdir_08_tan_margaret');
+  });
+
+  it('strategy B falls back to Halliday when Margaret Tan herself is the resignee', () => {
+    const state = sfgState({
+      board: { seats: [stubSeat('sfgdir_01_lim', 'chair')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      directors: [stubDirector('sfgdir_01_lim'), stubDirector('sfgdir_08_tan_margaret'), stubDirector('sfgdir_21_halliday')],
+      forcedChange: { type: 'resignation', directorId: 'sfgdir_08_tan_margaret', directorName: 'Margaret Tan Swee Lin', turnsRemaining: 1, narrative: '' },
+    });
+    const result = applySfgAcChairAppointment(state, 'sfgevent_01_b', 'SUCCESS');
+    expect(result.committees.audit.chairDirectorId).toBe('sfgdir_21_halliday');
   });
 });

@@ -456,7 +456,7 @@ export default function GameBoardScreen({
         <div className="bg-error/20 border-b border-error/40 px-4 py-2 flex items-center justify-center gap-2 text-sm shrink-0">
           <span className="text-error font-bold">URGENT:</span>
           <span className="text-foreground/90">
-            {gameState.forcedChange.directorName} has {gameState.forcedChange.type === 'health_crisis' ? 'resigned' : 'been flagged'}.
+            {gameState.forcedChange.directorName} has {gameState.forcedChange.type === 'health_crisis' || gameState.forcedChange.type === 'resignation' ? 'resigned' : 'been flagged'}.
             Appoint a replacement within {gameState.forcedChange.turnsRemaining} turn{gameState.forcedChange.turnsRemaining !== 1 ? 's' : ''}.
           </span>
         </div>

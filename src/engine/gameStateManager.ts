@@ -152,7 +152,9 @@ export function initializeGameState(
     charityCommissionInquiryActive: false,
     solvencyRisk: false,
     // SFG-specific fields (neutral defaults for non-SFG companies)
-    acChairVacant: co.id === 'company_sfg',
+    // No vacancy exists until sfgevent_01 fires and the sitting AC Chair
+    // resigns live (see applySfgAcChairResignation in forcedChanges.ts).
+    acChairVacant: false,
     masLetterOpen: co.id === 'company_sfg',
     ceoWhistleblower: co.id === 'company_sfg' ? 'pending' : null,
     pendingBoardNotification: null,
@@ -186,6 +188,11 @@ export function getCurrentEvent(state: GameState): GameEvent | null {
   // Check if event was already resolved
   if (state.resolvedEvents.some((r) => r.eventId === event.id)) {
     return null;
+  }
+
+  // SFG-01: inject the live resignee's name and filter invalidated strategies
+  if (event.id === 'sfgevent_01') {
+    return resolveSfgEvent01Event(event, state);
   }
 
   // If ETC is already active, replace "form ETC" strategies with "leverage existing ETC"
@@ -495,6 +502,34 @@ function replaceEtcStrategies(event: GameEvent): GameEvent | null {
   });
 
   return { ...event, strategies: newStrategies };
+}
+
+// ── SFG-01: resolve the live resignation into narrative + strategy list ──
+// Minimal, contained token substitution — not a general templating system.
+// Substitutes {acChair.name} in narrativeCard with the director who just
+// resigned (read from state.forcedChange, set by applySfgAcChairResignation
+// in forcedChanges.ts), and filters out strategies whose premise the
+// resignation invalidates: appointing Geok when she's the one who just
+// resigned, or promoting Rahman when she isn't seated at all.
+export function resolveSfgEvent01Event(event: GameEvent, state: GameState): GameEvent {
+  const resignedId = state.forcedChange?.type === 'resignation' ? state.forcedChange.directorId : null;
+  const resignedName = resignedId
+    ? state.directors.find((d) => d.id === resignedId)?.name ?? 'The outgoing Audit Committee Chair'
+    : 'The outgoing Audit Committee Chair';
+
+  let strategies = event.strategies;
+  if (resignedId === 'sfgdir_06_lee') {
+    strategies = strategies.filter((s) => s.id !== 'sfgevent_01_a');
+  }
+  if (!isDirectorSeated(state, 'sfgdir_04_rahman')) {
+    strategies = strategies.filter((s) => s.id !== 'sfgevent_01_c');
+  }
+
+  return {
+    ...event,
+    narrativeCard: event.narrativeCard.replace(/\{acChair\.name\}/g, resignedName),
+    strategies,
+  };
 }
 
 // ── Check whether a conditional event should fire ──

@@ -15,7 +15,7 @@ export const sfgEvents: GameEvent[] = [
     turn: 1,
     imageFile: 'sfgevent-01.png',
     narrativeCard:
-      "MAS has formally notified Straits Financial Group that the Audit Committee Chair vacancy is a breach of MAS Guidelines on Corporate Governance for Financial Institutions. The board has 60 days to appoint a qualified replacement. SGX has been copied on the notice. If unresolved, SFG will be required to make a public SGXNet disclosure — the first formal governance compliance breach in the company's history. The financial press is already asking questions.",
+      "{acChair.name} has resigned as Audit Committee Chair with immediate effect — a competing offer from a rival financial institution, with a conflict-of-interest dimension serious enough that the board's own counsel flagged it before the ink was dry. MAS has formally notified Straits Financial Group that the resulting Audit Committee Chair vacancy is a breach of MAS Guidelines on Corporate Governance for Financial Institutions. The board has 60 days to appoint a qualified replacement. SGX has been copied on the notice. If unresolved, SFG will be required to make a public SGXNet disclosure — the first formal governance compliance breach in the company's history. The financial press is already asking questions.",
     primaryDomain: 'regulatoryLegal',
     primaryWeight: 0.55,
     secondaryDomains: [
