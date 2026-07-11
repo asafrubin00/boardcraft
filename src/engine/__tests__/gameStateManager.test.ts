@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkEventPrecondition, getCurrentEvent, resolveSfgEvent01Event } from '../gameStateManager';
+import { checkEventPrecondition, getCurrentEvent, resolveSfgEvent01Event, applyRheinfeldFlagUpdates } from '../gameStateManager';
 import { meridianEvents } from '@/data/meridian/events';
 import { rheinfeldEvents } from '@/data/rheinfeld/events';
 import { sfgEvents } from '@/data/sfg/events';
@@ -260,6 +260,223 @@ describe('Rheinfeld board-state preconditions', () => {
       },
     });
     expect(checkEventPrecondition(revent01, state)).toBe(true);
+  });
+});
+
+describe('applyRheinfeldFlagUpdates: heinrichConflictRevealed', () => {
+  it('sets heinrichConflictRevealed on every outcome tier of revent_11', () => {
+    const tiers: ResolvedEvent['outcomeTier'][] = [
+      'CRITICAL_SUCCESS', 'SUCCESS', 'PARTIAL_SUCCESS', 'FAILURE', 'CRITICAL_FAILURE',
+    ];
+    for (const tier of tiers) {
+      const state = makeState({ heinrichConflictRevealed: false });
+      const updates = applyRheinfeldFlagUpdates(state, 'revent_11', tier);
+      expect(updates.heinrichConflictRevealed).toBe(true);
+    }
+  });
+
+  it('leaves heinrichConflictRevealed untouched for other events', () => {
+    const state = makeState({ heinrichConflictRevealed: false });
+    const updates = applyRheinfeldFlagUpdates(state, 'revent_02', 'CRITICAL_FAILURE');
+    expect(updates.heinrichConflictRevealed).toBeUndefined();
+  });
+});
+
+describe('applyRheinfeldFlagUpdates: meridianStatus escalation ladder', () => {
+  it('revent_02 FAILURE/CRITICAL_FAILURE escalates watching -> escalating', () => {
+    const failState = makeState({ meridianStatus: 'watching' });
+    expect(applyRheinfeldFlagUpdates(failState, 'revent_02', 'FAILURE').meridianStatus).toBe('escalating');
+    const critFailState = makeState({ meridianStatus: 'watching' });
+    expect(applyRheinfeldFlagUpdates(critFailState, 'revent_02', 'CRITICAL_FAILURE').meridianStatus).toBe('escalating');
+  });
+
+  it('revent_02 SUCCESS/CRITICAL_SUCCESS de-escalates escalating -> watching', () => {
+    const state = makeState({ meridianStatus: 'escalating' });
+    expect(applyRheinfeldFlagUpdates(state, 'revent_02', 'SUCCESS').meridianStatus).toBe('watching');
+    const csState = makeState({ meridianStatus: 'escalating' });
+    expect(applyRheinfeldFlagUpdates(csState, 'revent_02', 'CRITICAL_SUCCESS').meridianStatus).toBe('watching');
+  });
+
+  it('revent_02 PARTIAL_SUCCESS leaves meridianStatus unchanged', () => {
+    const state = makeState({ meridianStatus: 'escalating' });
+    const updates = applyRheinfeldFlagUpdates(state, 'revent_02', 'PARTIAL_SUCCESS');
+    expect(updates.meridianStatus).toBeUndefined();
+  });
+
+  it('revent_08 escalates on bad outcomes but never de-escalates on good ones (report card is escalate-only)', () => {
+    const badState = makeState({ meridianStatus: 'watching' });
+    expect(applyRheinfeldFlagUpdates(badState, 'revent_08', 'CRITICAL_FAILURE').meridianStatus).toBe('escalating');
+
+    const goodState = makeState({ meridianStatus: 'escalating' });
+    const updates = applyRheinfeldFlagUpdates(goodState, 'revent_08', 'CRITICAL_SUCCESS');
+    expect(updates.meridianStatus).toBeUndefined();
+  });
+
+  it('revent_09 (HV) CRITICAL_FAILURE escalates to escalating; SUCCESS de-escalates to watching', () => {
+    const failState = makeState({ meridianStatus: 'watching' });
+    expect(applyRheinfeldFlagUpdates(failState, 'revent_09', 'CRITICAL_FAILURE').meridianStatus).toBe('escalating');
+    const successState = makeState({ meridianStatus: 'escalating' });
+    expect(applyRheinfeldFlagUpdates(successState, 'revent_09', 'SUCCESS').meridianStatus).toBe('watching');
+  });
+
+  it('revent_12 FAILURE/CRITICAL_FAILURE escalates escalating -> hostile', () => {
+    const state = makeState({ meridianStatus: 'escalating' });
+    expect(applyRheinfeldFlagUpdates(state, 'revent_12', 'FAILURE').meridianStatus).toBe('hostile');
+    const cfState = makeState({ meridianStatus: 'escalating' });
+    expect(applyRheinfeldFlagUpdates(cfState, 'revent_12', 'CRITICAL_FAILURE').meridianStatus).toBe('hostile');
+  });
+
+  it('revent_12 SUCCESS/CRITICAL_SUCCESS (negotiated settlement) de-escalates to watching', () => {
+    const state = makeState({ meridianStatus: 'escalating' });
+    expect(applyRheinfeldFlagUpdates(state, 'revent_12', 'SUCCESS').meridianStatus).toBe('watching');
+  });
+
+  it('revent_12 PARTIAL_SUCCESS leaves meridianStatus unchanged (EGM proceeds, outcome uncertain)', () => {
+    const state = makeState({ meridianStatus: 'escalating' });
+    const updates = applyRheinfeldFlagUpdates(state, 'revent_12', 'PARTIAL_SUCCESS');
+    expect(updates.meridianStatus).toBeUndefined();
+  });
+
+  it('guards escalation writes: a bad revent_02/08/09 outcome cannot downgrade an already-hostile status', () => {
+    const state = makeState({ meridianStatus: 'hostile' });
+    const updates = applyRheinfeldFlagUpdates(state, 'revent_02', 'CRITICAL_FAILURE');
+    // escalateMeridianStatus targets 'escalating', which is a lower rank than 'hostile' —
+    // guard must refuse the write rather than silently downgrading.
+    expect(updates.meridianStatus).toBe('hostile');
+  });
+
+  it('guards de-escalation writes: a good revent_12 outcome cannot upgrade an already-watching status', () => {
+    const state = makeState({ meridianStatus: 'watching' });
+    const updates = applyRheinfeldFlagUpdates(state, 'revent_12', 'SUCCESS');
+    expect(updates.meridianStatus).toBe('watching');
+  });
+});
+
+// ── Rheinfeld: revent_12/14/15 reachability (previously dead — see gameStateManager
+// applyRheinfeldFlagUpdates and its precondition cases 'meridianEGM'/'ceoConfidence'/'fullCrisis') ──
+
+describe('Rheinfeld revent_12/14/15 reachability', () => {
+  const revent12 = findEvent(rheinfeldEvents, 'revent_12');
+  const revent14 = findEvent(rheinfeldEvents, 'revent_14');
+  const revent15 = findEvent(rheinfeldEvents, 'revent_15');
+
+  it('revent_12 fires once meridianStatus is escalating and governance health < 55, skips otherwise', () => {
+    const reachable = makeState({
+      company: rheinfeldAG,
+      meridianActive: true,
+      meridianStatus: 'escalating',
+      governanceHealth: 50,
+      currentQuarter: 'Q3',
+      currentTurn: 3,
+    });
+    expect(checkEventPrecondition(revent12, reachable)).toBe(true);
+    expect(getCurrentEvent(reachable)?.id).toBe('revent_12');
+
+    const stillWatching = makeState({
+      company: rheinfeldAG,
+      meridianActive: true,
+      meridianStatus: 'watching',
+      governanceHealth: 50,
+      currentQuarter: 'Q3',
+      currentTurn: 3,
+    });
+    expect(checkEventPrecondition(revent12, stillWatching)).toBe(false);
+    expect(getCurrentEvent(stillWatching)).toBeNull();
+
+    const ghTooHigh = makeState({
+      company: rheinfeldAG,
+      meridianActive: true,
+      meridianStatus: 'escalating',
+      governanceHealth: 60,
+      currentQuarter: 'Q3',
+      currentTurn: 3,
+    });
+    expect(checkEventPrecondition(revent12, ghTooHigh)).toBe(false);
+  });
+
+  it('revent_14 fires once heinrichConflictRevealed is true, skips otherwise', () => {
+    const reachable = makeState({
+      company: rheinfeldAG,
+      heinrichConflictRevealed: true,
+      currentQuarter: 'Q4',
+      currentTurn: 2,
+    });
+    expect(checkEventPrecondition(revent14, reachable)).toBe(true);
+    expect(getCurrentEvent(reachable)?.id).toBe('revent_14');
+
+    const notRevealed = makeState({
+      company: rheinfeldAG,
+      heinrichConflictRevealed: false,
+      currentQuarter: 'Q4',
+      currentTurn: 2,
+    });
+    expect(checkEventPrecondition(revent14, notRevealed)).toBe(false);
+    expect(getCurrentEvent(notRevealed)).toBeNull();
+  });
+
+  it('revent_15 fires only when revealed + hostile + GH < 45 all hold; skips if any one is missing', () => {
+    const reachable = makeState({
+      company: rheinfeldAG,
+      heinrichConflictRevealed: true,
+      meridianStatus: 'hostile',
+      governanceHealth: 40,
+      currentQuarter: 'Q4',
+      currentTurn: 3,
+    });
+    expect(checkEventPrecondition(revent15, reachable)).toBe(true);
+    expect(getCurrentEvent(reachable)?.id).toBe('revent_15');
+
+    const notRevealed = makeState({
+      company: rheinfeldAG,
+      heinrichConflictRevealed: false,
+      meridianStatus: 'hostile',
+      governanceHealth: 40,
+      currentQuarter: 'Q4',
+      currentTurn: 3,
+    });
+    expect(checkEventPrecondition(revent15, notRevealed)).toBe(false);
+
+    const notHostile = makeState({
+      company: rheinfeldAG,
+      heinrichConflictRevealed: true,
+      meridianStatus: 'escalating',
+      governanceHealth: 40,
+      currentQuarter: 'Q4',
+      currentTurn: 3,
+    });
+    expect(checkEventPrecondition(revent15, notHostile)).toBe(false);
+
+    const ghTooHigh = makeState({
+      company: rheinfeldAG,
+      heinrichConflictRevealed: true,
+      meridianStatus: 'hostile',
+      governanceHealth: 50,
+      currentQuarter: 'Q4',
+      currentTurn: 3,
+    });
+    expect(checkEventPrecondition(revent15, ghTooHigh)).toBe(false);
+  });
+
+  it('end-to-end: a rocky playthrough chains revent_02 -> revent_12 -> revent_11 into a reachable revent_15', () => {
+    // Q1T2: revent_02 goes badly -> meridianStatus escalates from 'watching'.
+    let state = makeState({ company: rheinfeldAG, meridianActive: true, governanceHealth: 50 });
+    Object.assign(state, applyRheinfeldFlagUpdates(state, 'revent_02', 'CRITICAL_FAILURE'));
+    expect(state.meridianStatus).toBe('escalating');
+
+    // Q3T3: revent_12 is now reachable (escalating + GH < 55) and goes badly -> hostile.
+    state = { ...state, currentQuarter: 'Q3', currentTurn: 3 };
+    expect(checkEventPrecondition(revent12, state)).toBe(true);
+    Object.assign(state, applyRheinfeldFlagUpdates(state, 'revent_12', 'FAILURE'), { governanceHealth: 40 });
+    expect(state.meridianStatus).toBe('hostile');
+
+    // Q3T2 (narratively earlier, applied here for state setup): revent_11 reveals the conflict.
+    Object.assign(state, applyRheinfeldFlagUpdates(state, 'revent_11', 'PARTIAL_SUCCESS'));
+    expect(state.heinrichConflictRevealed).toBe(true);
+
+    // Q4T3: revent_15's fullCrisis gate is now satisfied.
+    state = { ...state, currentQuarter: 'Q4', currentTurn: 3 };
+    expect(checkEventPrecondition(revent15, state)).toBe(true);
+    expect(getCurrentEvent(state)?.id).toBe('revent_15');
   });
 });
 

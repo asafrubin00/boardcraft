@@ -17,6 +17,7 @@ import {
   getMaxTurnsForQuarter,
   applyBenchRegen,
   applyAgmRegen,
+  applyRheinfeldFlagUpdates,
 } from '@/engine/gameStateManager';
 import { useSearchParams } from 'next/navigation';
 import CompanySelectScreen from '@/components/CompanySelectScreen';
@@ -277,6 +278,10 @@ function PlayPageInner() {
         strategyChoice,
         deployedDirectorIds
       );
+
+      // Rheinfeld: meridianStatus escalation ladder + Heinrich conflict reveal.
+      // No-op for non-Rheinfeld companies and events other than revent_02/08/11/12.
+      Object.assign(newState, applyRheinfeldFlagUpdates(newState, currentEvent.id, output.outcomeTier));
 
       const breakdown = recalcGovernanceBreakdown(newState);
       // Rescale breakdown proportionally to match the event-adjusted GH
@@ -560,6 +565,9 @@ function PlayPageInner() {
         strategyChoice,
         deployedDirectorIds
       );
+
+      // Rheinfeld: revent_09 (HV) outcome feeds the meridianStatus escalation ladder.
+      Object.assign(newState, applyRheinfeldFlagUpdates(newState, agmEventId, output.outcomeTier));
 
       const breakdown = recalcGovernanceBreakdown(newState);
 

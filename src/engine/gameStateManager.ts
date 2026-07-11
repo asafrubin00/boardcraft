@@ -12,6 +12,7 @@ import type {
   CompetencyDomain,
   Company,
   ScheduledEvent,
+  OutcomeTier,
 } from '@/types/game';
 import { directors as allDirectorsRaw } from '@/data/directors';
 import { events as allEvents } from '@/data/events';
@@ -727,6 +728,81 @@ export function applyResolution(
   };
 
   return { newState, output };
+}
+
+// ── Rheinfeld: meridianStatus escalation ladder + Heinrich conflict reveal ──
+// Both flags gate revent_12/14/15 (see checkEventPrecondition above) and were
+// previously never written anywhere, making those three events unreachable.
+
+type MeridianStatus = GameState['meridianStatus'];
+
+const MERIDIAN_STATUS_RANK: Record<MeridianStatus, number> = {
+  watching: 0,
+  escalating: 1,
+  hostile: 2,
+};
+
+// Ladder writes are direction-guarded: an escalation write only applies if the
+// target is a worse state than the current one, and a de-escalation write only
+// applies if the target is better. This stops a later event from silently
+// undoing a worse state set by an earlier one purely because of event ordering
+// (e.g. revent_09 resolving well after revent_12 already went hostile).
+function escalateMeridianStatus(current: MeridianStatus, target: MeridianStatus): MeridianStatus {
+  return MERIDIAN_STATUS_RANK[target] > MERIDIAN_STATUS_RANK[current] ? target : current;
+}
+
+function deescalateMeridianStatus(current: MeridianStatus, target: MeridianStatus): MeridianStatus {
+  return MERIDIAN_STATUS_RANK[target] < MERIDIAN_STATUS_RANK[current] ? target : current;
+}
+
+export function applyRheinfeldFlagUpdates(
+  state: GameState,
+  eventId: string,
+  outcomeTier: OutcomeTier
+): Partial<GameState> {
+  const updates: Partial<GameState> = {};
+
+  // revent_11 ("Heinrich's Secret"): every outcome tier narrates the side-deal
+  // becoming known in some form, from a controlled internal disclosure
+  // (CRITICAL_SUCCESS) to an international story (CRITICAL_FAILURE) — there is
+  // no tier where it stays secret, so this write is unconditional on tier.
+  if (eventId === 'revent_11') {
+    updates.heinrichConflictRevealed = true;
+  }
+
+  // revent_02 (Meridian's first letter), revent_08 (proxy adviser report),
+  // revent_09 (AGM/HV): all three narrate Meridian standing down or escalating
+  // depending on outcome. revent_08 is an auto-resolved report card with no
+  // real player strategy choice, so it's escalate-only — a good report
+  // shouldn't stand an activist down on its own; de-escalation has to be
+  // earned via a real event win (revent_02/09/12).
+  if (eventId === 'revent_02' || eventId === 'revent_08' || eventId === 'revent_09') {
+    if (outcomeTier === 'FAILURE' || outcomeTier === 'CRITICAL_FAILURE') {
+      updates.meridianStatus = escalateMeridianStatus(state.meridianStatus, 'escalating');
+    } else if (
+      eventId !== 'revent_08' &&
+      (outcomeTier === 'SUCCESS' || outcomeTier === 'CRITICAL_SUCCESS')
+    ) {
+      updates.meridianStatus = deescalateMeridianStatus(state.meridianStatus, 'watching');
+    }
+  }
+
+  // revent_12 (Meridian requisitions the EGM): this event settles the fight it
+  // started, so its outcome moves the ladder further than the earlier events do.
+  if (eventId === 'revent_12') {
+    if (outcomeTier === 'FAILURE' || outcomeTier === 'CRITICAL_FAILURE') {
+      updates.meridianStatus = escalateMeridianStatus(state.meridianStatus, 'hostile');
+    } else if (outcomeTier === 'SUCCESS' || outcomeTier === 'CRITICAL_SUCCESS') {
+      // Intentional, not a bug: winning the negotiated settlement de-escalates
+      // back to 'watching', which permanently closes off revent_15's fullCrisis
+      // gate (meridianStatus === 'hostile') for the rest of this playthrough.
+      // Recovering from the EGM is supposed to close the disaster ending.
+      updates.meridianStatus = deescalateMeridianStatus(state.meridianStatus, 'watching');
+    }
+    // PARTIAL_SUCCESS: the EGM proceeds with an uncertain outcome — no status change.
+  }
+
+  return updates;
 }
 
 // ── Recalculate governance health breakdown ──
