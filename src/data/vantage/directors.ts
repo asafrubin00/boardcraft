@@ -13,6 +13,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_01_kellerman',
     name: 'Robert Kellerman',
+    displayName: 'Kellerman',
     background:
       'Former COO of a Fortune 500 retailer. Has been Lead Independent Director at Vantage for 6 years. Known for avoiding confrontation with management.',
     domainRatings: {
@@ -41,6 +42,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_02_nguyen',
     name: 'Patricia Nguyen',
+    displayName: 'Nguyen',
     background:
       'Former partner at a mid-tier accounting firm. Audit Committee Chair for 4 years. Consulting contract with a Vantage supplier creates a conflict of interest that must be resolved.',
     domainRatings: {
@@ -75,6 +77,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_03_whitfield',
     name: 'James Whitfield',
+    displayName: 'Whitfield',
     background:
       'Former CFO of a major US food conglomerate. Strong financial expertise. 8 years on the Vantage board - approaching ISS\'s 9-year independence flag.',
     domainRatings: {
@@ -104,6 +107,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_04_park',
     name: 'Dr. Cynthia Park',
+    displayName: 'Park',
     background:
       'Former VP of Sustainability at a Fortune 100 consumer goods company. Expert in ESG disclosure, supply chain ethics, and consumer regulation. Two years on the Vantage board - underutilised.',
     domainRatings: {
@@ -136,6 +140,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_05_stern',
     name: 'Howard Stern III',
+    displayName: 'Stern',
     background:
       'Former Audit Partner at Deloitte (consumer practice). SEC-registered CPA. Audit Committee financial expert on two NYSE boards. No relation to the radio host.',
     domainRatings: {
@@ -164,6 +169,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_06_osei_bonsu',
     name: 'Margaret Osei-Bonsu',
+    displayName: 'Osei-Bonsu',
     background:
       'CFO (retired) of a major US beverage company. Deep FMCG sector knowledge. Strong on capital allocation and M&A.',
     domainRatings: {
@@ -196,6 +202,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_07_finch',
     name: 'Sen. Barbara Finch (ret.)',
+    displayName: 'Finch',
     background:
       'Former US Senator (Commerce Committee). Expert in FDA regulation, food safety law, and federal trade policy. Deep Washington network.',
     domainRatings: {
@@ -224,6 +231,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_08_dominguez',
     name: 'Rafael Dominguez',
+    displayName: 'Dominguez',
     background:
       'Partner at a leading US corporate law firm (food & beverage practice). Expert in FDA compliance, class action defence, and consumer protection law.',
     domainRatings: {
@@ -256,6 +264,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_09_marchetti',
     name: 'Diana Marchetti',
+    displayName: 'Marchetti',
     background:
       'Former President of North America at a global consumer goods company. Expert in brand management, retail strategy, and consumer trend navigation.',
     domainRatings: {
@@ -284,6 +293,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_10_reinholt',
     name: 'Todd Reinholt',
+    displayName: 'Reinholt',
     background:
       'Managing Director at a major US activist hedge fund (retired). Knows exactly how activists think and operate. Controversial appointment - signals the board is serious about reform.',
     domainRatings: {
@@ -322,6 +332,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_11_carter',
     name: 'Dr. Josephine Carter',
+    displayName: 'Carter',
     background:
       'Former CHRO of a Fortune 100 company. Expert in executive remuneration, CEO succession, and culture transformation in large consumer organisations.',
     domainRatings: {
@@ -350,6 +361,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_12_okoye',
     name: 'Prof. William Okoye',
+    displayName: 'Okoye',
     background:
       'Professor of Corporate Governance at Harvard Business School. Adviser to the SEC on board composition standards. Published extensively on activist defence and board effectiveness.',
     domainRatings: {
@@ -382,6 +394,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_13_thornton',
     name: 'Maya Thornton',
+    displayName: 'Thornton',
     background:
       'Former Chief Sustainability Officer at a major US food company. Led a successful reformulation programme that removed artificial ingredients from 40% of the product range. TCFD expert.',
     domainRatings: {
@@ -414,6 +427,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_14_mendez',
     name: 'Carlos Mendez',
+    displayName: 'Mendez',
     background:
       'Former CTO of a major US retail company. Expert in e-commerce infrastructure, data privacy (CCPA compliance), and AI-driven consumer marketing.',
     domainRatings: {
@@ -446,6 +460,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_15_vance',
     name: 'Eleanor Vance',
+    displayName: 'Vance',
     background:
       'Former Chair of two NYSE companies. Began career in investment banking (Goldman Sachs consumer practice). Expert in managing activist situations and proxy contests. Widely respected in US governance circles.',
     domainRatings: {
@@ -474,6 +489,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_16_oduya_washington',
     name: 'James Oduya-Washington',
+    displayName: 'Oduya-Washington',
     background:
       'Former Head of Corporate Governance at a major US asset manager (Vanguard equivalent). Deep knowledge of institutional shareholder expectations and proxy voting policies.',
     domainRatings: {
@@ -506,6 +522,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_17_singh',
     name: 'Dr. Amara Singh',
+    displayName: 'Singh',
     background:
       'Former FTC Commissioner. Expert in antitrust, consumer protection, and food industry regulation. Rarely takes board roles. Appointment would send a powerful signal to regulators.',
     domainRatings: {
@@ -534,6 +551,7 @@ export const vantageDirectors: Director[] = [
   {
     id: 'vdir_18_blackwood',
     name: 'Richard Blackwood',
+    displayName: 'Blackwood',
     background:
       'Former CEO of a Fortune 100 consumer goods company. One of the most recognised names in US consumer goods governance. Appointment would immediately signal board seriousness to activists.',
     domainRatings: {

@@ -13,6 +13,7 @@ export const directors: Director[] = [
   {
     id: 'dir_00_forsyth',
     name: 'Dame Helen Forsyth',
+    displayName: 'Forsyth',
     background:
       'Outgoing Chair of Harwick Energy. Served for 11 years. Respected in the City for steady leadership through multiple commodity cycles. Departing at the upcoming AGM.',
     domainRatings: {
@@ -41,6 +42,7 @@ export const directors: Director[] = [
   {
     id: 'dir_01_wren',
     name: 'Dame Patricia Wren',
+    displayName: 'Wren',
     background:
       'Former Deputy Governor, Bank of England. NED at two FTSE 100 companies. Audit Committee Chair at Meridian Financial Group for 6 years.',
     domainRatings: {
@@ -69,6 +71,7 @@ export const directors: Director[] = [
   {
     id: 'dir_02_bracewell',
     name: 'Howard Bracewell',
+    displayName: 'Bracewell',
     background:
       'Former CFO of two FTSE 100 energy companies. Qualified chartered accountant. Strong North Sea sector knowledge.',
     domainRatings: {
@@ -102,6 +105,7 @@ export const directors: Director[] = [
   {
     id: 'dir_03_brennan',
     name: 'Caoimhe Brennan',
+    displayName: 'Brennan',
     background:
       'Partner at a Big Four firm for 22 years (retired). Forensic accounting specialist. Sits on two other FTSE 250 audit committees.',
     domainRatings: {
@@ -130,6 +134,7 @@ export const directors: Director[] = [
   {
     id: 'dir_04_pemberton',
     name: 'Lord Alistair Pemberton',
+    displayName: 'Pemberton',
     background:
       'Former Secretary of State for Energy (10 years ago). Now a senior adviser at a policy consultancy. Extensive Whitehall and Brussels network.',
     domainRatings: {
@@ -158,6 +163,7 @@ export const directors: Director[] = [
   {
     id: 'dir_05_alfassih',
     name: 'Tariq Al-Fassih',
+    displayName: 'Al-Fassih',
     background:
       'Former senior partner at global law firm. Specialist in MENA and emerging market regulatory environments and government relations.',
     domainRatings: {
@@ -192,6 +198,7 @@ export const directors: Director[] = [
   {
     id: 'dir_06_macallister',
     name: 'Fiona MacAllister KC',
+    displayName: 'MacAllister',
     background:
       "King's Counsel. Specialist in energy regulation, environmental law, and corporate crime. Former CMA panel member.",
     domainRatings: {
@@ -220,6 +227,7 @@ export const directors: Director[] = [
   {
     id: 'dir_07_ashworth',
     name: 'Vivienne Ashworth',
+    displayName: 'Ashworth',
     background:
       'Former Managing Director at Goldman Sachs (energy & natural resources). Now a portfolio NED. Strong M&A and capital markets track record.',
     domainRatings: {
@@ -248,6 +256,7 @@ export const directors: Director[] = [
   {
     id: 'dir_08_crane',
     name: 'Geoffrey Crane',
+    displayName: 'Crane',
     background:
       'Former CEO of a mid-size oil services company. Deep North Sea operational knowledge. Has been on the Harwick board for 12 years.',
     domainRatings: {
@@ -277,6 +286,7 @@ export const directors: Director[] = [
   {
     id: 'dir_09_diallo',
     name: 'Amara Diallo',
+    displayName: 'Diallo',
     background:
       'Former VP of Strategy at Shell. Deep experience in West Africa and Guyana. MBA from INSEAD. Growing NED portfolio.',
     domainRatings: {
@@ -305,6 +315,7 @@ export const directors: Director[] = [
   {
     id: 'dir_10_lonsdale',
     name: 'Harriet Lonsdale',
+    displayName: 'Lonsdale',
     background:
       'Former CHRO of a FTSE 100 company. Expert in executive remuneration, succession planning, and culture transformation. Serves on two Rem Committees.',
     domainRatings: {
@@ -333,6 +344,7 @@ export const directors: Director[] = [
   {
     id: 'dir_11_oduya',
     name: 'Professor James Oduya',
+    displayName: 'Oduya',
     background:
       'Academic and governance specialist. Professor of Corporate Governance at London Business School. Sits on FRC advisory panels. Frequent commentator on board effectiveness.',
     domainRatings: {
@@ -361,6 +373,7 @@ export const directors: Director[] = [
   {
     id: 'dir_12_tanaka',
     name: 'Yuki Tanaka',
+    displayName: 'Tanaka',
     background:
       "Elected employee representative from Harwick's offshore operations workforce. Brings frontline safety perspective. Not a career NED.",
     domainRatings: {
@@ -389,6 +402,7 @@ export const directors: Director[] = [
   {
     id: 'dir_13_okafor',
     name: 'Sir David Okafor',
+    displayName: 'Okafor',
     background:
       "Former Director-General of the Environment Agency. Led a major energy company's net-zero transition programme. Safety & Environment Committee Chair at Harwick.",
     domainRatings: {
@@ -417,6 +431,7 @@ export const directors: Director[] = [
   {
     id: 'dir_14_larsson',
     name: 'Dr. Ingrid Larsson',
+    displayName: 'Larsson',
     background:
       'Former Chief Sustainability Officer at a major Nordic energy company. TCFD taskforce alumna. Strong institutional investor credibility on ESG disclosure.',
     domainRatings: {
@@ -445,6 +460,7 @@ export const directors: Director[] = [
   {
     id: 'dir_15_holt',
     name: 'Margaret Holt',
+    displayName: 'Holt',
     background:
       'Former Finance Director at a UK utility company. Moved into NED roles 8 years ago. Quiet but forensically thorough in audit work.',
     domainRatings: {
@@ -473,6 +489,7 @@ export const directors: Director[] = [
   {
     id: 'dir_16_chen',
     name: 'Chen Wei',
+    displayName: 'Chen',
     background:
       'CTO of a listed SaaS company. Former GCHQ advisory panel member. Specialist in cyber risk, AI governance, and digital transformation in industrial sectors.',
     domainRatings: {
@@ -501,6 +518,7 @@ export const directors: Director[] = [
   {
     id: 'dir_17_adeyemi',
     name: 'Priscilla Adeyemi',
+    displayName: 'Adeyemi',
     background:
       'Former CIO at a FTSE 100 mining company. Led a major OT/IT cybersecurity overhaul following a ransomware attack. Strong in industrial digital contexts.',
     domainRatings: {
@@ -529,6 +547,7 @@ export const directors: Director[] = [
   {
     id: 'dir_18_whitmore',
     name: 'Dame Frances Whitmore',
+    displayName: 'Whitmore',
     background:
       'Former Chair of two FTSE 250 companies. Began career in investment banking; last decade in governance. Known for managing activist situations calmly.',
     domainRatings: {
@@ -557,6 +576,7 @@ export const directors: Director[] = [
   {
     id: 'dir_21_mensah',
     name: 'Kofi Mensah',
+    displayName: 'Mensah',
     background:
       'Former Head of Investor Relations at a FTSE 100 company. Now a specialist governance consultant. Deep knowledge of institutional shareholder expectations and proxy adviser methodologies.',
     domainRatings: {
@@ -585,6 +605,7 @@ export const directors: Director[] = [
   {
     id: 'dir_22_morrow',
     name: 'General Sir Philip Morrow (ret.)',
+    displayName: 'Morrow',
     background:
       'Former Chief of Defence Staff. Post-retirement non-exec at a defence contractor and an energy infrastructure company. Deep understanding of geopolitical risk and government decision-making.',
     domainRatings: {
@@ -613,6 +634,7 @@ export const directors: Director[] = [
   {
     id: 'dir_24_voss',
     name: 'Dr. Eleanor Voss',
+    displayName: 'Voss',
     background:
       'Former Managing Partner of a global strategy consultancy (energy practice). Published author on energy transition economics. Extremely high demand; not publicly available.',
     domainRatings: {
@@ -641,6 +663,7 @@ export const directors: Director[] = [
   {
     id: 'dir_25_achebe',
     name: 'Professor Nnamdi Achebe',
+    displayName: 'Achebe',
     background:
       'World Bank senior adviser (energy sector). Expert in West African petroleum governance and emerging market regulatory frameworks. Rarely takes board roles.',
     domainRatings: {

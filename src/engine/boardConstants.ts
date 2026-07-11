@@ -1,4 +1,4 @@
-import type { BoardRole, CompetencyDomain, Jurisdiction } from '@/types/game';
+import type { BoardRole, CompetencyDomain, Director, Jurisdiction } from '@/types/game';
 
 export const DOMAIN_LABELS: Record<CompetencyDomain, string> = {
   financialOversight: 'Financial Oversight',
@@ -127,4 +127,14 @@ export function getRoleLabel(role: BoardRole, jurisdiction: Jurisdiction = 'UK',
     return ROLE_LABELS_SG[role] ?? ROLE_LABELS[role];
   }
   return ROLE_LABELS[role];
+}
+
+/**
+ * Short board-portrait label for a director. Uses the curated `displayName`
+ * when present (surname derivation is not reliable across naming
+ * conventions — e.g. Chinese/Malay name order, honorifics, post-nominals),
+ * falling back to the last word of `name` for any director missing one.
+ */
+export function directorShortLabel(director: Pick<Director, 'name' | 'displayName'>): string {
+  return director.displayName ?? director.name.split(' ').pop() ?? director.name;
 }

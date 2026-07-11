@@ -5,6 +5,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_heinrich',
     name: 'Heinrich Rheinfeld',
+    displayName: 'H. Rheinfeld',
     background:
       "Founder's son. Ran the company for 20 years before transitioning to Supervisory Board Chair. Knows every corner of the business. Believes governance reform is a distraction invented by people who have never built anything.",
     domainRatings: {
@@ -32,6 +33,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_margarethe',
     name: 'Margarethe Rheinfeld',
+    displayName: 'M. Rheinfeld',
     background:
       "Heinrich's daughter. Board member for three years. Votes with her father on everything. Weak independent credentials but family loyalty is absolute.",
     domainRatings: {
@@ -54,6 +56,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_strasser',
     name: 'Dr. Wolfgang Strasser',
+    displayName: 'Strasser',
     background:
       'Former Rheinfeld AG CFO. Eight years on the Supervisory Board. GCGC flags former executives on supervisory boards - the two-year cooling-off period should apply but he was appointed before stricter enforcement.',
     domainRatings: {
@@ -76,6 +79,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_w_koch',
     name: 'Hans-Werner Koch',
+    displayName: 'Koch',
     background:
       'Senior IG Metall official. Six years on the Supervisory Board. Opposes the China pivot. Supports CSRD. Will support the player on ESG if treated respectfully.',
     domainRatings: {
@@ -96,6 +100,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_w_alrashid',
     name: 'Fatima Al-Rashid',
+    displayName: 'Al-Rashid',
     background:
       'Works council chair. Pragmatic. Open to reform if job security is protected.',
     domainRatings: {
@@ -116,6 +121,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_w_hoffmann',
     name: 'Dieter Hoffmann',
+    displayName: 'Hoffmann',
     background:
       'IG BCE representative. Nine years on the board. Sceptical of all management proposals. Votes with Koch on most issues.',
     domainRatings: {
@@ -136,6 +142,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_w_mehta',
     name: 'Priya Mehta',
+    displayName: 'Mehta',
     background:
       'Represents senior managers. More reform-friendly than other worker representatives. Values CSRD compliance.',
     domainRatings: {
@@ -156,6 +163,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_w_gruber',
     name: 'Thomas Gruber',
+    displayName: 'Gruber',
     background:
       'Works council member. Loyal to Koch. Rarely breaks ranks. Votes as a bloc.',
     domainRatings: {
@@ -180,6 +188,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_01_lehrmann',
     name: 'Prof. Dr. Sabine Lehrmann',
+    displayName: 'Lehrmann',
     background:
       'Former President of the German Corporate Governance Commission. Professor at Humboldt University. The most credible governance reform voice available to Rheinfeld\'s supervisory board.',
     domainRatings: {
@@ -202,6 +211,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_02_fleischer',
     name: 'Dr. Marcus Fleischer',
+    displayName: 'Fleischer',
     background:
       'Former CFO of a DAX 40 industrial company. HGB and IFRS expert. Has served on three Audit Committees. Exactly what Rheinfeld\'s Audit Committee needs.',
     domainRatings: {
@@ -224,6 +234,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_03_hartmann',
     name: 'Ingrid Hartmann',
+    displayName: 'Hartmann',
     background:
       'Former State Secretary for Economic Affairs, NRW. Deep political network in Berlin and Brussels. Expert in German industrial policy, EU trade regulation, and government relations.',
     domainRatings: {
@@ -246,6 +257,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_04_taniguchi',
     name: 'Dr. Yuki Taniguchi',
+    displayName: 'Taniguchi',
     background:
       'Former Asia Pacific Director at a major German industrial company. Expert in Chinese market dynamics, supply chain strategy, and geopolitical risk in manufacturing. Speaks Mandarin and Japanese.',
     domainRatings: {
@@ -268,6 +280,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_05_becker',
     name: 'Prof. Dr. Anna Becker',
+    displayName: 'Becker',
     background:
       'Professor of Sustainability Management at RWTH Aachen. Led the CSRD implementation working group for the German industry association. The leading CSRD expert in the available pool.',
     domainRatings: {
@@ -290,6 +303,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_06_brandt',
     name: 'Karl-Heinz Brandt',
+    displayName: 'Brandt',
     background:
       'Former CEO of a mid-size German automotive supplier. Understands the industry deeply. Has restructured two companies and managed two rounds of workforce reduction - IG Metall knows and respects him even when they disagree.',
     domainRatings: {
@@ -312,6 +326,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_07_vasquez',
     name: 'Dr. Elena Vasquez',
+    displayName: 'Vasquez',
     background:
       'Chief Digital Officer (retired) of a DAX 40 manufacturing company. Led a complete Industry 4.0 transformation. Expert in OT/IT integration, manufacturing digitalisation, and cyber risk.',
     domainRatings: {
@@ -334,6 +349,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_08_vonkessler',
     name: 'Friedrich von Kessler',
+    displayName: 'von Kessler',
     background:
       'Former partner at a leading German M&A law firm. Expert in AktG, takeover law, and supervisory board governance. Has advised on 12 DAX company supervisory board restructurings.',
     domainRatings: {
@@ -356,6 +372,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_09_neumann',
     name: 'Claudia Neumann',
+    displayName: 'Neumann',
     background:
       'Former Head of Stewardship at a major German asset manager. Expert in institutional investor expectations, proxy voting policies, and ESG disclosure standards. Has voted against management at 40+ German AGMs.',
     domainRatings: {
@@ -378,6 +395,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_10_richter',
     name: 'Dr. Thomas Richter',
+    displayName: 'Richter',
     background:
       'Former President of the Federation of German Industries (BDI). Extraordinarily well-connected across German politics, industry, and EU institutions. Rarely takes supervisory board mandates.',
     domainRatings: {
@@ -400,6 +418,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_11_kowalski',
     name: 'Dr. Marta Kowalski',
+    displayName: 'Kowalski',
     background:
       'Former ECB supervisory board member. Expert in European financial regulation, CSRD implementation, and cross-border industrial governance. Polish-German background - uniquely positioned for EU regulatory events.',
     domainRatings: {
@@ -423,6 +442,7 @@ export const rheinfeldDirectors: Director[] = [
   {
     id: 'rdir_12_reuter',
     name: 'Dr. Johanna Reuter',
+    displayName: 'Reuter',
     background:
       "Operating partner at Meridian Capital's European activist strategy. Ran industrial-sector equity research in London for nine years before moving to the investment side. Has sat on three DAX supervisory boards as a shareholder nominee, each time over the incumbent chair's objections. Negotiated the Rheinfeld settlement personally.",
     domainRatings: {

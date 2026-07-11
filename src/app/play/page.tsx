@@ -786,7 +786,7 @@ import BoardroomTable, {
 } from '@/components/BoardroomTable';
 import DirectorPortrait from '@/components/DirectorPortrait';
 import type { BoardRole, CompetencyDomain, CommitteeState, Director } from '@/types/game';
-import { ALL_DOMAINS, DOMAIN_SHORT, ROLE_LABELS, getRoleLabel, getShortRoleLabel } from '@/engine/boardConstants';
+import { ALL_DOMAINS, DOMAIN_SHORT, ROLE_LABELS, getRoleLabel, getShortRoleLabel, directorShortLabel } from '@/engine/boardConstants';
 import { motion, AnimatePresence } from 'framer-motion';
 import CompanyLogo from '@/components/CompanyLogo';
 import SiteFooter from '@/components/SiteFooter';
@@ -1709,7 +1709,7 @@ function BoardConstructionWrapper({
                           onClick={() => { handleAssignCandidate(); setMobileOverlay(null); }}
                           className="w-full py-2.5 rounded-lg bg-gold text-navy-dark text-sm font-bold cursor-pointer"
                         >
-                          Replace {seatOccDir.name.split(' ').pop()} with {selDir.name.split(' ').pop()}
+                          Replace {directorShortLabel(seatOccDir)} with {directorShortLabel(selDir)}
                         </button>
                       )}
                     </div>

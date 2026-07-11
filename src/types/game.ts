@@ -78,6 +78,8 @@ export interface RiskFlag {
 export interface Director {
   id: string;
   name: string;
+  /** Curated short surname/referring-name for board-portrait labels. Falls back to the last word of `name` when absent — see directorShortLabel(). */
+  displayName?: string;
   background: string;
   domainRatings: DomainRatings;
   jurisdictionScores: JurisdictionScores;

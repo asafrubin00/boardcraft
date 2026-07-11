@@ -14,6 +14,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_01_lim',
     name: "Dato' Lim Boon Kiat",
+    displayName: 'Lim',
     background:
       "Former MAS senior official. Board Chair for 11 years and simultaneously chairs the Board Risk Committee — a dual role MAS has formally flagged. His regulatory background once reassured the market but now raises questions about regulatory-commercial independence. Non-independent under SGX rules.",
     domainRatings: {
@@ -49,6 +50,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_02_soong',
     name: 'Helena Soong Hui Ling',
+    displayName: 'Soong',
     background:
       "Senior Independent Director, NC Chair, and Board Credit Committee Chair. Has served 10 years — exceeding the 9-year SGX independence cap. Must be re-classified as non-independent OR retained via a two-tier shareholder vote. Glass Lewis Asia has pre-signalled opposition.",
     domainRatings: {
@@ -84,6 +86,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_03_goh',
     name: 'Winston Goh Teck Nam',
+    displayName: 'Goh',
     background:
       "RemCo Chair. Has served exactly 9 years — at the SGX independence cap. Any extension beyond this financial year triggers the two-tier shareholder vote requirement. Has approved CEO pay structures without clawback provisions now under institutional scrutiny.",
     domainRatings: {
@@ -119,6 +122,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_04_rahman',
     name: 'Dr. Nadia Rahman',
+    displayName: 'Rahman',
     background:
       "The strongest independent voice on the current SFG board. Has raised concerns about the Vietnam portfolio risk internally, but her influence has been limited by her relative isolation as the only genuinely independent director with financial expertise. 4 years tenure — no independence concern.",
     domainRatings: {
@@ -147,6 +151,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_05_png',
     name: 'Eric Png Wei Liang',
+    displayName: 'Png',
     background:
       "Temasek Holdings nominee. Current VP, Temasek International. Non-independent under SGX rules as a matter of shareholding structure. Rarely challenges management publicly. Temasek's primary channel for signalling expectations — his presence means Temasek is informed of all events in real time, including the whistleblower allegation.",
     domainRatings: {
@@ -179,6 +184,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_06_lee',
     name: 'Lee Siew Geok',
+    displayName: 'Lee',
     background:
       "Former Deputy Managing Director, MAS (Prudential Supervision). 28 years in financial regulation. NED at two SGX-listed banks. The highest-credibility Audit Committee Chair candidate in the pool — her MAS background sends an unmistakable signal to the regulator.",
     domainRatings: {
@@ -207,6 +213,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_07_anwar',
     name: 'Anwar bin Hamzah',
+    displayName: 'Anwar',
     background:
       "Former Group CRO, DBS Bank. Fellow of the Institute of Banking & Finance Singapore. Led Basel III implementation across ASEAN. Ideal for reconstituting the Board Risk Committee following the Vietnam credit loss.",
     domainRatings: {
@@ -235,6 +242,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_08_tan_margaret',
     name: 'Margaret Tan Swee Lin',
+    displayName: 'M. Tan',
     background:
       "Former CFO, OCBC Bank. Chartered Accountant (ISCA). Audit Committee Chair at two SGX Mainboard companies. Expert in regional financial reporting under SFRS(I). Solid, market-credible appointment.",
     domainRatings: {
@@ -263,6 +271,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_09_pillai',
     name: 'Dr. Suresh Pillai',
+    displayName: 'Pillai',
     background:
       "Partner, Allen & Gledhill LLP (retired). Specialised in MAS enforcement, bank mergers, and capital markets regulatory work. SGX Listing Committee member for 6 years. Carries a hidden conflict that activates under specific conditions.",
     domainRatings: {
@@ -301,6 +310,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_10_faridah',
     name: 'Tan Sri Faridah Aziz',
+    displayName: 'Faridah',
     background:
       "Former CEO, Maybank Investment Banking. Malaysian national. Extensive M&A advisory experience across ASEAN financial services. Sits on boards in Kuala Lumpur and Jakarta. Key for Indonesia expansion decisions.",
     domainRatings: {
@@ -329,6 +339,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_11_khoo',
     name: 'Jonathan Khoo Kai Seng',
+    displayName: 'Khoo',
     background:
       "Former McKinsey Singapore Managing Partner. Led financial services practice across Southeast Asia. Now independent board director and strategic advisor with deep relationships across regional banking.",
     domainRatings: {
@@ -357,6 +368,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_12_wu',
     name: 'Prof. Wu Jianping',
+    displayName: 'Wu',
     background:
       "Dean Emeritus, NUS Business School. Academic specialisation in corporate governance and Southeast Asian capital markets. Policy advisor to SGX and ACRA. Pairs with BG Abdul Rashid for governance reform credibility.",
     domainRatings: {
@@ -385,6 +397,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_13_vikram',
     name: 'Vikram Nair',
+    displayName: 'Nair',
     background:
       "Former GIC Portfolio Manager, Southeast Asia private equity. Returned 2.3x on financial services portfolio. Currently managing partner of a Singapore family office. Strong on capital allocation — carries a hidden conflict tied to Indonesia expansion.",
     domainRatings: {
@@ -423,6 +436,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_14_ho',
     name: 'Dr. Priscilla Ho',
+    displayName: 'Ho',
     background:
       "Former Chief Data Officer, Grab Financial. Led digital lending product across Vietnam and Indonesia. Board observer at two MAS-licensed digital banks. Fintech advisory board member, MAS. Critical for Indonesia digital bank licence event.",
     domainRatings: {
@@ -451,6 +465,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_15_samuel',
     name: 'Samuel Ong Beng Hock',
+    displayName: 'Ong',
     background:
       "CTO turned NED. Former Head of Technology, Standard Chartered Singapore. Led core banking modernisation and cybersecurity resilience programme for the Asia region. Essential for SFG's digital competitor response.",
     domainRatings: {
@@ -483,6 +498,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_16_krishnamurthy',
     name: 'Dr. Aiyana Krishnamurthy',
+    displayName: 'Krishnamurthy',
     background:
       "Founder, Meridian Climate Advisory (Singapore). Former World Bank senior economist. TCFD technical expert. Leads ESG reporting advisory for three Asian banks. Primary candidate to chair the Sustainability Committee.",
     domainRatings: {
@@ -511,6 +527,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_17_ng',
     name: 'Ng Kok Wah',
+    displayName: 'Ng',
     background:
       "Former Head of Responsible Investment, GIC. Built GIC's ESG integration framework. Extensive knowledge of MAS Green Finance Action Plan and Singapore-Asia Taxonomy. Strong alternative to Dr. Krishnamurthy for Sustainability Committee Chair.",
     domainRatings: {
@@ -543,6 +560,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_18_loh',
     name: 'Datin Sri Loh Pei Ying',
+    displayName: 'Loh',
     background:
       "Former Group CHRO, Singapore Airlines. Board-level expertise in executive remuneration design across APAC. Remuneration Committee Chair at two SGX-listed companies. Ideal to resolve the clawback issue and reform the CEO pay structure.",
     domainRatings: {
@@ -571,6 +589,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_19_rashid',
     name: 'BG (Ret.) Abdul Rashid bin Ismail',
+    displayName: 'Rashid',
     background:
       "Former SAF officer turned governance consultant. Teaches corporate governance at INSEAD Asia. Known for challenging management in boardroom settings. Governance Institute of Singapore board member. Pairs with Prof. Wu for governance reform credibility.",
     domainRatings: {
@@ -603,6 +622,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_20_beaumont',
     name: 'Sophie Beaumont',
+    displayName: 'Beaumont',
     background:
       "French national. Former Head of Southeast Asia, Societe Generale. Extensive experience in regional financial services, trade finance, and cross-border regulatory coordination. Valuable for international credibility.",
     domainRatings: {
@@ -631,6 +651,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_21_halliday',
     name: 'Robert Halliday',
+    displayName: 'Halliday',
     background:
       "Former CFO, HSBC Asia Pacific. British national, resident Singapore. Extensive cross-border bank governance experience. Sits on boards in Hong Kong and Singapore. Strong financial oversight — credible AC Chair if Lee Siew Geok or Margaret Tan are unavailable.",
     domainRatings: {
@@ -659,6 +680,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_22_fauzi',
     name: 'Datuk Ahmad Fauzi',
+    displayName: 'Ahmad',
     background:
       "Former Secretary-General, Malaysian Ministry of Finance. Deep relationships across ASEAN finance ministries and central banks. Independent NED at two Malaysian Bursa-listed banks. Politically exposed person (PEP) under MAS AML screening — carries significant risk if Malaysia-Singapore geopolitical tensions arise.",
     domainRatings: {
@@ -697,6 +719,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_23_eleanor',
     name: 'Eleanor Tan Bee Ling',
+    displayName: 'E. Tan',
     background:
       "Former CEO, SFG Wealth Management. Has worked with current CEO Raymond Tan for 9 years. Strong relationships across SFG's private banking client base — but SGX would classify her as non-independent given her close relationship with the CEO. Minority shareholder groups will flag her appointment immediately.",
     domainRatings: {
@@ -731,6 +754,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_24_chen',
     name: 'Chen Weiliang',
+    displayName: 'Chen',
     background:
       "Founding partner, Southeast Asia growth equity fund with USD 1.2bn AUM. Has publicly criticised SFG's Vietnam risk management in the financial press. Known as an activist voice. Appointment sends a strong institutional credibility signal but activates CEO-NED tension that penalises all Strategy events.",
     domainRatings: {
@@ -765,6 +789,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_25_grace',
     name: 'Grace Leong Shu Yin',
+    displayName: 'Leong',
     background:
       "Former Communications Director, Singapore Prime Minister's Office. Now independent consultant and NED. Deep relationships with Singapore media, civil service, and institutional stakeholder community. Highest Stakeholder & Comms score in the pool.",
     domainRatings: {
@@ -793,6 +818,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_26_rajan',
     name: 'Rajan Sethupathi',
+    displayName: 'Rajan',
     background:
       "Former CEO, Standard Chartered Singapore. Respected across Singapore's banking establishment. Has turned down six board roles this year — currently available but highly selective. His appointment as Board Chair would be the most powerful governance credibility signal available to SFG, triggering an immediate SV boost and MAS goodwill. Comes at the highest fee in the pool.",
     domainRatings: {
@@ -821,6 +847,7 @@ export const sfgDirectors: Director[] = [
   {
     id: 'sfgdir_27_phua',
     name: 'Catherine Phua',
+    displayName: 'Phua',
     background:
       "Current Vice President, Temasek International (Portfolio). 38 years old. Temasek's preferred replacement for Eric Png if he is rotated out. The player does not control whether Temasek exercises this right — it is triggered by SFG-08. Non-independent under SGX rules as a Temasek nominee. Her appointment signals Temasek's increased engagement and activates a governance pressure multiplier on ESG and risk events.",
     domainRatings: {

@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import type { BoardSeat, Director, BoardRole } from '@/types/game';
-import { ROLE_LABELS, getRoleLabel } from '@/engine/boardConstants';
+import { ROLE_LABELS, getRoleLabel, directorShortLabel } from '@/engine/boardConstants';
 import type { Jurisdiction } from '@/types/game';
 import DirectorPortrait from './DirectorPortrait';
 import { computeSeatLayout } from './boardroom/useSeatLayout';
@@ -795,7 +795,7 @@ export default function BoardroomTable({
               {director ? (
                 <>
                   <text y={nameY} textAnchor="middle" fontSize={nameFontSize} fontFamily="var(--font-mono, monospace)" fontWeight={600} fill="#E8E4DC">
-                    {truncateForWidth(director.name.split(' ').pop() ?? director.name, nameMaxWidth, nameFontSize)}
+                    {truncateForWidth(directorShortLabel(director), nameMaxWidth, nameFontSize)}
                   </text>
                   {labelMode === 'full' && (
                     <text y={roleY} textAnchor="middle" fontSize={roleFontSize} fontFamily="var(--font-mono, monospace)" fill="#E8E4DC" opacity={0.5}>

@@ -15,6 +15,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_mensah',
     name: 'Hon. Patricia Mensah',
+    displayName: 'Mensah',
     background:
       "Former FCDO senior civil servant; board chair for 7 years. Competent administrator with strong institutional networks. Has allowed governance drift through avoidance of confrontation with Dr. Osei-Bonsu. Approaching the Charity Governance Code's recommended 9-year maximum tenure.",
     domainRatings: {
@@ -50,6 +51,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_osei_bonsu',
     name: 'Dr. Evelyn Osei-Bonsu',
+    displayName: 'Osei-Bonsu',
     background:
       "Ghanaian-British development economist; Meridian's founder and CEO 2003–2017. Stepped down as CEO but remained on the board as a trustee — a transition that has never fully completed psychologically. Chairs the Programmes & Impact Committee; treats Marcus Finch as subordinate rather than peer. Has sent operational memos directly to country programme managers, bypassing the CEO.",
     domainRatings: {
@@ -85,6 +87,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_ashworth',
     name: 'Daniel Ashworth',
+    displayName: 'Ashworth',
     background:
       'Former COO of a large UK housing association. Strong on people and HR matters; weaker on international development sector specifics. Generally supportive of executive leadership; tends to defer to the chair. Chairs the People & Culture Committee.',
     domainRatings: {
@@ -114,6 +117,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_alrashid',
     name: 'Fatima Al-Rashid',
+    displayName: 'Al-Rashid',
     background:
       'Public health specialist; field experience in East Africa. The most recent appointee and the strongest voice for mission integrity on the current board. Beginning to push back on the grant-chasing strategy at board level. At risk of isolation without allies.',
     domainRatings: {
@@ -143,6 +147,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_cavendish',
     name: 'Robert Cavendish',
+    displayName: 'Cavendish',
     background:
       "Retired investment banker; chairs Finance & Risk Committee by delegation from the board chair. Six years on the board. UNDISCLOSED CONFLICT: Cavendish's brother-in-law runs Cavendish Logistics Solutions, which has submitted a tender for Meridian's Uganda supply chain contract (£400k). This has not been declared to the board or entered in the conflict of interest register.",
     domainRatings: {
@@ -182,6 +187,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_01_okonkwo',
     name: 'Professor James Okonkwo',
+    displayName: 'Okonkwo',
     background:
       'Professor of Development Economics, LSE. Published extensively on aid effectiveness and programme evaluation. Will challenge mission drift directly. Natural ally for Fatima Al-Rashid. If appointed to Programmes & Impact Committee, will act as a credible counterweight to Osei-Bonsu.',
     domainRatings: {
@@ -210,6 +216,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_02_nwosu',
     name: 'Councillor Diana Nwosu',
+    displayName: 'Nwosu',
     background:
       'Elected London borough councillor; former NHS Trust governor. Community engagement background. Brings external accountability perspective. Unlikely to challenge senior trustees on substance. Tends to support the chair.',
     domainRatings: {
@@ -238,6 +245,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_03_hedley',
     name: 'Simon Hedley',
+    displayName: 'Hedley',
     background:
       "Partner, Clifford Chance charity and not-for-profit law practice. Advises major INGO boards on Charity Commission compliance, regulatory investigations, and trustee liability. Governance score among the highest in the candidate pool. POTENTIAL CONFLICT: Clifford Chance acts for the Heron Foundation, one of Meridian's major institutional donors — must be disclosed and minuted at appointment.",
     domainRatings: {
@@ -272,6 +280,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_04_yusuf',
     name: 'Dr. Amina Yusuf',
+    displayName: 'Yusuf',
     background:
       'Former UNICEF Country Director (Uganda, Bangladesh). Now independent consultant. Strong field credibility; has walked away from previous roles over mission compromise. Natural successor for Programmes & Impact Committee Chair. Could trigger Osei-Bonsu resignation if handled poorly.',
     domainRatings: {
@@ -300,6 +309,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_05_webb',
     name: 'Marcus Webb',
+    displayName: 'Webb',
     background:
       "CEO of a UK social enterprise network. Significant fundraising and income diversification experience. Views income growth as intrinsically positive; limited sensitivity to mission drift risk. The board chair's preferred candidate. Appointing Webb without a mission-focused counterpart is the 'easy but wrong' choice.",
     domainRatings: {
@@ -334,6 +344,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_06_mbeki',
     name: 'Dr. Claire Mbeki',
+    displayName: 'Mbeki',
     background:
       'Specialist in safeguarding and child protection in humanitarian contexts. Former Save the Children policy director. Addresses a genuine skills gap (safeguarding). Her appointment does not destabilise existing power dynamics — a safe, credible, incremental improvement.',
     domainRatings: {
@@ -362,6 +373,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_07_patel',
     name: 'Raj Patel',
+    displayName: 'Patel',
     background:
       "Head of Philanthropy at a major UK family foundation. Controls c.£15m annual grants budget. Significant donor-side perspective. DISQUALIFYING CONFLICT: his foundation has an active grant application from Meridian (£2m over 3 years). Appointment while the application is pending would trigger a Charity Commission inquiry. Application must be withdrawn or decided before he could serve.",
     domainRatings: {
@@ -396,6 +408,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_08_gao',
     name: 'Gao Yan',
+    displayName: 'Gao',
     background:
       'CFO of a listed UK social impact investment firm. Specialist in blended finance and development finance institutions. Would immediately strengthen the Finance & Risk Committee. Would surface the liquidity risk question the CFO has not escalated.',
     domainRatings: {
@@ -424,6 +437,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_09_adeyemi',
     name: 'Ngozi Adeyemi',
+    displayName: 'Adeyemi',
     background:
       'Former Nigerian diplomat; now at Chatham House. International policy perspective; networks across FCDO, UN agencies, bilateral donors. Critical of aid-effectiveness fashions that distort delivery organisations. Appetite for Programmes & Impact Committee; would not challenge Osei-Bonsu as directly as Amina Yusuf.',
     domainRatings: {
@@ -452,6 +466,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_10_hartley',
     name: 'Fiona Hartley',
+    displayName: 'Hartley',
     background:
       "Partner, Deloitte Social Impact Practice. Specialist in charity audits, governance reviews, and Charity Commission compliance frameworks. DISQUALIFYING CONFLICT: Deloitte is Meridian's external auditor. Cannot serve as trustee while her firm holds the audit mandate. Firm would need to resign the audit before she could be appointed — minimum 12 months.",
     domainRatings: {
@@ -486,6 +501,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_11_blythe',
     name: 'Sir Edward Blythe',
+    displayName: 'Blythe',
     background:
       'Retired British diplomat; former High Commissioner. Significant honorary network value but limited operational charity experience. Will defer to the chair on contested questions. Tendency toward passive trusteeship — a Charity Commission concern.',
     domainRatings: {
@@ -520,6 +536,7 @@ export const meridianTrustees: Director[] = [
   {
     id: 'mdir_12_malik',
     name: 'Dr. Aisha Malik',
+    displayName: 'Malik',
     background:
       "Public health specialist; significant experience in South Asia and East Africa programme delivery. Direct successor profile to Dr. Sarah Lim (resigned trustee). Would fill the East Africa programme expertise gap immediately. The 'obvious repair' appointment if the player prioritises field credibility and mission alignment over structural reform.",
     domainRatings: {
