@@ -249,7 +249,7 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
   }
 
   return (
-    <div className="min-h-screen bg-navy flex flex-col items-center px-6 py-12">
+    <div className="min-h-screen bg-navy flex flex-col items-center px-6 pt-12 pb-20">
       {/* Header */}
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
@@ -301,14 +301,17 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
 
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl w-full">
-        {/* Playable Company Tiles */}
-        {companies.map((company) => {
+        {/* Playable Company Tiles — selected company reorders to the front */}
+        {[...companies]
+          .sort((a, b) => (a.id === selectedId ? -1 : b.id === selectedId ? 1 : 0))
+          .map((company) => {
           const isExpanded = selectedId === company.id;
           const isRecommended = !!skillLevel && (SKILL_LEVELS.find((s) => s.value === skillLevel)?.recommended ?? []).includes(company.id);
           return (
             <motion.div
               key={isRecommended ? `${company.id}-${jiggleKey}` : company.id}
               layoutId={`company-tile-${company.id}`}
+              layout
               onClick={() => setSelectedId(isExpanded ? null : company.id)}
               className={`relative rounded-xl border cursor-pointer transition-colors
                 ${isExpanded
@@ -454,7 +457,7 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
         ))}
       </div>
 
-      <SiteFooter className="fixed bottom-4 left-1/2 -translate-x-1/2 z-10" />
+      <SiteFooter vertical className="fixed bottom-4 right-4 z-10" />
 
       <AnimatePresence>
         {focusModalOpen && (
