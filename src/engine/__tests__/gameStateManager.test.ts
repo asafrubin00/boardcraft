@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { checkEventPrecondition, getCurrentEvent, resolveSfgEvent01Event, applyRheinfeldFlagUpdates } from '../gameStateManager';
+import { checkEventPrecondition, getCurrentEvent, resolveSfgEvent01Event, applyRheinfeldFlagUpdates, applyVantageFlagUpdates } from '../gameStateManager';
 import { meridianEvents } from '@/data/meridian/events';
 import { rheinfeldEvents } from '@/data/rheinfeld/events';
+import { vantageEvents } from '@/data/vantage/events';
 import { sfgEvents } from '@/data/sfg/events';
 import { meridianFoundation } from '@/data/meridian/company';
 import { rheinfeldAG } from '@/data/rheinfeld/company';
+import { vantageConsumer } from '@/data/vantage/company';
 import { straitsFinancialGroup } from '@/data/sfg/company';
 import type { GameState, BoardSeat, Director, ResolvedEvent } from '@/types/game';
 
@@ -72,7 +74,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     apexStatus: 'monitoring',
     chairCeoSeparationProgress: 0,
     apexActive: false,
-    fdaInquiryActive: false,
     forcedChange: null,
     healthCrisisFired: false,
     heinrichConflictRevealed: false,
@@ -477,6 +478,225 @@ describe('Rheinfeld revent_12/14/15 reachability', () => {
     state = { ...state, currentQuarter: 'Q4', currentTurn: 3 };
     expect(checkEventPrecondition(revent15, state)).toBe(true);
     expect(getCurrentEvent(state)?.id).toBe('revent_15');
+  });
+});
+
+// ── Vantage ──────────────────────────────────────────────────────────────────
+
+describe('applyVantageFlagUpdates: apexStatus escalation ladder', () => {
+  it('vevent_02 FAILURE/CRITICAL_FAILURE escalates monitoring -> escalating; SUCCESS/CRITICAL_SUCCESS de-escalates back', () => {
+    const failState = makeState({ apexStatus: 'monitoring' });
+    expect(applyVantageFlagUpdates(failState, 'vevent_02', 'vevent_02_d', 'CRITICAL_FAILURE').apexStatus).toBe('escalating');
+
+    const successState = makeState({ apexStatus: 'escalating' });
+    expect(applyVantageFlagUpdates(successState, 'vevent_02', 'vevent_02_a', 'SUCCESS').apexStatus).toBe('monitoring');
+  });
+
+  it('vevent_02 PARTIAL_SUCCESS leaves apexStatus unchanged', () => {
+    const state = makeState({ apexStatus: 'escalating' });
+    const updates = applyVantageFlagUpdates(state, 'vevent_02', 'vevent_02_b', 'PARTIAL_SUCCESS');
+    expect(updates.apexStatus).toBeUndefined();
+  });
+
+  it('vevent_09 (AGM) also escalates on PARTIAL_SUCCESS ("guarantees six more months of activist pressure")', () => {
+    const state = makeState({ apexStatus: 'monitoring' });
+    expect(applyVantageFlagUpdates(state, 'vevent_09', 'vevent_09_d', 'PARTIAL_SUCCESS').apexStatus).toBe('escalating');
+  });
+
+  it('vevent_09 CRITICAL_FAILURE escalates only to escalating, never straight to hostile', () => {
+    const state = makeState({ apexStatus: 'monitoring' });
+    expect(applyVantageFlagUpdates(state, 'vevent_09', 'vevent_09_d', 'CRITICAL_FAILURE').apexStatus).toBe('escalating');
+  });
+
+  it('vevent_10 FAILURE/CRITICAL_FAILURE escalates escalating -> hostile', () => {
+    const state = makeState({ apexStatus: 'escalating' });
+    expect(applyVantageFlagUpdates(state, 'vevent_10', 'vevent_10_b', 'FAILURE').apexStatus).toBe('hostile');
+    const cfState = makeState({ apexStatus: 'escalating' });
+    expect(applyVantageFlagUpdates(cfState, 'vevent_10', 'vevent_10_d', 'CRITICAL_FAILURE').apexStatus).toBe('hostile');
+  });
+
+  it('vevent_10 PARTIAL_SUCCESS ("a pause, not a peace") leaves apexStatus unchanged', () => {
+    const state = makeState({ apexStatus: 'escalating' });
+    const updates = applyVantageFlagUpdates(state, 'vevent_10', 'vevent_10_c', 'PARTIAL_SUCCESS');
+    expect(updates.apexStatus).toBeUndefined();
+  });
+
+  it('vevent_15 FAILURE/CRITICAL_FAILURE escalates to hostile; SUCCESS/CRITICAL_SUCCESS de-escalates to monitoring', () => {
+    const failState = makeState({ apexStatus: 'escalating' });
+    expect(applyVantageFlagUpdates(failState, 'vevent_15', 'vevent_15_d', 'CRITICAL_FAILURE').apexStatus).toBe('hostile');
+
+    const successState = makeState({ apexStatus: 'hostile' });
+    expect(applyVantageFlagUpdates(successState, 'vevent_15', 'vevent_15_a', 'SUCCESS').apexStatus).toBe('monitoring');
+  });
+
+  it('guards escalation writes: a bad vevent_02 outcome cannot downgrade an already-hostile status', () => {
+    const state = makeState({ apexStatus: 'hostile' });
+    const updates = applyVantageFlagUpdates(state, 'vevent_02', 'vevent_02_d', 'CRITICAL_FAILURE');
+    expect(updates.apexStatus).toBe('hostile');
+  });
+
+  it('guards de-escalation writes: a good vevent_10 outcome cannot upgrade an already-monitoring status', () => {
+    const state = makeState({ apexStatus: 'monitoring' });
+    const updates = applyVantageFlagUpdates(state, 'vevent_10', 'vevent_10_a', 'SUCCESS');
+    expect(updates.apexStatus).toBe('monitoring');
+  });
+});
+
+describe('applyVantageFlagUpdates: apexActive neutralisation', () => {
+  it('vevent_10 CRITICAL_SUCCESS ("standstill") fully neutralises Apex', () => {
+    const state = makeState({ apexActive: true, apexStatus: 'escalating' });
+    const updates = applyVantageFlagUpdates(state, 'vevent_10', 'vevent_10_a', 'CRITICAL_SUCCESS');
+    expect(updates.apexActive).toBe(false);
+    expect(updates.apexStatus).toBe('monitoring');
+  });
+
+  it('vevent_10 SUCCESS de-escalates status but leaves Apex active ("keeping the receipts")', () => {
+    const state = makeState({ apexActive: true, apexStatus: 'escalating' });
+    const updates = applyVantageFlagUpdates(state, 'vevent_10', 'vevent_10_a', 'SUCCESS');
+    expect(updates.apexActive).toBeUndefined();
+    expect(updates.apexStatus).toBe('monitoring');
+  });
+
+  it('vevent_15 SUCCESS/CRITICAL_SUCCESS neutralises Apex; FAILURE/CRITICAL_FAILURE does not', () => {
+    const winState = makeState({ apexActive: true });
+    expect(applyVantageFlagUpdates(winState, 'vevent_15', 'vevent_15_a', 'CRITICAL_SUCCESS').apexActive).toBe(false);
+
+    const loseState = makeState({ apexActive: true });
+    expect(applyVantageFlagUpdates(loseState, 'vevent_15', 'vevent_15_d', 'CRITICAL_FAILURE').apexActive).toBeUndefined();
+  });
+});
+
+describe('applyVantageFlagUpdates: chairCeoSeparationProgress', () => {
+  it('vevent_05 strategies A/B/C add tier-scaled progress', () => {
+    const state = makeState({ chairCeoSeparationProgress: 0 });
+    expect(applyVantageFlagUpdates(state, 'vevent_05', 'vevent_05_a', 'CRITICAL_SUCCESS').chairCeoSeparationProgress).toBe(50);
+
+    const state2 = makeState({ chairCeoSeparationProgress: 0 });
+    expect(applyVantageFlagUpdates(state2, 'vevent_05', 'vevent_05_b', 'SUCCESS').chairCeoSeparationProgress).toBe(30);
+
+    const state3 = makeState({ chairCeoSeparationProgress: 0 });
+    expect(applyVantageFlagUpdates(state3, 'vevent_05', 'vevent_05_c', 'PARTIAL_SUCCESS').chairCeoSeparationProgress).toBe(10);
+  });
+
+  it('vevent_05 strategy D ("defend combined structure") never adds progress, even at CRITICAL_SUCCESS', () => {
+    const state = makeState({ chairCeoSeparationProgress: 0 });
+    const updates = applyVantageFlagUpdates(state, 'vevent_05', 'vevent_05_d', 'CRITICAL_SUCCESS');
+    expect(updates.chairCeoSeparationProgress).toBeUndefined();
+  });
+
+  it('vevent_05 FAILURE/CRITICAL_FAILURE add no progress', () => {
+    const state = makeState({ chairCeoSeparationProgress: 0 });
+    const updates = applyVantageFlagUpdates(state, 'vevent_05', 'vevent_05_a', 'CRITICAL_FAILURE');
+    expect(updates.chairCeoSeparationProgress).toBeUndefined();
+  });
+
+  it('vevent_10 strategy A adds progress on SUCCESS/CRITICAL_SUCCESS only; other strategies never do', () => {
+    const state = makeState({ chairCeoSeparationProgress: 0 });
+    expect(applyVantageFlagUpdates(state, 'vevent_10', 'vevent_10_a', 'CRITICAL_SUCCESS').chairCeoSeparationProgress).toBe(30);
+
+    const state2 = makeState({ chairCeoSeparationProgress: 0 });
+    expect(applyVantageFlagUpdates(state2, 'vevent_10', 'vevent_10_a', 'SUCCESS').chairCeoSeparationProgress).toBe(20);
+
+    const state3 = makeState({ chairCeoSeparationProgress: 0 });
+    const updatesB = applyVantageFlagUpdates(state3, 'vevent_10', 'vevent_10_b', 'CRITICAL_SUCCESS');
+    expect(updatesB.chairCeoSeparationProgress).toBeUndefined();
+  });
+
+  it('crosses the >= 50 threshold via one vevent_05 CRITICAL_SUCCESS, or via vevent_05 SUCCESS + vevent_10_a SUCCESS combined', () => {
+    const solo = makeState({ chairCeoSeparationProgress: 0 });
+    const soloUpdates = applyVantageFlagUpdates(solo, 'vevent_05', 'vevent_05_a', 'CRITICAL_SUCCESS');
+    expect(soloUpdates.chairCeoSeparationProgress!).toBeGreaterThanOrEqual(50);
+
+    let combined = makeState({ chairCeoSeparationProgress: 0 });
+    Object.assign(combined, applyVantageFlagUpdates(combined, 'vevent_05', 'vevent_05_b', 'SUCCESS'));
+    expect(combined.chairCeoSeparationProgress).toBe(30);
+    Object.assign(combined, applyVantageFlagUpdates(combined, 'vevent_10', 'vevent_10_a', 'SUCCESS'));
+    expect(combined.chairCeoSeparationProgress).toBe(50);
+  });
+
+  it('clamps at 100', () => {
+    const state = makeState({ chairCeoSeparationProgress: 90 });
+    const updates = applyVantageFlagUpdates(state, 'vevent_05', 'vevent_05_a', 'CRITICAL_SUCCESS');
+    expect(updates.chairCeoSeparationProgress).toBe(100);
+  });
+});
+
+describe('Vantage vevent_10/15 reachability', () => {
+  const vevent10 = findEvent(vantageEvents, 'vevent_10');
+  const vevent15 = findEvent(vantageEvents, 'vevent_15');
+
+  it('vevent_10 fires once apexActive is true and vevent_02 resolved at PARTIAL_SUCCESS-or-worse, skips otherwise', () => {
+    const reachable = makeState({
+      company: vantageConsumer,
+      apexActive: true,
+      resolvedEvents: [stubResolvedEvent('vevent_02', 'FAILURE')],
+      currentQuarter: 'Q3',
+      currentTurn: 1,
+    });
+    expect(checkEventPrecondition(vevent10, reachable)).toBe(true);
+    expect(getCurrentEvent(reachable)?.id).toBe('vevent_10');
+
+    const apexNeutralised = makeState({
+      company: vantageConsumer,
+      apexActive: false,
+      resolvedEvents: [stubResolvedEvent('vevent_02', 'FAILURE')],
+      currentQuarter: 'Q3',
+      currentTurn: 1,
+    });
+    expect(checkEventPrecondition(vevent10, apexNeutralised)).toBe(false);
+    expect(getCurrentEvent(apexNeutralised)).toBeNull();
+
+    const vevent02Succeeded = makeState({
+      company: vantageConsumer,
+      apexActive: true,
+      resolvedEvents: [stubResolvedEvent('vevent_02', 'SUCCESS')],
+      currentQuarter: 'Q3',
+      currentTurn: 1,
+    });
+    expect(getCurrentEvent(vevent02Succeeded)).toBeNull();
+  });
+
+  it('vevent_15 fires once apexActive is true and governance health < 50, skips otherwise', () => {
+    const reachable = makeState({
+      company: vantageConsumer,
+      apexActive: true,
+      governanceHealth: 40,
+      currentQuarter: 'Q4',
+      currentTurn: 3,
+    });
+    expect(checkEventPrecondition(vevent15, reachable)).toBe(true);
+    expect(getCurrentEvent(reachable)?.id).toBe('vevent_15');
+
+    const ghTooHigh = makeState({
+      company: vantageConsumer,
+      apexActive: true,
+      governanceHealth: 60,
+      currentQuarter: 'Q4',
+      currentTurn: 3,
+    });
+    expect(checkEventPrecondition(vevent15, ghTooHigh)).toBe(false);
+  });
+
+  it('end-to-end: winning vevent_10 at CRITICAL_SUCCESS neutralises Apex and permanently locks out vevent_15', () => {
+    let state = makeState({ company: vantageConsumer, apexActive: true, apexStatus: 'escalating', governanceHealth: 40 });
+    Object.assign(state, applyVantageFlagUpdates(state, 'vevent_10', 'vevent_10_a', 'CRITICAL_SUCCESS'));
+    expect(state.apexActive).toBe(false);
+
+    state = { ...state, currentQuarter: 'Q4', currentTurn: 3 };
+    // Even with governance health well under 50, vevent_15 is unreachable — the win closed it off.
+    expect(checkEventPrecondition(vevent15, state)).toBe(false);
+    expect(getCurrentEvent(state)).toBeNull();
+  });
+
+  it('end-to-end: losing vevent_10 escalates to hostile and keeps vevent_15 reachable', () => {
+    let state = makeState({ company: vantageConsumer, apexActive: true, apexStatus: 'escalating', governanceHealth: 60 });
+    Object.assign(state, applyVantageFlagUpdates(state, 'vevent_10', 'vevent_10_d', 'CRITICAL_FAILURE'), { governanceHealth: 40 });
+    expect(state.apexStatus).toBe('hostile');
+    expect(state.apexActive).toBe(true);
+
+    state = { ...state, currentQuarter: 'Q4', currentTurn: 3 };
+    expect(checkEventPrecondition(vevent15, state)).toBe(true);
+    expect(getCurrentEvent(state)?.id).toBe('vevent_15');
   });
 });
 

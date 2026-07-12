@@ -418,8 +418,6 @@ export interface GameState {
   chairCeoSeparationProgress: number;
   /** Vantage-specific: whether Apex Capital is still an active threat */
   apexActive: boolean;
-  /** Vantage-specific: whether FDA inquiry has escalated */
-  fdaInquiryActive: boolean;
   /** Active forced director change (if any) */
   forcedChange: ForcedDirectorChange | null;
   /** Whether FMC-01 (health crisis) has already fired this game */

@@ -18,6 +18,7 @@ import {
   applyBenchRegen,
   applyAgmRegen,
   applyRheinfeldFlagUpdates,
+  applyVantageFlagUpdates,
 } from '@/engine/gameStateManager';
 import { useSearchParams } from 'next/navigation';
 import CompanySelectScreen from '@/components/CompanySelectScreen';
@@ -282,6 +283,10 @@ function PlayPageInner() {
       // Rheinfeld: meridianStatus escalation ladder + Heinrich conflict reveal.
       // No-op for non-Rheinfeld companies and events other than revent_02/08/11/12.
       Object.assign(newState, applyRheinfeldFlagUpdates(newState, currentEvent.id, output.outcomeTier));
+
+      // Vantage: apexActive/apexStatus escalation ladder + chairCeoSeparationProgress.
+      // No-op for non-Vantage companies and events other than vevent_02/05/09/10/15.
+      Object.assign(newState, applyVantageFlagUpdates(newState, currentEvent.id, strategyChoice, output.outcomeTier));
 
       const breakdown = recalcGovernanceBreakdown(newState);
       // Rescale breakdown proportionally to match the event-adjusted GH
@@ -568,6 +573,9 @@ function PlayPageInner() {
 
       // Rheinfeld: revent_09 (HV) outcome feeds the meridianStatus escalation ladder.
       Object.assign(newState, applyRheinfeldFlagUpdates(newState, agmEventId, output.outcomeTier));
+
+      // Vantage: vevent_09 (AGM) outcome feeds the apexStatus escalation ladder.
+      Object.assign(newState, applyVantageFlagUpdates(newState, agmEventId, strategyChoice, output.outcomeTier));
 
       const breakdown = recalcGovernanceBreakdown(newState);
 

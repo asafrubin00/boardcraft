@@ -93,7 +93,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     apexStatus: 'monitoring',
     chairCeoSeparationProgress: 0,
     apexActive: false,
-    fdaInquiryActive: false,
     forcedChange: null,
     healthCrisisFired: false,
     heinrichConflictRevealed: false,

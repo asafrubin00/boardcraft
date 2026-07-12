@@ -138,7 +138,6 @@ export function initializeGameState(
     apexStatus: 'monitoring',
     chairCeoSeparationProgress: 0,
     apexActive: co.id === 'company_vantage',
-    fdaInquiryActive: false,
     forcedChange: null,
     healthCrisisFired: false,
     // Rheinfeld-specific fields (neutral defaults for non-Rheinfeld companies)
@@ -800,6 +799,119 @@ export function applyRheinfeldFlagUpdates(
       updates.meridianStatus = deescalateMeridianStatus(state.meridianStatus, 'watching');
     }
     // PARTIAL_SUCCESS: the EGM proceeds with an uncertain outcome — no status change.
+  }
+
+  return updates;
+}
+
+// ── Vantage: apexActive/apexStatus escalation ladder + chairCeoSeparationProgress ──
+// apexStatus/apexActive gate vevent_10/15's eligibility and drive the AGM Resolution 1
+// vote penalty (AgmScreen.tsx); chairCeoSeparationProgress drives the AGM Resolution 3
+// pass/fail lever and vote math. All three were previously never written anywhere.
+
+type ApexStatusValue = GameState['apexStatus'];
+
+const APEX_STATUS_RANK: Record<ApexStatusValue, number> = {
+  monitoring: 0,
+  escalating: 1,
+  hostile: 2,
+};
+
+// Same direction-guarded ladder pattern as Rheinfeld's meridianStatus (see above).
+function escalateApexStatus(current: ApexStatusValue, target: ApexStatusValue): ApexStatusValue {
+  return APEX_STATUS_RANK[target] > APEX_STATUS_RANK[current] ? target : current;
+}
+
+function deescalateApexStatus(current: ApexStatusValue, target: ApexStatusValue): ApexStatusValue {
+  return APEX_STATUS_RANK[target] < APEX_STATUS_RANK[current] ? target : current;
+}
+
+export function applyVantageFlagUpdates(
+  state: GameState,
+  eventId: string,
+  strategyId: string,
+  outcomeTier: OutcomeTier
+): Partial<GameState> {
+  const updates: Partial<GameState> = {};
+
+  // vevent_02 (Apex's opening disclosure) and vevent_09 (AGM): both narrate Apex
+  // standing down or ramping up depending on outcome, but neither is the direct
+  // negotiation/battle — so neither ever reaches 'hostile' or touches apexActive.
+  if (eventId === 'vevent_02' || eventId === 'vevent_09') {
+    if (outcomeTier === 'FAILURE' || outcomeTier === 'CRITICAL_FAILURE') {
+      updates.apexStatus = escalateApexStatus(state.apexStatus, 'escalating');
+    } else if (outcomeTier === 'SUCCESS' || outcomeTier === 'CRITICAL_SUCCESS') {
+      updates.apexStatus = deescalateApexStatus(state.apexStatus, 'monitoring');
+    } else if (eventId === 'vevent_09' && outcomeTier === 'PARTIAL_SUCCESS') {
+      // AGM PARTIAL_SUCCESS: "guarantees six more months of activist pressure" —
+      // unlike vevent_02's PARTIAL_SUCCESS (no real signal either way), this one
+      // explicitly escalates.
+      updates.apexStatus = escalateApexStatus(state.apexStatus, 'escalating');
+    }
+  }
+
+  // vevent_10 (Apex Escalation — the direct negotiation): this is the one event that
+  // can fully neutralise Apex, and the only pre-endgame source of chairCeoSeparationProgress.
+  if (eventId === 'vevent_10') {
+    if (outcomeTier === 'CRITICAL_SUCCESS') {
+      // "Apex agrees to a standstill" — full neutralisation. Intentional, not a bug:
+      // this permanently closes vevent_15's fullCrisis-equivalent gate (apexActive
+      // required) for the rest of the playthrough, the same way winning Rheinfeld's
+      // revent_12 EGM settlement locks out revent_15. Recovering is supposed to
+      // close the disaster ending.
+      updates.apexActive = false;
+      updates.apexStatus = deescalateApexStatus(state.apexStatus, 'monitoring');
+    } else if (outcomeTier === 'SUCCESS') {
+      // "Apex scales back publicly, though everyone knows they're keeping the
+      // receipts" — de-escalated, but still active and could flare up again.
+      updates.apexStatus = deescalateApexStatus(state.apexStatus, 'monitoring');
+    } else if (outcomeTier === 'FAILURE' || outcomeTier === 'CRITICAL_FAILURE') {
+      updates.apexStatus = escalateApexStatus(state.apexStatus, 'hostile');
+    }
+    // PARTIAL_SUCCESS: "a pause, not a peace" — no status change.
+
+    // Strategy A ("negotiate directly; offer one board seat and commitments") is the
+    // only vevent_10 strategy whose negotiated terms plausibly include a Chair/CEO
+    // separation commitment — B (public rejection), C (independent review), and D
+    // (do nothing) don't touch it, so they contribute no progress at any tier.
+    if (strategyId === 'vevent_10_a') {
+      const delta = outcomeTier === 'CRITICAL_SUCCESS' ? 30 : outcomeTier === 'SUCCESS' ? 20 : 0;
+      if (delta > 0) {
+        updates.chairCeoSeparationProgress = Math.min(100, state.chairCeoSeparationProgress + delta);
+      }
+    }
+  }
+
+  // vevent_15 (Full Proxy Battle — the endgame): belt-and-suspenders escalation to
+  // 'hostile' on a loss (the precondition already requires apexActive, so status is
+  // usually 'hostile' by the time this fires, but not guaranteed if GH dropped for
+  // unrelated reasons), and full neutralisation on a win — same "intentional lockout"
+  // reasoning as vevent_10's CRITICAL_SUCCESS above.
+  if (eventId === 'vevent_15') {
+    if (outcomeTier === 'SUCCESS' || outcomeTier === 'CRITICAL_SUCCESS') {
+      updates.apexActive = false;
+      updates.apexStatus = deescalateApexStatus(state.apexStatus, 'monitoring');
+    } else if (outcomeTier === 'FAILURE' || outcomeTier === 'CRITICAL_FAILURE') {
+      updates.apexStatus = escalateApexStatus(state.apexStatus, 'hostile');
+    }
+    // PARTIAL_SUCCESS: "Apex takes two seats... power dynamics shifted" — unresolved, no change.
+  }
+
+  // vevent_05 (Chair/CEO Split: Institutional Shareholder Letter) — the event whose
+  // entire premise is progress toward separation. Strategies A/B/C all move toward
+  // it to varying degrees; strategy D ("reject the request; defend combined
+  // structure") is the opposite premise, so it contributes 0 at every tier —
+  // outcomeTiers narrative is shared across strategies in this schema, so a
+  // well-executed *rejection* must not be misread as separation progress just
+  // because the roll came back CRITICAL_SUCCESS.
+  if (eventId === 'vevent_05' && strategyId !== 'vevent_05_d') {
+    const delta =
+      outcomeTier === 'CRITICAL_SUCCESS' ? 50 :
+      outcomeTier === 'SUCCESS' ? 30 :
+      outcomeTier === 'PARTIAL_SUCCESS' ? 10 : 0;
+    if (delta > 0) {
+      updates.chairCeoSeparationProgress = Math.min(100, state.chairCeoSeparationProgress + delta);
+    }
   }
 
   return updates;
