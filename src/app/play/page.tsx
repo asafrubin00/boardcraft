@@ -19,6 +19,7 @@ import {
   applyAgmRegen,
   applyRheinfeldFlagUpdates,
   applyVantageFlagUpdates,
+  applyMeridianFlagUpdates,
 } from '@/engine/gameStateManager';
 import { useSearchParams } from 'next/navigation';
 import CompanySelectScreen from '@/components/CompanySelectScreen';
@@ -287,6 +288,10 @@ function PlayPageInner() {
       // Vantage: apexActive/apexStatus escalation ladder + chairCeoSeparationProgress.
       // No-op for non-Vantage companies and events other than vevent_02/05/09/10/15.
       Object.assign(newState, applyVantageFlagUpdates(newState, currentEvent.id, strategyChoice, output.outcomeTier));
+
+      // Meridian: founderSyndromeScore contested meter. No-op for non-Meridian
+      // companies and events other than mevent_03/09.
+      Object.assign(newState, applyMeridianFlagUpdates(newState, currentEvent.id, output.outcomeTier));
 
       const breakdown = recalcGovernanceBreakdown(newState);
       // Rescale breakdown proportionally to match the event-adjusted GH
@@ -576,6 +581,9 @@ function PlayPageInner() {
 
       // Vantage: vevent_09 (AGM) outcome feeds the apexStatus escalation ladder.
       Object.assign(newState, applyVantageFlagUpdates(newState, agmEventId, strategyChoice, output.outcomeTier));
+
+      // Meridian: mevent_09 (CEO Ultimatum, fires at AGM) outcome feeds founderSyndromeScore.
+      Object.assign(newState, applyMeridianFlagUpdates(newState, agmEventId, output.outcomeTier));
 
       const breakdown = recalcGovernanceBreakdown(newState);
 

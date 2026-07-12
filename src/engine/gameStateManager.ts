@@ -917,6 +917,55 @@ export function applyVantageFlagUpdates(
   return updates;
 }
 
+// ── Meridian: founderSyndromeScore (FSS) contested meter ──
+// FSS gates mevent_09's auto-fire (checkEventPrecondition's 'mevent_09_fss_or_event03'
+// case and checkEventCondition's mevent_09 override, both > 60) and was previously never
+// written anywhere, so the auto-fire path — and the "Founder Syndrome -10/+6/..." deltas
+// mevent_03's own narrative claims — were both dead. Unlike Vantage's apexActive, this is
+// a genuine contested meter, not a one-way ratchet: mevent_03's narrative text states both
+// directions explicitly (board acts decisively → score drops; board does nothing → score
+// rises), so good outcomes must be able to pull it back down, not just floor at "no change."
+export function applyMeridianFlagUpdates(
+  state: GameState,
+  eventId: string,
+  outcomeTier: OutcomeTier
+): Partial<GameState> {
+  const updates: Partial<GameState> = {};
+
+  // mevent_03 ("The Founder's Memo"): the sole pre-AGM driver. Same delta table
+  // regardless of chosen strategy — outcomeTiers narrative is shared across
+  // strategies in this schema, and here (unlike Vantage's vevent_05_d) none of
+  // the four strategies represent an alternate premise that would make a good
+  // roll mean something different; they're all just responses of varying
+  // decisiveness to the same memo, and the tier already reflects that.
+  if (eventId === 'mevent_03') {
+    const delta =
+      outcomeTier === 'CRITICAL_SUCCESS' ? -10 :
+      outcomeTier === 'SUCCESS' ? -4 :
+      outcomeTier === 'PARTIAL_SUCCESS' ? 6 :
+      outcomeTier === 'FAILURE' ? 8 : 10;
+    updates.founderSyndromeScore = Math.max(0, Math.min(100, state.founderSyndromeScore + delta));
+  }
+
+  // mevent_09 ("CEO Ultimatum"): the confrontation itself. These writes are
+  // currently write-only — the only two FSS reads in the codebase both gate
+  // mevent_09's own firing, and nothing downstream ever reads the score again
+  // this playthrough. Kept anyway: it's cheap, it makes "Founder Syndrome
+  // significantly reduced" (CRITICAL_SUCCESS) narratively honest rather than a
+  // lie, and a future year-end debrief could plausibly read the final value.
+  // Not a dead mechanic to "clean up" — just a producer with no consumer yet.
+  if (eventId === 'mevent_09') {
+    const delta =
+      outcomeTier === 'CRITICAL_SUCCESS' ? -20 :
+      outcomeTier === 'SUCCESS' ? -8 :
+      outcomeTier === 'PARTIAL_SUCCESS' ? 8 :
+      outcomeTier === 'FAILURE' ? 12 : 18;
+    updates.founderSyndromeScore = Math.max(0, Math.min(100, state.founderSyndromeScore + delta));
+  }
+
+  return updates;
+}
+
 // ── Recalculate governance health breakdown ──
 
 export function recalcGovernanceBreakdown(

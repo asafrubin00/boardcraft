@@ -687,7 +687,7 @@ export const meridianEvents: GameEvent[] = [
         id: 'mevent_08_c',
         label: 'Mount legal challenge to the inquiry on procedural grounds',
         description:
-          'Adversarial. The legal challenge fails; Commission makes a removal Order. Game Over threshold reached.',
+          "Adversarial. The legal challenge fails; Commission makes a removal Order — governance health and the Mission Integrity Score both take the worst hit of the year, and there's no strategy left that fully recovers from it before the AGM.",
         multiplier: 0.10,
         isDoNothing: false,
         competencyGates: [],
@@ -724,12 +724,12 @@ export const meridianEvents: GameEvent[] = [
       FAILURE: {
         svRange: [-20, -12],
         narrative:
-          "The legal challenge fails. The Commission makes an Order removing trustees. Governance Health -20, MIS -12. GAME OVER threshold reached.",
+          "The legal challenge fails. The Commission makes an Order removing trustees. Governance Health -20, MIS -12 — the board enters the AGM with a public regulatory record it cannot talk its way out of.",
       },
       CRITICAL_FAILURE: {
         svRange: [-25, -15],
         narrative:
-          "Legal challenge, public spectacle, removal Order. The Commission's press release is widely covered. Governance Health -25, MIS -15. GAME OVER.",
+          "Legal challenge, public spectacle, removal Order. The Commission's press release is widely covered. Governance Health -25, MIS -15 — the worst single-event score of the year, with most of it still to play out from there.",
       },
     },
     isConditional: true,
@@ -1250,7 +1250,7 @@ export const meridianEvents: GameEvent[] = [
         id: 'mevent_14_d',
         label: 'Encourage Osei-Bonsu to stand as chair',
         description:
-          "The founder becomes chair. Game Over for mission integrity — founder syndrome becomes structurally entrenched.",
+          "The founder becomes chair. Founder syndrome becomes structurally entrenched — mission integrity and governance health both take the worst hit of the year, and the board carries it into the Annual Public Meeting.",
         multiplier: 0.10,
         isDoNothing: false,
         competencyGates: [],
@@ -1283,7 +1283,7 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-15, -12],
         narrative:
-          "Osei-Bonsu becomes chair. Founder syndrome is now the governance architecture. Marcus Finch resigns immediately. MIS -15, Governance Health -12. GAME OVER threshold reached.",
+          "Osei-Bonsu becomes chair. Founder syndrome is now the governance architecture. Marcus Finch resigns immediately. MIS -15, Governance Health -12 — with only the Annual Public Meeting left to face, and no cushion left to prepare for it.",
       },
     },
     isConditional: false,

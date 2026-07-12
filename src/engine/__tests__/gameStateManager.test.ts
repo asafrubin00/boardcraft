@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkEventPrecondition, getCurrentEvent, resolveSfgEvent01Event, applyRheinfeldFlagUpdates, applyVantageFlagUpdates } from '../gameStateManager';
+import { checkEventPrecondition, getCurrentEvent, resolveSfgEvent01Event, applyRheinfeldFlagUpdates, applyVantageFlagUpdates, applyMeridianFlagUpdates } from '../gameStateManager';
 import { meridianEvents } from '@/data/meridian/events';
 import { rheinfeldEvents } from '@/data/rheinfeld/events';
 import { vantageEvents } from '@/data/vantage/events';
@@ -697,6 +697,103 @@ describe('Vantage vevent_10/15 reachability', () => {
     state = { ...state, currentQuarter: 'Q4', currentTurn: 3 };
     expect(checkEventPrecondition(vevent15, state)).toBe(true);
     expect(getCurrentEvent(state)?.id).toBe('vevent_15');
+  });
+});
+
+describe('applyMeridianFlagUpdates: founderSyndromeScore contested meter', () => {
+  it('mevent_03 tier deltas match the narrative-stated numbers', () => {
+    const cs = makeState({ founderSyndromeScore: 55 });
+    expect(applyMeridianFlagUpdates(cs, 'mevent_03', 'CRITICAL_SUCCESS').founderSyndromeScore).toBe(45);
+
+    const s = makeState({ founderSyndromeScore: 55 });
+    expect(applyMeridianFlagUpdates(s, 'mevent_03', 'SUCCESS').founderSyndromeScore).toBe(51);
+
+    const ps = makeState({ founderSyndromeScore: 55 });
+    expect(applyMeridianFlagUpdates(ps, 'mevent_03', 'PARTIAL_SUCCESS').founderSyndromeScore).toBe(61);
+
+    const f = makeState({ founderSyndromeScore: 55 });
+    expect(applyMeridianFlagUpdates(f, 'mevent_03', 'FAILURE').founderSyndromeScore).toBe(63);
+
+    const cf = makeState({ founderSyndromeScore: 55 });
+    expect(applyMeridianFlagUpdates(cf, 'mevent_03', 'CRITICAL_FAILURE').founderSyndromeScore).toBe(65);
+  });
+
+  it('mevent_09 tier deltas move further than mevent_03 (the decisive confrontation)', () => {
+    const cs = makeState({ founderSyndromeScore: 65 });
+    expect(applyMeridianFlagUpdates(cs, 'mevent_09', 'CRITICAL_SUCCESS').founderSyndromeScore).toBe(45);
+
+    const cf = makeState({ founderSyndromeScore: 65 });
+    expect(applyMeridianFlagUpdates(cf, 'mevent_09', 'CRITICAL_FAILURE').founderSyndromeScore).toBe(83);
+  });
+
+  it('is a contested meter, not a one-way ratchet: good outcomes lower the score, bad outcomes raise it', () => {
+    const state = makeState({ founderSyndromeScore: 55 });
+    const worse = applyMeridianFlagUpdates(state, 'mevent_03', 'CRITICAL_FAILURE').founderSyndromeScore!;
+    const better = applyMeridianFlagUpdates(state, 'mevent_03', 'CRITICAL_SUCCESS').founderSyndromeScore!;
+    expect(worse).toBeGreaterThan(55);
+    expect(better).toBeLessThan(55);
+  });
+
+  it('clamps to [0, 100]', () => {
+    const high = makeState({ founderSyndromeScore: 95 });
+    expect(applyMeridianFlagUpdates(high, 'mevent_09', 'CRITICAL_FAILURE').founderSyndromeScore).toBe(100);
+
+    const low = makeState({ founderSyndromeScore: 5 });
+    expect(applyMeridianFlagUpdates(low, 'mevent_03', 'CRITICAL_SUCCESS').founderSyndromeScore).toBe(0);
+  });
+
+  it('leaves founderSyndromeScore untouched for other events', () => {
+    const state = makeState({ founderSyndromeScore: 55 });
+    const updates = applyMeridianFlagUpdates(state, 'mevent_01', 'CRITICAL_FAILURE');
+    expect(updates.founderSyndromeScore).toBeUndefined();
+  });
+});
+
+describe('Meridian mevent_09 reachability via founderSyndromeScore', () => {
+  const mevent09 = findEvent(meridianEvents, 'mevent_09');
+  const osei = stubSeat('mdir_osei_bonsu');
+
+  it('threshold analysis: a single mevent_03 PARTIAL_SUCCESS-or-worse crosses the >60 auto-fire threshold from the starting value of 55', () => {
+    const afterPartial = applyMeridianFlagUpdates(makeState({ founderSyndromeScore: 55 }), 'mevent_03', 'PARTIAL_SUCCESS');
+    expect(afterPartial.founderSyndromeScore!).toBeGreaterThan(60);
+  });
+
+  it('auto-fires mevent_09 when FSS > 60, independent of whether mevent_03 has resolved at all', () => {
+    const state = makeState({
+      company: meridianFoundation,
+      board: { seats: [osei], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      founderSyndromeScore: 65,
+      resolvedEvents: [], // mevent_03 never resolved — the outcome-chain path alone would skip this
+      currentQuarter: 'AGM',
+      currentTurn: 1,
+    });
+    expect(checkEventPrecondition(mevent09, state)).toBe(true);
+    expect(getCurrentEvent(state)?.id).toBe('mevent_09');
+  });
+
+  it('does not fire when FSS <= 60 and mevent_03 was never resolved badly', () => {
+    const state = makeState({
+      company: meridianFoundation,
+      board: { seats: [osei], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      founderSyndromeScore: 55,
+      resolvedEvents: [],
+      currentQuarter: 'AGM',
+      currentTurn: 1,
+    });
+    expect(checkEventPrecondition(mevent09, state)).toBe(false);
+    expect(getCurrentEvent(state)).toBeNull();
+  });
+
+  it('still fires via the mevent_03 outcome-chain path even when FSS itself is <= 60', () => {
+    const state = makeState({
+      company: meridianFoundation,
+      board: { seats: [osei], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      founderSyndromeScore: 55,
+      resolvedEvents: [stubResolvedEvent('mevent_03', 'FAILURE')],
+      currentQuarter: 'AGM',
+      currentTurn: 1,
+    });
+    expect(getCurrentEvent(state)?.id).toBe('mevent_09');
   });
 });
 
