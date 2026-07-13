@@ -191,17 +191,22 @@ export function getCurrentEvent(state: GameState): GameEvent | null {
   }
 
   // SFG-01: inject the live resignee's name and filter invalidated strategies
+  // (this already applies filterStrategiesByRequires internally for sfgevent_01_c).
   if (event.id === 'sfgevent_01') {
     return resolveSfgEvent01Event(event, state);
   }
 
+  // Generic per-strategy-option gating (see StrategyOption.requires) — no-op
+  // for events with no requires-gated strategies.
+  const gated = filterStrategiesByRequires(event, state);
+
   // If ETC is already active, replace "form ETC" strategies with "leverage existing ETC"
   if (state.committees.energyTransition.active) {
-    const replaced = replaceEtcStrategies(event);
+    const replaced = replaceEtcStrategies(gated);
     if (replaced) return replaced;
   }
 
-  return event;
+  return gated;
 }
 
 // ── Generic board-state precondition helpers ──
@@ -504,13 +509,36 @@ function replaceEtcStrategies(event: GameEvent): GameEvent | null {
   return { ...event, strategies: newStrategies };
 }
 
+// ── Generic per-strategy-option gating ──
+// StrategyOption.requires lets content flag an option that only makes sense
+// when a specific director is seated or a specific role is filled — e.g. "the
+// SID" strategies, or "promote the sitting X" strategies. An unmet option is
+// filtered out entirely; no substitute is shown, the remaining options are
+// simply what the player sees. Degenerate-case guarded: if filtering would
+// leave fewer than 2 options, skip filtering entirely — an event reduced to a
+// single (or zero) option isn't a real choice, and showing a strategy whose
+// premise no longer holds is the least-bad fallback until content is fixed.
+export function filterStrategiesByRequires(event: GameEvent, state: GameState): GameEvent {
+  const filtered = event.strategies.filter((s) => {
+    if (!s.requires) return true;
+    if (s.requires.directorSeated && !isDirectorSeated(state, s.requires.directorSeated)) return false;
+    if (s.requires.roleFilled && !state.board.seats.some((seat) => seat.role === s.requires!.roleFilled)) return false;
+    return true;
+  });
+  if (filtered.length < 2 || filtered.length === event.strategies.length) return event;
+  return { ...event, strategies: filtered };
+}
+
 // ── SFG-01: resolve the live resignation into narrative + strategy list ──
 // Minimal, contained token substitution — not a general templating system.
 // Substitutes {acChair.name} in narrativeCard with the director who just
 // resigned (read from state.forcedChange, set by applySfgAcChairResignation
-// in forcedChanges.ts), and filters out strategies whose premise the
-// resignation invalidates: appointing Geok when she's the one who just
-// resigned, or promoting Rahman when she isn't seated at all.
+// in forcedChanges.ts). Strategy filtering is two-layered: appointing Geok
+// when she's the one who just resigned is a bespoke check (depends on *who*
+// resigned, not just seat presence, so it can't be expressed via `requires`);
+// promoting Rahman when she isn't seated is handled generically via
+// sfgevent_01_c's own requires: { directorSeated: 'sfgdir_04_rahman' } field,
+// run through the same filterStrategiesByRequires every other company uses.
 export function resolveSfgEvent01Event(event: GameEvent, state: GameState): GameEvent {
   const resignedId = state.forcedChange?.type === 'resignation' ? state.forcedChange.directorId : null;
   const resignedName = resignedId
@@ -521,14 +549,12 @@ export function resolveSfgEvent01Event(event: GameEvent, state: GameState): Game
   if (resignedId === 'sfgdir_06_lee') {
     strategies = strategies.filter((s) => s.id !== 'sfgevent_01_a');
   }
-  if (!isDirectorSeated(state, 'sfgdir_04_rahman')) {
-    strategies = strategies.filter((s) => s.id !== 'sfgevent_01_c');
-  }
+
+  const requiresFiltered = filterStrategiesByRequires({ ...event, strategies }, state);
 
   return {
-    ...event,
+    ...requiresFiltered,
     narrativeCard: event.narrativeCard.replace(/\{acChair\.name\}/g, resignedName),
-    strategies,
   };
 }
 

@@ -1,14 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { checkEventPrecondition, getCurrentEvent, resolveSfgEvent01Event, applyRheinfeldFlagUpdates, applyVantageFlagUpdates, applyMeridianFlagUpdates } from '../gameStateManager';
+import { checkEventPrecondition, getCurrentEvent, resolveSfgEvent01Event, applyRheinfeldFlagUpdates, applyVantageFlagUpdates, applyMeridianFlagUpdates, filterStrategiesByRequires } from '../gameStateManager';
+import { events as harwickEvents } from '@/data/events';
 import { meridianEvents } from '@/data/meridian/events';
 import { rheinfeldEvents } from '@/data/rheinfeld/events';
 import { vantageEvents } from '@/data/vantage/events';
 import { sfgEvents } from '@/data/sfg/events';
+import { harwickEnergy } from '@/data/company';
 import { meridianFoundation } from '@/data/meridian/company';
 import { rheinfeldAG } from '@/data/rheinfeld/company';
 import { vantageConsumer } from '@/data/vantage/company';
 import { straitsFinancialGroup } from '@/data/sfg/company';
-import type { GameState, BoardSeat, Director, ResolvedEvent } from '@/types/game';
+import type { GameState, BoardSeat, Director, ResolvedEvent, GameEvent } from '@/types/game';
 
 // ── Minimal GameState factory ────────────────────────────────────────────────
 
@@ -944,6 +946,179 @@ describe('SFG relocated preconditions (sfg_helena_on_board etc.)', () => {
       committees: { ...makeState().committees, risk: { active: true, chairDirectorId: 'sfgdir_01_lim' } },
     });
     expect(checkEventPrecondition(sfgevent15, state)).toBe(true);
+  });
+});
+
+// ── Generic per-strategy-option gating (StrategyOption.requires) ───────────
+
+describe('filterStrategiesByRequires: real gated strategies', () => {
+  const event04 = findEvent(harwickEvents, 'event_04');
+  const event11 = findEvent(harwickEvents, 'event_11');
+  const event15 = findEvent(harwickEvents, 'event_15');
+  const sfgevent07 = findEvent(sfgEvents, 'sfgevent_07');
+
+  const noSidBoard = { seats: [stubSeat('x_ned')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] };
+  const sidBoard = { seats: [stubSeat('x_sid', 'sid')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] };
+
+  it('event_04_c ("Engage SID") is hidden with no SID seated, shown with one', () => {
+    const noSid = filterStrategiesByRequires(event04, makeState({ board: noSidBoard }));
+    expect(noSid.strategies.map((s) => s.id)).not.toContain('event_04_c');
+    expect(noSid.strategies).toHaveLength(3);
+
+    const withSid = filterStrategiesByRequires(event04, makeState({ board: sidBoard }));
+    expect(withSid.strategies.map((s) => s.id)).toContain('event_04_c');
+    expect(withSid.strategies).toHaveLength(4);
+  });
+
+  it('event_11_b ("SID issues statement") is hidden with no SID seated, shown with one', () => {
+    const noSid = filterStrategiesByRequires(event11, makeState({ board: noSidBoard }));
+    expect(noSid.strategies.map((s) => s.id)).not.toContain('event_11_b');
+    expect(noSid.strategies).toHaveLength(3);
+
+    const withSid = filterStrategiesByRequires(event11, makeState({ board: sidBoard }));
+    expect(withSid.strategies.map((s) => s.id)).toContain('event_11_b');
+  });
+
+  it('event_15_a ("Institutional roadshow", Chair and SID) is hidden with no SID seated, shown with one', () => {
+    const noSid = filterStrategiesByRequires(event15, makeState({ board: noSidBoard }));
+    expect(noSid.strategies.map((s) => s.id)).not.toContain('event_15_a');
+    expect(noSid.strategies).toHaveLength(3);
+
+    const withSid = filterStrategiesByRequires(event15, makeState({ board: sidBoard }));
+    expect(withSid.strategies.map((s) => s.id)).toContain('event_15_a');
+  });
+
+  it('sfgevent_07_a/_b (Krishnamurthy/Ng as Chair) are each hidden when their named director is unseated', () => {
+    const neitherSeated = filterStrategiesByRequires(sfgevent07, makeState({
+      board: { seats: [], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    }));
+    expect(neitherSeated.strategies.map((s) => s.id)).toEqual(['sfgevent_07_c', 'sfgevent_07_d']);
+
+    const onlyKrishnamurthy = filterStrategiesByRequires(sfgevent07, makeState({
+      board: { seats: [stubSeat('sfgdir_16_krishnamurthy')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    }));
+    expect(onlyKrishnamurthy.strategies.map((s) => s.id)).toEqual(['sfgevent_07_a', 'sfgevent_07_c', 'sfgevent_07_d']);
+
+    const bothSeated = filterStrategiesByRequires(sfgevent07, makeState({
+      board: { seats: [stubSeat('sfgdir_16_krishnamurthy'), stubSeat('sfgdir_17_ng')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    }));
+    expect(bothSeated.strategies.map((s) => s.id)).toEqual(['sfgevent_07_a', 'sfgevent_07_b', 'sfgevent_07_c', 'sfgevent_07_d']);
+  });
+
+  it('assumption check: worst-case filtering on every real gated event this session added never triggers the degenerate <2 fallback', () => {
+    const emptyBoard = { seats: [], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] };
+    const worstCaseState = makeState({ board: emptyBoard });
+
+    for (const event of [event04, event11, event15, sfgevent07]) {
+      const result = filterStrategiesByRequires(event, worstCaseState);
+      // Every gate in this set actually filtered (proves the assertion isn't vacuous)
+      expect(result.strategies.length).toBeLessThan(event.strategies.length);
+      // ...but never dropped below 2 — the degenerate fallback never had to engage for real data.
+      expect(result.strategies.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+});
+
+describe('filterStrategiesByRequires: degenerate-case fallback (artificial fixture)', () => {
+  it('skips filtering entirely when it would leave fewer than 2 strategies', () => {
+    const fixture: GameEvent = {
+      id: 'fixture_event',
+      name: 'Fixture Event',
+      tier: 1,
+      quarter: 'Q1',
+      turn: 1,
+      narrativeCard: '',
+      primaryDomain: 'stakeholderComms',
+      primaryWeight: 1,
+      secondaryDomains: [],
+      strategies: [
+        { id: 'fixture_a', label: 'A', description: '', multiplier: 1, competencyGates: [], requires: { directorSeated: 'nobody_seated' } },
+        { id: 'fixture_b', label: 'B', description: '', multiplier: 1, competencyGates: [], requires: { roleFilled: 'sid' } },
+        { id: 'fixture_c', label: 'C', description: '', multiplier: 1, competencyGates: [] },
+      ],
+      relevantCommittee: null,
+      committeeBonusValue: 0,
+      followOnTriggers: [],
+      outcomeTiers: {
+        CRITICAL_SUCCESS: { svRange: [0, 0], narrative: '' },
+        SUCCESS: { svRange: [0, 0], narrative: '' },
+        PARTIAL_SUCCESS: { svRange: [0, 0], narrative: '' },
+        FAILURE: { svRange: [0, 0], narrative: '' },
+        CRITICAL_FAILURE: { svRange: [0, 0], narrative: '' },
+      },
+      isConditional: false,
+      precondition: null,
+    };
+
+    // Neither requires-gated strategy's condition is met — a naive filter would
+    // leave only fixture_c (1 strategy). The fallback must keep all 3 instead.
+    const state = makeState({
+      board: { seats: [], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    });
+    const result = filterStrategiesByRequires(fixture, state);
+    expect(result.strategies.map((s) => s.id)).toEqual(['fixture_a', 'fixture_b', 'fixture_c']);
+  });
+
+  it('does filter when 2 or more strategies would remain', () => {
+    const fixture: GameEvent = {
+      id: 'fixture_event_2',
+      name: 'Fixture Event 2',
+      tier: 1,
+      quarter: 'Q1',
+      turn: 1,
+      narrativeCard: '',
+      primaryDomain: 'stakeholderComms',
+      primaryWeight: 1,
+      secondaryDomains: [],
+      strategies: [
+        { id: 'fixture_a', label: 'A', description: '', multiplier: 1, competencyGates: [], requires: { directorSeated: 'nobody_seated' } },
+        { id: 'fixture_b', label: 'B', description: '', multiplier: 1, competencyGates: [] },
+        { id: 'fixture_c', label: 'C', description: '', multiplier: 1, competencyGates: [] },
+      ],
+      relevantCommittee: null,
+      committeeBonusValue: 0,
+      followOnTriggers: [],
+      outcomeTiers: {
+        CRITICAL_SUCCESS: { svRange: [0, 0], narrative: '' },
+        SUCCESS: { svRange: [0, 0], narrative: '' },
+        PARTIAL_SUCCESS: { svRange: [0, 0], narrative: '' },
+        FAILURE: { svRange: [0, 0], narrative: '' },
+        CRITICAL_FAILURE: { svRange: [0, 0], narrative: '' },
+      },
+      isConditional: false,
+      precondition: null,
+    };
+
+    const state = makeState({
+      board: { seats: [], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    });
+    const result = filterStrategiesByRequires(fixture, state);
+    expect(result.strategies.map((s) => s.id)).toEqual(['fixture_b', 'fixture_c']);
+  });
+});
+
+describe('getCurrentEvent: requires-gating wired through the real pipeline', () => {
+  it('event_04_c is absent from getCurrentEvent output when no SID is seated', () => {
+    const state = makeState({
+      company: harwickEnergy,
+      board: { seats: [stubSeat('x_ned')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      currentQuarter: 'Q1',
+      currentTurn: 4,
+    });
+    const event = getCurrentEvent(state);
+    expect(event?.id).toBe('event_04');
+    expect(event?.strategies.map((s) => s.id)).not.toContain('event_04_c');
+  });
+
+  it('event_04_c is present in getCurrentEvent output when a SID is seated', () => {
+    const state = makeState({
+      company: harwickEnergy,
+      board: { seats: [stubSeat('x_sid', 'sid')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      currentQuarter: 'Q1',
+      currentTurn: 4,
+    });
+    const event = getCurrentEvent(state);
+    expect(event?.strategies.map((s) => s.id)).toContain('event_04_c');
   });
 });
 

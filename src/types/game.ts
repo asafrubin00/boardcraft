@@ -188,6 +188,14 @@ export interface StrategyOption {
   competencyGates: CompetencyGate[];
   fallback?: string;
   isDoNothing?: boolean;
+  /** Board-state gate for this specific option. If unmet, the option is filtered
+   *  out of the choices shown (see filterStrategiesByRequires in gameStateManager.ts)
+   *  — unless filtering would leave fewer than 2 options, in which case filtering
+   *  is skipped entirely, since a single remaining option isn't a real choice. */
+  requires?: {
+    directorSeated?: string;
+    roleFilled?: BoardRole;
+  };
   /** If set, a successful resolution at or above minOutcomeTier triggers a director removal */
   boardEffect?: {
     removeDirectorId: string;

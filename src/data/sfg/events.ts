@@ -49,6 +49,7 @@ export const sfgEvents: GameEvent[] = [
           'Promote the existing independent board member. No recruitment cost. Lower market impact — MAS satisfied on technicality but proxy advisors note it as a minimal response. Requires Financial Oversight ≥ 65.',
         multiplier: 0.80,
         competencyGates: [{ domain: 'financialOversight', minimumRating: 65 }],
+        requires: { directorSeated: 'sfgdir_04_rahman' },
       },
       {
         id: 'sfgevent_01_d',
@@ -586,6 +587,7 @@ export const sfgEvents: GameEvent[] = [
           'Appoint Dr. Aiyana Krishnamurthy as Sustainability Committee Chair. Highest ESG credibility — TCFD expert, World Bank background. Proxy advisors satisfied. Requires Dr. Aiyana in the director pool (Availability B).',
         multiplier: 1.10,
         competencyGates: [{ domain: 'esgSustainability', minimumRating: 85 }],
+        requires: { directorSeated: 'sfgdir_16_krishnamurthy' },
       },
       {
         id: 'sfgevent_07_b',
@@ -594,6 +596,7 @@ export const sfgEvents: GameEvent[] = [
           'Appoint Ng Kok Wah as Chair. Slightly lower external profile than Dr. Aiyana but higher Singapore Jurisdiction Score — strong MAS framework familiarity. Proxy advisors satisfied.',
         multiplier: 0.95,
         competencyGates: [{ domain: 'esgSustainability', minimumRating: 80 }],
+        requires: { directorSeated: 'sfgdir_17_ng' },
       },
       {
         id: 'sfgevent_07_c',

@@ -290,6 +290,7 @@ export const events: GameEvent[] = [
         description: 'Task the Senior Independent Director with leading the dialogue with Greenvale. Provides a credible, independent voice while keeping the Chair above the fray.',
         multiplier: 1.00,
         competencyGates: [{ domain: 'stakeholderComms', minimumRating: 60 }],
+        requires: { roleFilled: 'sid' },
       },
       {
         id: 'event_04_d',
@@ -857,6 +858,7 @@ export const events: GameEvent[] = [
         description: 'The Senior Independent Director issues a public statement backing the CEO while the board assesses the situation. Buys time and controls the narrative if handled credibly.',
         multiplier: 1.00,
         competencyGates: [{ domain: 'stakeholderComms', minimumRating: 75 }],
+        requires: { roleFilled: 'sid' },
       },
       {
         id: 'event_11_c',
@@ -1187,6 +1189,7 @@ export const events: GameEvent[] = [
         description: 'The Chair and SID embark on an intensive roadshow meeting the top 20 institutional shareholders to make the case for board continuity and against Greenvale\'s nominees.',
         multiplier: 1.40,
         competencyGates: [{ domain: 'stakeholderComms', minimumRating: 75 }],
+        requires: { roleFilled: 'sid' },
       },
       {
         id: 'event_15_b',
