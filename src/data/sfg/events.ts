@@ -104,7 +104,7 @@ export const sfgEvents: GameEvent[] = [
     turn: 2,
     imageFile: 'sfgevent-02.png',
     narrativeCard:
-      "The Nominating Committee must recommend whether to seek shareholder approval to retain Helena Soong as an independent director beyond the 9-year SGX cap. A two-tier resolution is required: the first tier requires all shareholders (including Temasek's 34%) to approve; the second tier requires approval from minority shareholders only — excluding Temasek and any holder above 5%. Glass Lewis Asia has pre-signalled it will recommend against the resolution unless a concrete board renewal plan is disclosed simultaneously. Temasek's vote can carry Tier 1 but cannot touch Tier 2. This is the mechanic that makes SFG different from every other company in the game.",
+      "The Nominating Committee must recommend whether to seek shareholder approval to retain Helena Soong as an independent director beyond the 9-year SGX cap. A two-tier resolution is required: the first tier requires all shareholders (including Temasek's 34%) to approve; the second tier requires approval from minority shareholders only — excluding Temasek and any holder above 5%. Glass Lewis Asia has pre-signalled it will recommend against the resolution unless a concrete board renewal plan is disclosed simultaneously. Temasek's vote can carry Tier 1 but cannot touch Tier 2 — the same two-tier structure the AGM will apply to any long-tenured director standing for re-election.",
     primaryDomain: 'regulatoryLegal',
     primaryWeight: 0.40,
     secondaryDomains: [
@@ -660,7 +660,7 @@ export const sfgEvents: GameEvent[] = [
     turn: 2,
     imageFile: 'sfgevent-08.png',
     narrativeCard:
-      "Eric Png, the Temasek nominee, has formally requested a private meeting with the Board Chair. He conveys — carefully, without explicit instruction — that Temasek's Portfolio Review Committee has noted the volume of outstanding governance issues at SFG and is considering whether to exercise its shareholder right to nominate a second board representative. Temasek's preferred additional nominee is Catherine Phua, VP at Temasek International. This is not a threat — it is a signal. In Singapore's institutional market, the difference is academic.",
+      "Eric Png, the Temasek nominee, has formally requested a private meeting with the Board Chair. He conveys — carefully, without explicit instruction — that Temasek's Portfolio Review Committee has noted an unresolved governance question at SFG and is considering whether to exercise its shareholder right to nominate a second board representative. Temasek's preferred additional nominee is Catherine Phua, VP at Temasek International. This is not a threat — it is a signal. In Singapore's institutional market, the difference is academic.",
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.45,
     secondaryDomains: [

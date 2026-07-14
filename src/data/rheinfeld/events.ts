@@ -396,7 +396,7 @@ export const rheinfeldEvents: GameEvent[] = [
         id: 'revent_05_d',
         label: 'Do nothing',
         description:
-          'Reject the proposal - force the Management Board to find an alternative. Only viable with Strategy ≥ 75.',
+          'Reject the proposal - force the Management Board to find an alternative.',
         multiplier: 0.50,
         isDoNothing: true,
         competencyGates: [],
@@ -711,7 +711,7 @@ export const rheinfeldEvents: GameEvent[] = [
         id: 'revent_09_c',
         label: 'Defend the status quo - oppose all Meridian proposals',
         description:
-          'Back Heinrich\'s position completely. Only viable if governance reforms have been implemented independently.',
+          'Back Heinrich\'s position completely. A hard sell to institutional shareholders unless the board has something else to point to.',
         multiplier: 0.60,
         competencyGates: [],
       },
@@ -893,7 +893,7 @@ export const rheinfeldEvents: GameEvent[] = [
         id: 'revent_11_d',
         label: 'Do nothing',
         description:
-          "Hope the story doesn't run. 70% chance it does.",
+          "Hope the story doesn't run. It probably does.",
         multiplier: 0.50,
         isDoNothing: true,
         competencyGates: [],
@@ -1244,7 +1244,7 @@ export const rheinfeldEvents: GameEvent[] = [
         id: 'revent_15_d',
         label: 'Do nothing',
         description:
-          'Let Heinrich manage his own crisis. Game ends. SV -25%.',
+          'Let Heinrich manage his own crisis. SV -25% — the worst single-event score of the year, with the Supervisory Board carrying it into whatever comes next.',
         multiplier: 0.50,
         isDoNothing: true,
         competencyGates: [],

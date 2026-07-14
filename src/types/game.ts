@@ -450,8 +450,6 @@ export interface GameState {
   solvencyRisk: boolean;
   /** SFG-specific: whether the Audit Committee Chair seat is vacant (compliance breach) */
   acChairVacant: boolean;
-  /** SFG-specific: whether the MAS supervisory letter is still open (-10% BRC events until resolved) */
-  masLetterOpen: boolean;
   /** SFG-specific: CEO whistleblower investigation chain (SFG-04 → SFG-10) */
   ceoWhistleblower: 'pending' | 'substantiated' | 'cleared' | null;
   /** Transient notification from an event consequence (e.g. involuntary board removals).

@@ -105,7 +105,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     charityCommissionInquiryActive: false,
     solvencyRisk: false,
     acChairVacant: false,
-    masLetterOpen: false,
     ceoWhistleblower: null,
     pendingBoardNotification: null,
     ...overrides,

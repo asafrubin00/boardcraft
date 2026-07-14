@@ -88,7 +88,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     charityCommissionInquiryActive: false,
     solvencyRisk: false,
     acChairVacant: false,
-    masLetterOpen: false,
     ceoWhistleblower: null,
     pendingBoardNotification: null,
     ...overrides,
@@ -263,6 +262,60 @@ describe('Rheinfeld board-state preconditions', () => {
       },
     });
     expect(checkEventPrecondition(revent01, state)).toBe(true);
+  });
+});
+
+describe('Rheinfeld revent_04/08: Margarethe/Strasser generic phrasing fallback', () => {
+  const fullBoard = rheinfeldAG.inheritedBoard.map((s) => ({ directorId: s.directorId, role: s.role, feeWithPremium: s.baseFee }));
+
+  it('revent_04_a names Margarethe and Strasser when both are seated', () => {
+    const state = makeState({
+      company: rheinfeldAG,
+      board: { seats: [...fullBoard, stubSeat('x_extra')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      currentQuarter: 'Q1',
+      currentTurn: 4,
+    });
+    const event = getCurrentEvent(state);
+    const strategyA = event?.strategies.find((s) => s.id === 'revent_04_a');
+    expect(strategyA?.description).toContain('Margarethe and Strasser');
+  });
+
+  it('revent_04_a swaps to generic "shareholder-side bloc" phrasing when Margarethe is not seated', () => {
+    const withoutMargarethe = fullBoard.filter((s) => s.directorId !== 'rdir_margarethe');
+    const state = makeState({
+      company: rheinfeldAG,
+      board: { seats: [...withoutMargarethe, stubSeat('x_extra')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      currentQuarter: 'Q1',
+      currentTurn: 4,
+    });
+    const event = getCurrentEvent(state);
+    const strategyA = event?.strategies.find((s) => s.id === 'revent_04_a');
+    expect(strategyA?.description).not.toContain('Margarethe');
+    expect(strategyA?.description).toContain('shareholder-side bloc');
+  });
+
+  it('revent_08 narrativeCard names Margarethe and Strasser when both are seated', () => {
+    const state = makeState({
+      company: rheinfeldAG,
+      board: { seats: fullBoard, totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      currentQuarter: 'Q2',
+      currentTurn: 4,
+    });
+    const event = getCurrentEvent(state);
+    expect(event?.narrativeCard).toContain('Margarethe, Strasser');
+  });
+
+  it('revent_08 narrativeCard swaps to generic "shareholder-side NEDs" phrasing when Strasser is not seated', () => {
+    const withoutStrasser = fullBoard.filter((s) => s.directorId !== 'rdir_strasser');
+    const state = makeState({
+      company: rheinfeldAG,
+      board: { seats: withoutStrasser, totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      currentQuarter: 'Q2',
+      currentTurn: 4,
+    });
+    const event = getCurrentEvent(state);
+    expect(event?.narrativeCard).not.toContain('Strasser');
+    expect(event?.narrativeCard).toContain('shareholder-side NEDs');
   });
 });
 

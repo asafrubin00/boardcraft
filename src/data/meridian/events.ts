@@ -62,7 +62,7 @@ export const meridianEvents: GameEvent[] = [
         id: 'mevent_01_d',
         label: 'Do nothing — conflict not addressed',
         description:
-          'The whistleblower path opens. Event 08 fires on the next turn regardless of all other decisions.',
+          'The whistleblower path opens. Event 08 becomes very likely to fire on the next turn.',
         multiplier: 0.30,
         isDoNothing: true,
         competencyGates: [],
@@ -298,7 +298,7 @@ export const meridianEvents: GameEvent[] = [
     imageFile: 'mevent-safeguarding-alert.jpg',
     illustrationType: 'mevent-safeguarding-alert',
     narrativeCard:
-      "The Bangladesh country director has reported a serious safeguarding allegation involving a Meridian partner organisation employee and a programme beneficiary. The CEO has been informed. Under Charity Commission Serious Incident Reporting requirements, this must be reported to the Commission promptly. The CEO is uncertain whether to report before the investigation is complete; the legal team advises caution. The People & Culture Committee chair is on holiday.",
+      "The Bangladesh country director has reported a serious safeguarding allegation involving a Meridian partner organisation employee and a programme beneficiary. The CEO has been informed. Under Charity Commission Serious Incident Reporting requirements, this must be reported to the Commission promptly. The CEO is uncertain whether to report before the investigation is complete; the legal team advises caution. The People & Culture Committee has no one immediately available to escalate to.",
     primaryDomain: 'regulatoryLegal',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -763,7 +763,7 @@ export const meridianEvents: GameEvent[] = [
         id: 'mevent_09_a',
         label: 'Formally raise role boundaries at full board; minute a trustee code of conduct resolution',
         description:
-          'Decisive board action — Osei-Bonsu accepts the resolution or resigns gracefully; Marcus withdraws threat. People & Culture ≥ 75 required. Cannot achieve Critical Success while Mensah is chair unless another trustee formally seconds the motion.',
+          'Decisive board action — Osei-Bonsu accepts the resolution or resigns gracefully; Marcus withdraws threat. People & Culture ≥ 75 required.',
         multiplier: 1.10,
         competencyGates: [{ domain: 'peopleCulture', minimumRating: 75 }],
         fallback: 'mevent_09_b',

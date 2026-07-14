@@ -151,7 +151,7 @@ export default function EventCard({
           onClick={onDoNothing}
           className="w-full py-3 px-4 rounded-lg bg-gold text-navy font-bold text-sm hover:bg-gold-light transition-colors cursor-pointer"
         >
-          Meridian Governance Report - Review and Continue
+          {event.name} - Review and Continue
         </button>
       ) : (
         <>

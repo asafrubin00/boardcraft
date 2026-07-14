@@ -155,7 +155,6 @@ export function initializeGameState(
     // No vacancy exists until sfgevent_01 fires and the sitting AC Chair
     // resigns live (see applySfgAcChairResignation in forcedChanges.ts).
     acChairVacant: false,
-    masLetterOpen: co.id === 'company_sfg',
     ceoWhistleblower: co.id === 'company_sfg' ? 'pending' : null,
     pendingBoardNotification: null,
   };
@@ -198,7 +197,11 @@ export function getCurrentEvent(state: GameState): GameEvent | null {
 
   // Generic per-strategy-option gating (see StrategyOption.requires) — no-op
   // for events with no requires-gated strategies.
-  const gated = filterStrategiesByRequires(event, state);
+  let gated = filterStrategiesByRequires(event, state);
+
+  // Rheinfeld: revent_04/08 generic phrasing fallback — no-op for other events
+  // or when Margarethe/Strasser are both seated.
+  gated = resolveRheinfeldNamedDirectorEvent(gated, state);
 
   // If ETC is already active, replace "form ETC" strategies with "leverage existing ETC"
   if (state.committees.energyTransition.active) {
@@ -527,6 +530,39 @@ export function filterStrategiesByRequires(event: GameEvent, state: GameState): 
   });
   if (filtered.length < 2 || filtered.length === event.strategies.length) return event;
   return { ...event, strategies: filtered };
+}
+
+// ── Rheinfeld: generic phrasing fallback when Margarethe/Strasser aren't seated ──
+// revent_04's strategy A and revent_08's narrativeCard name Margarethe and Strasser
+// directly. Unlike Heinrich and the worker reps, both are ordinary removable NEDs
+// (no lockedDirectorIds/workerRepIds protection), so either can be dropped or
+// reassigned pre-lock. Hiding the whole strategy/event doesn't fit here — both
+// remain fully coherent without them — so this swaps in generic "shareholder-side"
+// phrasing instead, the same dynamic-content-on-read approach resolveSfgEvent01Event
+// uses for its {acChair.name} substitution.
+function resolveRheinfeldNamedDirectorEvent(event: GameEvent, state: GameState): GameEvent {
+  if (event.id !== 'revent_04' && event.id !== 'revent_08') return event;
+
+  const bothSeated =
+    isDirectorSeated(state, 'rdir_margarethe') && isDirectorSeated(state, 'rdir_strasser');
+  if (bothSeated) return event;
+
+  if (event.id === 'revent_04') {
+    return {
+      ...event,
+      strategies: event.strategies.map((s) =>
+        s.id === 'revent_04_a'
+          ? { ...s, description: 'Overrule the Nomination Committee. High risk if the shareholder-side bloc votes with Heinrich.' }
+          : s
+      ),
+    };
+  }
+
+  return {
+    ...event,
+    narrativeCard:
+      "Meridian Governance has published its pre-HV assessment of Rheinfeld's supervisory board. Their headline is damning: 'Structural governance failure. Family entrenchment, independence deficit, and CSRD unpreparedness combine to create material risk.' The report flags Heinrich, the shareholder-side NEDs, and the absent Audit Committee Chair specifically.",
+  };
 }
 
 // ── SFG-01: resolve the live resignation into narrative + strategy list ──
@@ -1228,11 +1264,6 @@ export function applyAgmRegen(
   };
 }
 
-// ── Check if game is over ──
-
-export function isGameOver(state: GameState): boolean {
-  return state.phase === 'year_end' || state.svIndex <= 0;
-}
 
 // ── Get max turns for a quarter ──
 

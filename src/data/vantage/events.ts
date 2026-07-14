@@ -14,7 +14,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 1,
     illustrationType: 'vevent-nguyen-conflict',
     narrativeCard:
-      'Meridian Governance just hand-delivered a letter to your Lead Independent Director that reads like a litigation threat wrapped in polite stationery. Patricia Nguyen\'s $340K consulting contract with a Vantage supplier - somehow never disclosed to the full board - has been flagged as a material conflict. Meridian wants her out of the Audit Committee Chair before Q2, or they\'ll recommend against her election at the AGM. The letter was cc\'d to the SEC. That part wasn\'t polite at all.',
+      'Meridian Governance just hand-delivered a letter to your Lead Independent Director that reads like a litigation threat wrapped in polite stationery. Patricia Nguyen\'s $340K consulting contract with a Vantage supplier - the exact conflict your own governance review already flagged internally - is now a matter of external record. Meridian wants her out of the Audit Committee Chair before Q2, or they\'ll recommend against her election at the AGM. The letter was cc\'d to the SEC. That part wasn\'t polite at all.',
     primaryDomain: 'regulatoryLegal',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -705,7 +705,7 @@ export const vantageEvents: GameEvent[] = [
         id: 'vevent_09_c',
         label: 'Concede on Chair/CEO split to secure other votes',
         description:
-          'Support Resolution 3 (Chair/CEO separation) to build goodwill for other contested items.',
+          'Support Resolution 3 (Chair/CEO separation) rather than fight it - a concession, not a negotiating chip for the other resolutions.',
         multiplier: 1.00,
         competencyGates: [{ domain: 'peopleCulture', minimumRating: 55 }],
       },
@@ -848,7 +848,7 @@ export const vantageEvents: GameEvent[] = [
       },
     },
     isConditional: true,
-    conditionDescription: 'Fires only if Event V-02 was Partial Success or below, OR AGM Resolution 3 failed, AND Apex is still active',
+    conditionDescription: 'Fires only if Event V-02 was Partial Success or below, AND Apex is still active',
     precondition: 'vantage_apex_escalation',
     conditionConfig: {
       requiresEventId: 'vevent_02',
@@ -1120,7 +1120,6 @@ export const vantageEvents: GameEvent[] = [
       },
     },
     isConditional: true,
-    conditionDescription: 'Probability increases if SV < 95 and Apex is still active',
     precondition: 'vantage_hostile_bid',
   },
 
@@ -1293,7 +1292,7 @@ export const vantageEvents: GameEvent[] = [
       },
     },
     isConditional: true,
-    conditionDescription: 'Fires only if governance health < 50 AND Apex is still active AND AGM Resolution 3 failed',
+    conditionDescription: 'Fires only if governance health < 50 AND Apex is still active',
     precondition: 'vantage_proxy_battle',
     conditionConfig: {
       requiresGhBelow: 50,

@@ -179,7 +179,7 @@ export const events: GameEvent[] = [
     turn: 3,
     illustrationType: 'event-safety-incident',
     narrativeCard:
-      'At 04:17 this morning, a pressure coupling on Harwick\'s Shetland platform failed. Two contractors are in hospital - stable, but one required airlift. The HSE has been notified. No journalists yet, though the union rep has been making calls. The Safety & Environment Committee Chair received the briefing over breakfast and has, to her credit, already cancelled a holiday. What the board does in the next 48 hours will determine whether this is an incident report or a front page.',
+      'At 04:17 this morning, a pressure coupling on Harwick\'s Shetland platform failed. Two contractors are in hospital - stable, but one required airlift. The HSE has been notified. No journalists yet, though the union rep has been making calls. The Safety & Environment Committee Chair received the briefing over breakfast and has, to their credit, already cancelled a holiday. What the board does in the next 48 hours will determine whether this is an incident report or a front page.',
     primaryDomain: 'esgSustainability',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -1080,7 +1080,6 @@ export const events: GameEvent[] = [
       },
     },
     isConditional: false,
-    conditionDescription: 'Probability increases if SV < 90 and Greenvale is active',
     precondition: null,
   },
 

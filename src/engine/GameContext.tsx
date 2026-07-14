@@ -15,7 +15,6 @@ import {
   recalcGovernanceBreakdown,
   getSvHistory,
   getProxyAdviserRating,
-  isGameOver,
   estimateAgmVotes,
   getAllEvents,
 } from './gameStateManager';
