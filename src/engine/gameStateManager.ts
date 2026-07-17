@@ -514,18 +514,26 @@ function replaceEtcStrategies(event: GameEvent): GameEvent | null {
 
 // ── Generic per-strategy-option gating ──
 // StrategyOption.requires lets content flag an option that only makes sense
-// when a specific director is seated or a specific role is filled — e.g. "the
-// SID" strategies, or "promote the sitting X" strategies. An unmet option is
-// filtered out entirely; no substitute is shown, the remaining options are
-// simply what the player sees. Degenerate-case guarded: if filtering would
-// leave fewer than 2 options, skip filtering entirely — an event reduced to a
-// single (or zero) option isn't a real choice, and showing a strategy whose
-// premise no longer holds is the least-bad fallback until content is fixed.
+// when a specific director is seated, a specific role is filled, a specific
+// director is available to be freshly recruited (not currently seated
+// anywhere — "promote the sitting X" strategies use directorSeated/
+// directorHoldsRole instead), or a specific director holds a specific role.
+// An unmet option is filtered out entirely; no substitute is shown, the
+// remaining options are simply what the player sees. Degenerate-case
+// guarded: if filtering would leave fewer than 2 options, skip filtering
+// entirely — an event reduced to a single (or zero) option isn't a real
+// choice, and showing a strategy whose premise no longer holds is the
+// least-bad fallback until content is fixed.
 export function filterStrategiesByRequires(event: GameEvent, state: GameState): GameEvent {
   const filtered = event.strategies.filter((s) => {
     if (!s.requires) return true;
     if (s.requires.directorSeated && !isDirectorSeated(state, s.requires.directorSeated)) return false;
     if (s.requires.roleFilled && !state.board.seats.some((seat) => seat.role === s.requires!.roleFilled)) return false;
+    if (s.requires.candidateAvailable && isDirectorSeated(state, s.requires.candidateAvailable)) return false;
+    if (s.requires.directorHoldsRole) {
+      const { directorId, role } = s.requires.directorHoldsRole;
+      if (!directorHoldsRole(state, directorId, role)) return false;
+    }
     return true;
   });
   if (filtered.length < 2 || filtered.length === event.strategies.length) return event;

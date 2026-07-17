@@ -195,6 +195,15 @@ export interface StrategyOption {
   requires?: {
     directorSeated?: string;
     roleFilled?: BoardRole;
+    /** Available to be freshly appointed/recruited — i.e. NOT currently seated
+     *  in any role. Inverse of directorSeated; matches the same "is this
+     *  director in the pool" predicate board construction's own hiring UI
+     *  uses (BoardConstructionWrapper's sortedPool: !boardIdSet.has(d.id)). */
+    candidateAvailable?: string;
+    /** A specific director must currently hold a specific role — for "promote
+     *  X from role Y" strategies where seatedness alone isn't enough (e.g.
+     *  "Elevate Helena Soong from SID" is false if she's seated as a plain NED). */
+    directorHoldsRole?: { directorId: string; role: BoardRole };
   };
   /** If set, a successful resolution at or above minOutcomeTier triggers a director removal */
   boardEffect?: {

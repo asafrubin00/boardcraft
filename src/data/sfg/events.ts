@@ -33,6 +33,7 @@ export const sfgEvents: GameEvent[] = [
           { domain: 'regulatoryLegal', minimumRating: 85 },
           { domain: 'financialOversight', minimumRating: 80 },
         ],
+        requires: { candidateAvailable: 'sfgdir_06_lee' },
       },
       {
         id: 'sfgevent_01_b',
@@ -579,6 +580,11 @@ export const sfgEvents: GameEvent[] = [
       { domain: 'regulatoryLegal', weight: 0.25 },
       { domain: 'stakeholderComms', weight: 0.20 },
     ],
+    // NOTE: neither strategy below has a board-mutation effect wired in page.tsx —
+    // resolving this event never actually seats Krishnamurthy/Ng anywhere, so the
+    // requires gate only enforces narrative consistency, not a real appointment.
+    // Pre-existing type-C gap (stale display state); out of scope here, but a
+    // future board-mutation pass should start with these two.
     strategies: [
       {
         id: 'sfgevent_07_a',
@@ -587,7 +593,9 @@ export const sfgEvents: GameEvent[] = [
           'Appoint Dr. Aiyana Krishnamurthy as Sustainability Committee Chair. Highest ESG credibility — TCFD expert, World Bank background. Proxy advisors satisfied. Requires Dr. Aiyana in the director pool (Availability B).',
         multiplier: 1.10,
         competencyGates: [{ domain: 'esgSustainability', minimumRating: 85 }],
-        requires: { directorSeated: 'sfgdir_16_krishnamurthy' },
+        // Recruit-from-pool shape ("in the director pool"), not promote-existing —
+        // available means NOT currently seated, opposite of directorSeated.
+        requires: { candidateAvailable: 'sfgdir_16_krishnamurthy' },
       },
       {
         id: 'sfgevent_07_b',
@@ -596,7 +604,7 @@ export const sfgEvents: GameEvent[] = [
           'Appoint Ng Kok Wah as Chair. Slightly lower external profile than Dr. Aiyana but higher Singapore Jurisdiction Score — strong MAS framework familiarity. Proxy advisors satisfied.',
         multiplier: 0.95,
         competencyGates: [{ domain: 'esgSustainability', minimumRating: 80 }],
-        requires: { directorSeated: 'sfgdir_17_ng' },
+        requires: { candidateAvailable: 'sfgdir_17_ng' },
       },
       {
         id: 'sfgevent_07_c',
@@ -1293,6 +1301,11 @@ export const sfgEvents: GameEvent[] = [
       { domain: 'regulatoryLegal', weight: 0.30 },
       { domain: 'stakeholderComms', weight: 0.35 },
     ],
+    // NOTE: none of the three strategies below have a board-mutation effect wired
+    // in page.tsx — resolving this event never actually seats anyone as Chair, so
+    // these requires gates only enforce narrative consistency, not a real
+    // appointment. Pre-existing type-C gap; out of scope here, but a future
+    // board-mutation pass should start with these three.
     strategies: [
       {
         id: 'sfgevent_15_a',
@@ -1304,6 +1317,7 @@ export const sfgEvents: GameEvent[] = [
           { domain: 'stakeholderComms', minimumRating: 85 },
           { domain: 'regulatoryLegal', minimumRating: 70 },
         ],
+        requires: { candidateAvailable: 'sfgdir_26_rajan' },
       },
       {
         id: 'sfgevent_15_b',
@@ -1315,6 +1329,7 @@ export const sfgEvents: GameEvent[] = [
           { domain: 'peopleCulture', minimumRating: 75 },
           { domain: 'stakeholderComms', minimumRating: 75 },
         ],
+        requires: { candidateAvailable: 'sfgdir_19_rashid' },
       },
       {
         id: 'sfgevent_15_c',
@@ -1323,6 +1338,9 @@ export const sfgEvents: GameEvent[] = [
           "Continuity pick — Helena takes the Chair while the independence question is unresolved. Proxy advisors will flag this immediately. Tenure issue compounds the Chair independence concern.",
         multiplier: 0.45,
         competencyGates: [],
+        // Seatedness alone isn't enough — the narrative specifically claims she's
+        // moving *from SID*, so this is false if she's seated as a plain NED.
+        requires: { directorHoldsRole: { directorId: 'sfgdir_02_soong', role: 'sid' } },
       },
       {
         id: 'sfgevent_15_d',

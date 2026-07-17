@@ -1041,34 +1041,132 @@ describe('filterStrategiesByRequires: real gated strategies', () => {
     expect(withSid.strategies.map((s) => s.id)).toContain('event_15_a');
   });
 
-  it('sfgevent_07_a/_b (Krishnamurthy/Ng as Chair) are each hidden when their named director is unseated', () => {
+  it('sfgevent_07_a/_b (Krishnamurthy/Ng as Chair) are each hidden when their named director is seated elsewhere — "in the director pool" means available, not already seated', () => {
     const neitherSeated = filterStrategiesByRequires(sfgevent07, makeState({
       board: { seats: [], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
     }));
-    expect(neitherSeated.strategies.map((s) => s.id)).toEqual(['sfgevent_07_c', 'sfgevent_07_d']);
+    expect(neitherSeated.strategies.map((s) => s.id)).toEqual(['sfgevent_07_a', 'sfgevent_07_b', 'sfgevent_07_c', 'sfgevent_07_d']);
 
-    const onlyKrishnamurthy = filterStrategiesByRequires(sfgevent07, makeState({
+    const onlyKrishnamurthySeated = filterStrategiesByRequires(sfgevent07, makeState({
       board: { seats: [stubSeat('sfgdir_16_krishnamurthy')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
     }));
-    expect(onlyKrishnamurthy.strategies.map((s) => s.id)).toEqual(['sfgevent_07_a', 'sfgevent_07_c', 'sfgevent_07_d']);
+    expect(onlyKrishnamurthySeated.strategies.map((s) => s.id)).toEqual(['sfgevent_07_b', 'sfgevent_07_c', 'sfgevent_07_d']);
 
     const bothSeated = filterStrategiesByRequires(sfgevent07, makeState({
       board: { seats: [stubSeat('sfgdir_16_krishnamurthy'), stubSeat('sfgdir_17_ng')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
     }));
-    expect(bothSeated.strategies.map((s) => s.id)).toEqual(['sfgevent_07_a', 'sfgevent_07_b', 'sfgevent_07_c', 'sfgevent_07_d']);
+    expect(bothSeated.strategies.map((s) => s.id)).toEqual(['sfgevent_07_c', 'sfgevent_07_d']);
   });
 
   it('assumption check: worst-case filtering on every real gated event this session added never triggers the degenerate <2 fallback', () => {
     const emptyBoard = { seats: [], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] };
-    const worstCaseState = makeState({ board: emptyBoard });
 
-    for (const event of [event04, event11, event15, sfgevent07]) {
-      const result = filterStrategiesByRequires(event, worstCaseState);
-      // Every gate in this set actually filtered (proves the assertion isn't vacuous)
+    // Harwick's SID-role gates: worst case is no SID seated at all.
+    for (const event of [event04, event11, event15]) {
+      const result = filterStrategiesByRequires(event, makeState({ board: emptyBoard }));
       expect(result.strategies.length).toBeLessThan(event.strategies.length);
-      // ...but never dropped below 2 — the degenerate fallback never had to engage for real data.
       expect(result.strategies.length).toBeGreaterThanOrEqual(2);
     }
+
+    // sfgevent_07's candidateAvailable gates: worst case is both named
+    // candidates already seated elsewhere (the opposite board state).
+    const bothCandidatesSeated = makeState({
+      board: { seats: [stubSeat('sfgdir_16_krishnamurthy'), stubSeat('sfgdir_17_ng')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    });
+    const sfgResult = filterStrategiesByRequires(sfgevent07, bothCandidatesSeated);
+    expect(sfgResult.strategies.length).toBeLessThan(sfgevent07.strategies.length);
+    expect(sfgResult.strategies.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('filterStrategiesByRequires: candidateAvailable and directorHoldsRole (sfgevent_15)', () => {
+  const sfgevent15 = findEvent(sfgEvents, 'sfgevent_15');
+
+  it('sfgevent_15_a ("Appoint Rajan") shows when Rajan is unseated, hides when seated elsewhere', () => {
+    const available = filterStrategiesByRequires(sfgevent15, makeState({
+      board: { seats: [], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    }));
+    expect(available.strategies.map((s) => s.id)).toContain('sfgevent_15_a');
+
+    const seatedElsewhere = filterStrategiesByRequires(sfgevent15, makeState({
+      board: { seats: [stubSeat('sfgdir_26_rajan')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    }));
+    expect(seatedElsewhere.strategies.map((s) => s.id)).not.toContain('sfgevent_15_a');
+  });
+
+  it('sfgevent_15_b ("Appoint BG Abdul Rashid") shows when unseated, hides when seated elsewhere', () => {
+    const available = filterStrategiesByRequires(sfgevent15, makeState({
+      board: { seats: [], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    }));
+    expect(available.strategies.map((s) => s.id)).toContain('sfgevent_15_b');
+
+    const seatedElsewhere = filterStrategiesByRequires(sfgevent15, makeState({
+      board: { seats: [stubSeat('sfgdir_19_rashid', 'ned')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    }));
+    expect(seatedElsewhere.strategies.map((s) => s.id)).not.toContain('sfgevent_15_b');
+  });
+
+  it('sfgevent_15_c ("Elevate Helena from SID") shows only when she holds the SID role specifically, not just any seat', () => {
+    const asSid = filterStrategiesByRequires(sfgevent15, makeState({
+      board: { seats: [stubSeat('sfgdir_02_soong', 'sid')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    }));
+    expect(asSid.strategies.map((s) => s.id)).toContain('sfgevent_15_c');
+
+    const asPlainNed = filterStrategiesByRequires(sfgevent15, makeState({
+      board: { seats: [stubSeat('sfgdir_02_soong', 'ned')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    }));
+    expect(asPlainNed.strategies.map((s) => s.id)).not.toContain('sfgevent_15_c');
+
+    const notSeated = filterStrategiesByRequires(sfgevent15, makeState({
+      board: { seats: [], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    }));
+    expect(notSeated.strategies.map((s) => s.id)).not.toContain('sfgevent_15_c');
+  });
+
+  it('degenerate fallback engages with real production data: Rajan and Rashid seated elsewhere + Soong removed leaves only sfgevent_15_d, so filtering is skipped and all 4 strategies show', () => {
+    const worstCase = makeState({
+      board: {
+        seats: [stubSeat('sfgdir_26_rajan'), stubSeat('sfgdir_19_rashid')],
+        totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [],
+      },
+      // Soong isn't in the seats list at all — removed pre-lock or via a forced change.
+    });
+    const result = filterStrategiesByRequires(sfgevent15, worstCase);
+    // A naive filter would leave only sfgevent_15_d (1 strategy) — the
+    // degenerate-case guard must keep all 4 instead.
+    expect(result.strategies.map((s) => s.id)).toEqual(['sfgevent_15_a', 'sfgevent_15_b', 'sfgevent_15_c', 'sfgevent_15_d']);
+  });
+});
+
+describe('filterStrategiesByRequires: sfgevent_01_a candidateAvailable (Lee Siew Geok)', () => {
+  const sfgevent01 = findEvent(sfgEvents, 'sfgevent_01');
+
+  it('shows sfgevent_01_a when Lee is unseated, hides when she is seated elsewhere', () => {
+    const available = filterStrategiesByRequires(sfgevent01, makeState({
+      board: { seats: [stubSeat('sfgdir_04_rahman')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    }));
+    expect(available.strategies.map((s) => s.id)).toContain('sfgevent_01_a');
+
+    const seatedElsewhere = filterStrategiesByRequires(sfgevent01, makeState({
+      board: { seats: [stubSeat('sfgdir_04_rahman'), stubSeat('sfgdir_06_lee', 'ned')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+    }));
+    expect(seatedElsewhere.strategies.map((s) => s.id)).not.toContain('sfgevent_01_a');
+  });
+
+  it('interaction with the bespoke resignee filter: when Lee is the resignee, resolveSfgEvent01Event removes _a before the generic availability check ever runs — she reads as "available" (just vacated her seat) but must not be reappointable this same turn', () => {
+    const state = makeState({
+      board: { seats: [stubSeat('sfgdir_04_rahman')], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
+      directors: [stubDirector('sfgdir_06_lee')],
+      forcedChange: { type: 'resignation', directorId: 'sfgdir_06_lee', directorName: 'Lee Siew Geok', turnsRemaining: 1, narrative: '' },
+    });
+
+    // Plain availability alone would (wrongly) show it — she's not seated.
+    const availabilityOnly = filterStrategiesByRequires(sfgevent01, state);
+    expect(availabilityOnly.strategies.map((s) => s.id)).toContain('sfgevent_01_a');
+
+    // The real entry point applies the bespoke resignee filter first, which wins.
+    const resolved = resolveSfgEvent01Event(sfgevent01, state);
+    expect(resolved.strategies.map((s) => s.id)).not.toContain('sfgevent_01_a');
   });
 });
 
