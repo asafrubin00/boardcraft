@@ -312,7 +312,13 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
               key={isRecommended ? `${company.id}-${jiggleKey}` : company.id}
               layoutId={`company-tile-${company.id}`}
               layout
-              onClick={() => setSelectedId(isExpanded ? null : company.id)}
+              onClick={() => {
+                const next = isExpanded ? null : company.id;
+                setSelectedId(next);
+                // Selected card re-sorts to the top of the grid — follow it,
+                // otherwise on mobile it appears to vanish above the fold
+                if (next) window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               className={`relative rounded-xl border cursor-pointer transition-colors
                 ${isExpanded
                   ? 'bg-card-bg border-gold col-span-1 sm:col-span-2 lg:col-span-3'

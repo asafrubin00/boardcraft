@@ -173,14 +173,14 @@ export default function EventCard({
                       : 'border-card-border bg-navy-light hover:shadow-[0_0_12px_rgba(200,150,12,0.15)] cursor-pointer'
                   }`}
                 >
-                  <div className="mb-1 flex items-center justify-between">
+                  <div className="mb-1 flex items-start justify-between gap-2">
                     <span className="font-bold text-xs md:text-sm text-foreground">
                       {strategy.label}
                     </span>
                     {(() => {
                       const badge = getMultiplierBadge(strategy.multiplier);
                       return badge ? (
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full border ${badge.className}`}>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full border shrink-0 whitespace-nowrap ${badge.className}`}>
                           {badge.label}
                         </span>
                       ) : null;

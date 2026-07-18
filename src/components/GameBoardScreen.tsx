@@ -88,6 +88,11 @@ export default function GameBoardScreen({
   const [flashingIds, setFlashingIds] = useState<Set<string>>(new Set());
   const [selectedDirectorId, setSelectedDirectorId] = useState<string | null>(null);
   const [showRegenToast, setShowRegenToast] = useState(false);
+  // Mobile: board collapses while an event is active; strip toggle re-opens it
+  const [mobileBoardOpen, setMobileBoardOpen] = useState(false);
+  const currentEventId = currentEvent?.id;
+  useEffect(() => { setMobileBoardOpen(false); }, [currentEventId]);
+  const boardVisibleMobile = !currentEvent || mobileBoardOpen;
 
   // Ensure AudioContext is ready on first user click
   useEffect(() => { ensureAudioContext(); }, []);
@@ -120,19 +125,24 @@ export default function GameBoardScreen({
     return w.slice(-3); // max 3
   }, [gameState.resolvedEvents]);
 
-  // Flash energy bars green for directors who regenerated energy
+  // Flash energy bars green for directors who regenerated energy.
+  // Keyed on the id *content* (not array/callback identity): parent re-renders
+  // used to restart the effect and cancel these timers, so the "Quarter
+  // Complete" toast never dismissed.
+  const onClearRegenRef = useRef(onClearRegen);
+  useEffect(() => { onClearRegenRef.current = onClearRegen; });
+  const regenKey = regenDirectorIds.join(',');
   useEffect(() => {
-    if (regenDirectorIds.length > 0) {
-      setFlashingIds(new Set(regenDirectorIds));
-      setShowRegenToast(true);
-      const timer = setTimeout(() => {
-        setFlashingIds(new Set());
-        onClearRegen?.();
-      }, 1500);
-      const toastTimer = setTimeout(() => setShowRegenToast(false), 3000);
-      return () => { clearTimeout(timer); clearTimeout(toastTimer); };
-    }
-  }, [regenDirectorIds, onClearRegen]);
+    if (!regenKey) return;
+    setFlashingIds(new Set(regenKey.split(',')));
+    setShowRegenToast(true);
+    const timer = setTimeout(() => {
+      setFlashingIds(new Set());
+      onClearRegenRef.current?.();
+    }, 1500);
+    const toastTimer = setTimeout(() => setShowRegenToast(false), 3000);
+    return () => { clearTimeout(timer); clearTimeout(toastTimer); };
+  }, [regenKey]);
 
   const boardDirectors = useMemo(() => {
     const result: (Director & { seatRole: string })[] = [];
@@ -466,8 +476,23 @@ export default function GameBoardScreen({
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         {/* Left panel — Boardroom Table + Director Detail */}
         <div className="flex flex-col border-b md:border-b-0 md:border-r border-card-border md:w-[40%]">
+          {/* Mobile: while an event is on the table the board collapses behind
+              this strip so the event card gets the full screen */}
+          {currentEvent && (
+            <button
+              onClick={() => setMobileBoardOpen((v) => !v)}
+              className="md:hidden flex items-center justify-between px-4 py-2.5 bg-navy-dark/40 cursor-pointer"
+            >
+              <span className="text-[11px] uppercase tracking-widest text-foreground/50 font-semibold">
+                Boardroom
+              </span>
+              <span className="text-xs text-gold font-semibold">
+                {mobileBoardOpen ? 'Hide ▴' : 'View ▾'}
+              </span>
+            </button>
+          )}
           {/* Boardroom Table — larger fixed height on mobile, flex-1 on desktop */}
-          <div className="overflow-hidden flex items-center justify-center p-3 h-[min(100vw,52dvh)] md:h-auto md:flex-1 md:min-h-0" style={{ paddingTop: '8px' }}>
+          <div className={`overflow-hidden items-center justify-center p-3 md:h-auto md:flex-1 md:min-h-0 ${boardVisibleMobile ? 'flex h-[min(100vw,52dvh)]' : 'hidden md:flex'}`} style={{ paddingTop: '8px' }}>
             {/* Height-capped square: on short phones the table shrinks to fit
                 45dvh instead of clipping the bottom row of seat labels */}
             <div className="h-full max-w-full aspect-square">
@@ -696,7 +721,13 @@ export default function GameBoardScreen({
       {/* Stamina Regen Toast */}
       <AnimatePresence>
         {showRegenToast && (
-          <div className="fixed bottom-20 right-4 z-40 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.25 }}
+            className="fixed bottom-20 left-4 right-4 sm:left-auto z-40"
+          >
             <div className="bg-card-bg border border-success/30 rounded-lg px-4 py-3 shadow-lg flex items-center gap-2">
               <span className="text-success text-lg">&#9889;</span>
               <div>
@@ -704,7 +735,7 @@ export default function GameBoardScreen({
                 <div className="text-[11px] text-foreground/60">Directors resting. Stamina regenerating.</div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
