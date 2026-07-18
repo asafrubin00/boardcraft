@@ -434,6 +434,19 @@ const GRID_STRATEGY_POSITION: TablePosition = {
   labelAbove: false,
 };
 
+// Compact-mode role shorthand (phones): standard governance abbreviations so
+// role labels never ellipsize. Desktop keeps the full titles.
+function compactRoleLabel(label: string): string {
+  return label
+    .replace('Remuneration', 'Rem')
+    .replace('Compensation', 'Comp')
+    .replace('Nomination', 'Nom')
+    .replace('Safety & Environment', 'S&E')
+    .replace('Energy Transition', 'Energy')
+    .replace('Sustainability', 'Sustain')
+    .replace('Tech/Cyber', 'Tech');
+}
+
 function truncateForWidth(text: string, maxWidth: number, fontSize: number): string {
   const avgCharWidth = fontSize * 0.62;
   const maxChars = Math.max(3, Math.floor(maxWidth / avgCharWidth));
@@ -795,10 +808,14 @@ export default function BoardroomTable({
           // Match the candidate pool card's name text size (text-[9px]) in real
           // CSS pixels, independent of how large the seat ring renders on screen.
           const nameText = director ? directorShortLabel(director) : '';
+          const displayRole = labelMode === 'compact' ? compactRoleLabel(actualLabel) : actualLabel;
           const nameFontSize = unitsForPx(fitFontPx(nameText, labelMode === 'compact' ? 12 : 10));
-          const roleFontSize = unitsForPx(fitFontPx(actualLabel, labelMode === 'compact' ? 11 : 9));
+          const roleFontSize = unitsForPx(fitFontPx(displayRole, labelMode === 'compact' ? 11 : 9));
+          // Role line under the name — smaller than the empty-seat label so the
+          // two-line block stays clear of neighbouring seats on phones
+          const roleLineSize = unitsForPx(fitFontPx(displayRole, 9));
           const nameY = r + 14 + nameFontSize;
-          const roleY = nameY + roleFontSize + 3;
+          const roleY = nameY + roleLineSize + 3;
 
           return (
             <g key={`label-${index}`} className="bcraft-seat-pos" style={{ transform: `translate(${point.x}px, ${point.y}px)` }}>
@@ -807,18 +824,18 @@ export default function BoardroomTable({
                   <text y={nameY} textAnchor="middle" fontSize={nameFontSize} fontFamily="var(--font-mono, monospace)" fontWeight={600} fill="#E8E4DC">
                     {truncateForWidth(nameText, nameMaxWidth, nameFontSize)}
                   </text>
-                  {labelMode === 'full' && (
-                    <text y={roleY} textAnchor="middle" fontSize={roleFontSize} fontFamily="var(--font-mono, monospace)" fill="#E8E4DC" opacity={0.5}>
-                      {truncateForWidth(actualLabel, nameMaxWidth, roleFontSize)}
-                      <title>{actualLabel}</title>
-                    </text>
-                  )}
+                  <text y={roleY} textAnchor="middle" fontSize={roleLineSize} fontFamily="var(--font-mono, monospace)" fill="#E8E4DC" opacity={0.5}>
+                    {truncateForWidth(displayRole, nameMaxWidth, roleLineSize)}
+                    <title>{actualLabel}</title>
+                  </text>
                 </>
               ) : (() => {
                 const emptyRoleLabel = shortRoleLabel(pos.defaultRole, jurisdiction, null, undefined, companyId);
+                const emptyDisplay = labelMode === 'compact' ? compactRoleLabel(emptyRoleLabel) : emptyRoleLabel;
+                const emptySize = unitsForPx(fitFontPx(emptyDisplay, labelMode === 'compact' ? 11 : 9));
                 return (
-                  <text y={nameY} textAnchor="middle" fontSize={roleFontSize} fontFamily="var(--font-mono, monospace)" fill="#E8E4DC" opacity={0.5}>
-                    {truncateForWidth(emptyRoleLabel, nameMaxWidth, roleFontSize)}
+                  <text y={nameY} textAnchor="middle" fontSize={emptySize} fontFamily="var(--font-mono, monospace)" fill="#E8E4DC" opacity={0.5}>
+                    {truncateForWidth(emptyDisplay, nameMaxWidth, emptySize)}
                     <title>{emptyRoleLabel}</title>
                   </text>
                 );
