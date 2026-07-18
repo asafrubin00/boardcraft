@@ -25,6 +25,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "jest": "^30.3.0",
+    "playwright-core": "^1.61.1",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.6",
     "typescript": "^5",
