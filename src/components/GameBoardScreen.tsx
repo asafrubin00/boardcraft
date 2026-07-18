@@ -330,7 +330,7 @@ export default function GameBoardScreen({
   const metricLabel = gameState.company.id === 'company_meridian' ? 'MIS' : 'SV';
 
   return (
-    <div className="h-screen bg-navy text-foreground flex flex-col overflow-hidden">
+    <div className="h-dvh bg-navy text-foreground flex flex-col overflow-hidden">
       {/* Top Bar
           Mobile:  two rows — Row1: logo + company + volume | Row2: quarter + metrics
           Desktop: single row — logo | quarter/turn | SvTracker + GH + AGM | company + volume */}
@@ -467,7 +467,10 @@ export default function GameBoardScreen({
         {/* Left panel — Boardroom Table + Director Detail */}
         <div className="flex flex-col border-b md:border-b-0 md:border-r border-card-border md:w-[40%]">
           {/* Boardroom Table — larger fixed height on mobile, flex-1 on desktop */}
-          <div className="overflow-hidden flex items-center justify-center p-3 h-[45vh] md:h-auto md:flex-1 md:min-h-0" style={{ paddingTop: '8px' }}>
+          <div className="overflow-hidden flex items-center justify-center p-3 h-[min(100vw,52dvh)] md:h-auto md:flex-1 md:min-h-0" style={{ paddingTop: '8px' }}>
+            {/* Height-capped square: on short phones the table shrinks to fit
+                45dvh instead of clipping the bottom row of seat labels */}
+            <div className="h-full max-w-full aspect-square">
             <BoardroomTable
               seats={gameState.board.seats}
               directors={gameState.directors}
@@ -482,6 +485,7 @@ export default function GameBoardScreen({
               combinedChairCeo={combinedChairCeo}
               workerRepIds={workerRepIds}
             />
+            </div>
           </div>
 
           {/* Director Detail Box — hidden on mobile (profile shows as overlay instead)
@@ -567,6 +571,8 @@ export default function GameBoardScreen({
               ) : null}
             </AnimatePresence>
           </div>
+          {/* Copyright — in-flow on mobile so it never overlaps the event card */}
+          <SiteFooter className="md:hidden mt-6 pb-1" />
         </main>
 
         {/* ── Mobile: Director Profile Overlay (slides from right) ── */}
@@ -717,8 +723,12 @@ export default function GameBoardScreen({
         />
       )}
 
-      {/* Copyright — sits above the 40px news ticker */}
-      <SiteFooter className="fixed bottom-[52px] left-1/2 -translate-x-1/2 z-[49]" />
+      {/* Copyright — sits above the 40px news ticker. Desktop only: on mobile it
+          would overlap the event scroll area, so the footer renders in-flow at the
+          end of <main> instead. */}
+      <div className="hidden md:block">
+        <SiteFooter className="fixed bottom-[52px] left-1/2 -translate-x-1/2 z-[49]" />
+      </div>
 
       {/* Financial News Ticker */}
       <NewsTicker headlines={headlines} />

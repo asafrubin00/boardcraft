@@ -1542,7 +1542,7 @@ function BoardConstructionWrapper({
   ) : null;
 
   return (
-    <div className="h-screen bg-navy text-foreground flex flex-col overflow-hidden">
+    <div className="h-dvh bg-navy text-foreground flex flex-col overflow-hidden">
       {/* Header */}
       <header className="border-b border-card-border px-6 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">

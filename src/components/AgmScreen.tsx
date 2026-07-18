@@ -950,7 +950,11 @@ export default function AgmScreen({
             </motion.div>
           )}
         </AnimatePresence>
-      <SiteFooter vertical className="fixed bottom-4 right-4 z-10" />
+      {/* Copyright — pinned on desktop; in-flow on mobile so it never overlaps content */}
+      <div className="hidden md:block">
+        <SiteFooter vertical className="fixed bottom-4 right-4 z-10" />
+      </div>
+      <SiteFooter className="md:hidden mt-10 pb-2" />
 
     </div>
     );
@@ -1155,7 +1159,11 @@ export default function AgmScreen({
           </button>
         </motion.div>
       </div>
-      <SiteFooter vertical className="fixed bottom-4 right-4 z-10" />
+      {/* Copyright — pinned on desktop; in-flow on mobile so it never overlaps content */}
+      <div className="hidden md:block">
+        <SiteFooter vertical className="fixed bottom-4 right-4 z-10" />
+      </div>
+      <SiteFooter className="md:hidden mt-10 pb-2" />
     </div>
   );
 }

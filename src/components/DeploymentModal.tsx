@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { GameEvent, Director, BoardSeat } from '@/types/game';
-import { DOMAIN_LABELS } from '@/engine/boardConstants';
+import { DOMAIN_LABELS, DOMAIN_SHORT } from '@/engine/boardConstants';
 import DirectorPortrait from './DirectorPortrait';
 import { playDirectorSelect } from '@/engine/soundEngine';
 
@@ -96,7 +96,7 @@ export default function DeploymentModal({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className="bg-navy rounded-xl border border-card-border max-w-4xl w-full max-h-[90vh] overflow-hidden p-3 md:p-5 flex flex-col"
+            className="bg-navy rounded-xl border border-card-border max-w-4xl w-full max-h-[85dvh] overflow-hidden p-3 md:p-5 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -114,8 +114,10 @@ export default function DeploymentModal({
               </p>
             </div>
 
-            {/* Director grid - compact, responsive up to 4 cols */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-4 flex-1 min-h-0">
+            {/* Director grid - compact, responsive up to 4 cols. Scrolls when the
+                board doesn't fit the viewport (small phones) so the action buttons
+                below always stay reachable. */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-4 flex-1 min-h-0 overflow-y-auto content-start">
               {boardDirectors.map((director) => {
                 const isExhausted = director.currentEnergy === 0;
                 const isSelected = selectedIds.includes(director.id);
@@ -147,7 +149,7 @@ export default function DeploymentModal({
                         <DirectorPortrait directorId={director.id} size={36} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-xs font-bold text-foreground font-narrative leading-snug truncate">
+                        <h3 className="text-xs font-bold text-foreground font-narrative leading-snug break-words">
                           {director.name}
                         </h3>
                         {isExhausted && (
@@ -163,8 +165,8 @@ export default function DeploymentModal({
                       <span className={`text-xl font-bold leading-none ${scoreColor(domainRating)}`}>
                         {domainRating}
                       </span>
-                      <span className="text-[11px] text-foreground/50 uppercase truncate">
-                        {DOMAIN_LABELS[event.primaryDomain]}
+                      <span className="text-[11px] text-foreground/50 uppercase">
+                        {DOMAIN_SHORT[event.primaryDomain]}
                       </span>
                     </div>
 

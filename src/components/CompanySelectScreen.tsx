@@ -457,7 +457,11 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
         ))}
       </div>
 
-      <SiteFooter vertical className="fixed bottom-4 right-4 z-10" />
+      {/* Copyright — pinned on desktop; in-flow on mobile so it never overlaps the cards */}
+      <div className="hidden md:block">
+        <SiteFooter vertical className="fixed bottom-4 right-4 z-10" />
+      </div>
+      <SiteFooter className="md:hidden mt-10" />
 
       <AnimatePresence>
         {focusModalOpen && (

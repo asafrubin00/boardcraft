@@ -519,7 +519,7 @@ export default function BoardroomTable({
   const { seats: seatPoints, radius: r } = computeSeatLayout(effectivePositions.length);
 
   const labelMode: 'full' | 'compact' | 'hidden' =
-    containerWidth < 300 ? 'hidden' : containerWidth < 420 ? 'compact' : 'full';
+    containerWidth < 270 ? 'hidden' : containerWidth < 420 ? 'compact' : 'full';
   const needsBigHitArea = (r * containerWidth) / 1000 < 20;
 
   // Lock label text to a real on-screen size (matching the candidate pool card's
@@ -532,7 +532,16 @@ export default function BoardroomTable({
   const cx = 500;
   const cy = 500;
   const tableRect = { x: cx - 200, y: cy - 200, w: 400, h: 400, rx: 56 };
-  const nameMaxWidth = 150;
+  // Label width budget: at least ~92 on-screen px so full surnames fit even on
+  // phones (tighter on very small boards where adjacent labels would collide).
+  // Long labels shrink their font (min 8px, via fitFontPx) rather than
+  // truncate; truncateForWidth stays only as a last-resort safety net.
+  const labelBudgetPx = containerWidth < 340 ? 76 : Math.max(92, 150 * pxPerUnit);
+  const nameMaxWidth = labelBudgetPx / pxPerUnit;
+  const fitFontPx = (text: string, basePx: number) =>
+    text.length * basePx * 0.62 <= labelBudgetPx
+      ? basePx
+      : Math.max(8, labelBudgetPx / (text.length * 0.62));
 
   return (
     <div ref={containerRef} className="relative w-full" style={{ aspectRatio: '1/1' }}>
@@ -785,8 +794,9 @@ export default function BoardroomTable({
 
           // Match the candidate pool card's name text size (text-[9px]) in real
           // CSS pixels, independent of how large the seat ring renders on screen.
-          const nameFontSize = unitsForPx(labelMode === 'compact' ? 12 : 10);
-          const roleFontSize = unitsForPx(labelMode === 'compact' ? 11 : 9);
+          const nameText = director ? directorShortLabel(director) : '';
+          const nameFontSize = unitsForPx(fitFontPx(nameText, labelMode === 'compact' ? 12 : 10));
+          const roleFontSize = unitsForPx(fitFontPx(actualLabel, labelMode === 'compact' ? 11 : 9));
           const nameY = r + 14 + nameFontSize;
           const roleY = nameY + roleFontSize + 3;
 
@@ -795,7 +805,7 @@ export default function BoardroomTable({
               {director ? (
                 <>
                   <text y={nameY} textAnchor="middle" fontSize={nameFontSize} fontFamily="var(--font-mono, monospace)" fontWeight={600} fill="#E8E4DC">
-                    {truncateForWidth(directorShortLabel(director), nameMaxWidth, nameFontSize)}
+                    {truncateForWidth(nameText, nameMaxWidth, nameFontSize)}
                   </text>
                   {labelMode === 'full' && (
                     <text y={roleY} textAnchor="middle" fontSize={roleFontSize} fontFamily="var(--font-mono, monospace)" fill="#E8E4DC" opacity={0.5}>

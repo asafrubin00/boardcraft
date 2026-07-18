@@ -4,6 +4,7 @@
  *
  * Usage:  npm run dev   (in another terminal, port 3000)
  *         node scripts/mobile-shots.js
+ *         VIEWPORT=375x667 node scripts/mobile-shots.js   (small-phone pass)
  * Output: mobile-shots/*.png + mobile-shots/log.json (gitignored)
  *
  * Each shot also logs horizontal-overflow offenders (elements wider than the
@@ -16,6 +17,7 @@ const os = require('os');
 const path = require('path');
 
 const BASE = process.env.BASE_URL || 'http://localhost:3000';
+const [VW, VH] = (process.env.VIEWPORT || '390x844').split('x').map(Number);
 const OUT = path.join(__dirname, '..', 'mobile-shots');
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -39,7 +41,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
   const browser = await chromium.launch({ executablePath: findChromium(), headless: true });
   const ctx = await browser.newContext({
-    viewport: { width: 390, height: 844 },
+    viewport: { width: VW, height: VH },
     deviceScaleFactor: 2,
     isMobile: true,
     hasTouch: true,
@@ -50,15 +52,16 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const log = [];
 
   async function shot(name) {
+    const vwArg = VW;
     await sleep(900); // let enter animations finish
     await page.screenshot({ path: path.join(OUT, name + '.png') });
-    const overflow = await page.evaluate(() => {
+    const overflow = await page.evaluate((vw) => {
       const bad = [...document.querySelectorAll('*')]
         .filter((e) => {
           const r = e.getBoundingClientRect();
           const cs = getComputedStyle(e);
           return (
-            r.width > 30 && r.right > 391 && r.left > -1 &&
+            r.width > 30 && r.right > vw + 1 && r.left > -1 &&
             cs.position !== 'fixed' && cs.overflow !== 'hidden' &&
             !e.className.toString().includes('news-ticker')
           );
@@ -66,7 +69,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         .slice(0, 4)
         .map((e) => e.tagName + '.' + String(e.className).slice(0, 60));
       return { scrollW: document.documentElement.scrollWidth, clipped: bad };
-    });
+    }, vwArg);
     log.push({ name, ...overflow });
     console.log('SHOT', name, JSON.stringify(overflow));
   }
