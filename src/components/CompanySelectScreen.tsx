@@ -302,9 +302,11 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl w-full">
         {/* Playable Company Tiles — selected company reorders to the front */}
-        {[...companies]
-          .sort((a, b) => (a.id === selectedId ? -1 : b.id === selectedId ? 1 : 0))
-          .map((company) => {
+        {/* Mobile (single column): the selected card expands IN PLACE — no
+            reordering, so it never jumps out from under the player's thumb.
+            Desktop (multi column): sm:order-first moves it to the top so the
+            full-width expansion doesn't leave a hole in the grid. */}
+        {companies.map((company) => {
           const isExpanded = selectedId === company.id;
           const isRecommended = !!skillLevel && (SKILL_LEVELS.find((s) => s.value === skillLevel)?.recommended ?? []).includes(company.id);
           return (
@@ -312,16 +314,10 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
               key={isRecommended ? `${company.id}-${jiggleKey}` : company.id}
               layoutId={`company-tile-${company.id}`}
               layout
-              onClick={() => {
-                const next = isExpanded ? null : company.id;
-                setSelectedId(next);
-                // Selected card re-sorts to the top of the grid — follow it,
-                // otherwise on mobile it appears to vanish above the fold
-                if (next) window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onClick={() => setSelectedId(isExpanded ? null : company.id)}
               className={`relative rounded-xl border cursor-pointer transition-colors
                 ${isExpanded
-                  ? 'bg-card-bg border-gold col-span-1 sm:col-span-2 lg:col-span-3'
+                  ? 'bg-card-bg border-gold col-span-1 sm:col-span-2 lg:col-span-3 sm:order-first'
                   : 'bg-card-bg border-card-border hover:border-gold hover:bg-navy-light'
                 }
                 p-5`}

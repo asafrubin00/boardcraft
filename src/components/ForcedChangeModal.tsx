@@ -214,7 +214,7 @@ export default function ForcedChangeModal({
         >
           {/* ── Left: Departing Director (order-1 on both breakpoints) ── */}
           <div
-            className="order-1 md:w-[28%] md:flex-none md:overflow-y-auto"
+            className="order-1 shrink-0 md:shrink md:w-[28%] md:flex-none md:overflow-y-auto"
             style={{
               background: 'rgba(220,60,60,0.06)',
               border: '1px solid rgba(220,60,60,0.2)',
@@ -253,14 +253,14 @@ export default function ForcedChangeModal({
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                       <span style={{ fontSize: 10, color: '#9BB4CC' }}>Energy</span>
                       <span style={{ fontSize: 10, color: '#E8E4DC', fontWeight: 600 }}>
-                        {Math.round(departingDirector.currentEnergy * 100)}%
+                        {Math.round(departingDirector.currentEnergy)}%
                       </span>
                     </div>
                     <div style={{ height: 4, background: '#0D1B2A', borderRadius: 2, overflow: 'hidden' }}>
                       <div style={{
                         height: '100%',
-                        width: `${Math.round(departingDirector.currentEnergy * 100)}%`,
-                        background: departingDirector.currentEnergy > 0.6 ? '#4CAF82' : departingDirector.currentEnergy > 0.3 ? '#C8960C' : '#E05050',
+                        width: `${Math.min(100, Math.round(departingDirector.currentEnergy))}%`,
+                        background: departingDirector.currentEnergy > 60 ? '#4CAF82' : departingDirector.currentEnergy > 30 ? '#C8960C' : '#E05050',
                         borderRadius: 2,
                       }} />
                     </div>
@@ -277,7 +277,7 @@ export default function ForcedChangeModal({
 
           {/* ── Centre: Board State — shown last on mobile (below replacement pool) ── */}
           <div
-            className="order-3 md:order-2 md:w-[32%] md:flex-none md:overflow-y-auto"
+            className="order-3 shrink-0 md:shrink md:order-2 md:w-[32%] md:flex-none md:overflow-y-auto"
             style={{
               background: 'rgba(26,58,92,0.25)',
               border: '1px solid rgba(200,150,12,0.2)',
@@ -349,7 +349,7 @@ export default function ForcedChangeModal({
 
           {/* ── Right: Replacement Pool — shown second on mobile ── */}
           <div
-            className="order-2 md:order-3 flex flex-col md:flex-1 md:min-w-0"
+            className="order-2 shrink-0 md:shrink md:order-3 flex flex-col md:flex-1 md:min-w-0"
             style={{
               background: 'rgba(13,27,42,0.6)',
               border: '1px solid rgba(200,150,12,0.2)',
@@ -545,7 +545,9 @@ export default function ForcedChangeModal({
             </div>
           </div>
         </div>
-        <div style={{ textAlign: 'center', paddingBottom: 10, paddingTop: 4 }}>
+        {/* Desktop only: on phones every pixel of this modal is needed for the
+            replacement flow, and the footer already shows on the screens below */}
+        <div className="hidden md:block" style={{ textAlign: 'center', paddingBottom: 10, paddingTop: 4 }}>
           <SiteFooter />
         </div>
       </motion.div>
