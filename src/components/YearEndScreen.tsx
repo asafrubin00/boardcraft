@@ -609,7 +609,7 @@ function LeaderboardModal({ isOpen, onClose, currentEntryId }: { isOpen: boolean
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-navy border border-card-border rounded-xl p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto"
+        className="bg-navy border border-card-border rounded-xl p-6 w-full max-w-3xl max-h-[80dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">

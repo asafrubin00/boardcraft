@@ -21,7 +21,7 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-navy border border-card-border rounded-xl p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200"
+        className="bg-navy border border-card-border rounded-xl p-6 w-full max-w-3xl max-h-[80dvh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">

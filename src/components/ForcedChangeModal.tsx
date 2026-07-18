@@ -175,7 +175,7 @@ export default function ForcedChangeModal({
           borderRadius: 16,
           width: '100%',
           maxWidth: 940,
-          maxHeight: '92vh',
+          maxHeight: '88dvh',
           overflow: 'hidden',
           margin: '0 12px',
         }}

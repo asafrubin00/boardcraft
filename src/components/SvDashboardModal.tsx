@@ -94,7 +94,7 @@ export default function SvDashboardModal({
 
           {/* Modal */}
           <motion.div
-            className="relative z-10 w-full max-w-5xl max-h-[90vh] overflow-y-auto bg-navy rounded-xl border border-card-border p-6 mx-4"
+            className="relative z-10 w-full max-w-5xl max-h-[85dvh] overflow-y-auto bg-navy rounded-xl border border-card-border p-6 mx-4"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}

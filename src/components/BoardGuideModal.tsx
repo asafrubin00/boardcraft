@@ -213,7 +213,7 @@ export default function BoardGuideModal({ isOpen, onClose, company }: BoardGuide
               borderRadius: 14,
               width: '100%',
               maxWidth: 680,
-              maxHeight: '88vh',
+              maxHeight: '85dvh',
               overflowY: 'auto',
               margin: '0 16px',
             }}

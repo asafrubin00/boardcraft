@@ -126,7 +126,9 @@ export default function OutcomeDisplay({
               ...(isCritSuccess ? {
                 boxShadow: '0 0 40px rgba(200,150,12,0.25), inset 0 0 30px rgba(200,150,12,0.08)',
               } : {}),
-              maxHeight: '90vh',
+              // dvh, not vh: on iOS Safari 90vh is taller than the visible area
+              // (toolbars), which buried the Continue button off-screen.
+              maxHeight: '85dvh',
               display: 'flex',
               flexDirection: 'column',
             }}
