@@ -397,6 +397,7 @@ export default function GameBoardScreen({
               onClick={() => setShowDashboard(true)}
               className="md:hidden flex items-center gap-1 rounded border border-card-border px-2 py-0.5 cursor-pointer"
               title="Open SV Dashboard"
+              aria-label="Open SV Dashboard"
             >
               <span className="text-xs text-foreground/60">{metricLabel}</span>
               <span className={`font-bold text-sm ${svColor}`}>{gameState.svIndex}</span>
@@ -581,7 +582,7 @@ export default function GameBoardScreen({
         </div>
 
         {/* Right panel — Event Area */}
-        <main className="flex-1 min-h-0 overflow-y-auto pt-3 pb-[84px] md:py-6 px-3 md:px-5 md:pb-6">
+        <main className="flex-1 min-h-0 overflow-y-auto pt-3 pb-[calc(84px+env(safe-area-inset-bottom))] md:py-6 px-3 md:px-5 md:pb-6">
           <div className="w-full">
             <AnimatePresence mode="wait">
               {currentEvent ? (

@@ -15,7 +15,13 @@ export default function NewsTicker({ headlines }: NewsTickerProps) {
   return (
     <div
       className="fixed bottom-0 left-0 right-0 z-50 flex items-center overflow-hidden select-none"
-      style={{ height: 40, backgroundColor: '#080F1A' }}
+      style={{
+        // Extra height + padding keep the ticker clear of the iOS home indicator
+        // (viewport-fit=cover lets content extend into that zone)
+        height: 'calc(40px + env(safe-area-inset-bottom))',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        backgroundColor: '#080F1A',
+      }}
     >
       {/* LIVE badge - fixed, does not scroll */}
       <div

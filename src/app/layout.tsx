@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import TabletRotateGate from "@/components/TabletRotateGate";
@@ -15,11 +15,19 @@ const geistMono = Geist_Mono({
 
 const BASE_URL = "https://boardcraft-eight.vercel.app";
 
+// Blend the browser chrome into the app's navy and extend rendering into the
+// safe areas on notched iPhones (bottom-fixed elements pad with env() insets).
+export const viewport: Viewport = {
+  themeColor: "#112840",
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: "BoardCraft",
   description: "A corporate governance strategy game. Navigate board composition, proxy adviser dynamics, and AGM season.",
   icons: {
     icon: "/icon.svg",
+    apple: "/apple-icon.png",
   },
   openGraph: {
     title: "BoardCraft",
