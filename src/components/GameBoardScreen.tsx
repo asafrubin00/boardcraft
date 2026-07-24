@@ -87,7 +87,6 @@ export default function GameBoardScreen({
   const [waitingForNext, setWaitingForNext] = useState(false);
   const [flashingIds, setFlashingIds] = useState<Set<string>>(new Set());
   const [selectedDirectorId, setSelectedDirectorId] = useState<string | null>(null);
-  const [showRegenToast, setShowRegenToast] = useState(false);
   // Mobile: board collapses while an event is active; strip toggle re-opens it
   const [mobileBoardOpen, setMobileBoardOpen] = useState(false);
   const currentEventId = currentEvent?.id;
@@ -126,22 +125,19 @@ export default function GameBoardScreen({
   }, [gameState.resolvedEvents]);
 
   // Flash energy bars green for directors who regenerated energy.
-  // Keyed on the id *content* (not array/callback identity): parent re-renders
-  // used to restart the effect and cancel these timers, so the "Quarter
-  // Complete" toast never dismissed.
+  // Keyed on the id *content* (not array/callback identity) so parent
+  // re-renders don't restart the effect and cancel the timer.
   const onClearRegenRef = useRef(onClearRegen);
   useEffect(() => { onClearRegenRef.current = onClearRegen; });
   const regenKey = regenDirectorIds.join(',');
   useEffect(() => {
     if (!regenKey) return;
     setFlashingIds(new Set(regenKey.split(',')));
-    setShowRegenToast(true);
     const timer = setTimeout(() => {
       setFlashingIds(new Set());
       onClearRegenRef.current?.();
     }, 1500);
-    const toastTimer = setTimeout(() => setShowRegenToast(false), 3000);
-    return () => { clearTimeout(timer); clearTimeout(toastTimer); };
+    return () => clearTimeout(timer);
   }, [regenKey]);
 
   const boardDirectors = useMemo(() => {
@@ -718,27 +714,6 @@ export default function GameBoardScreen({
         resolvedEvents={gameState.resolvedEvents}
         company={gameState.company}
       />
-
-      {/* Stamina Regen Toast */}
-      <AnimatePresence>
-        {showRegenToast && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.25 }}
-            className="fixed bottom-20 left-4 right-4 sm:left-auto z-40"
-          >
-            <div className="bg-card-bg border border-success/30 rounded-lg px-4 py-3 shadow-lg flex items-center gap-2">
-              <span className="text-success text-lg">&#9889;</span>
-              <div>
-                <div className="text-xs font-semibold text-success">Quarter Complete</div>
-                <div className="text-[11px] text-foreground/60">Directors resting. Stamina regenerating.</div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Forced Change Modal */}
       {showForcedModal && gameState.forcedChange && onForcedDismissAndReplace && (
