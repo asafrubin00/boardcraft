@@ -149,7 +149,7 @@ export default function EventCard({
       {isEvent08 ? (
         <button
           onClick={onDoNothing}
-          className="w-full py-3 px-4 rounded-lg bg-gold text-navy font-bold text-sm hover:bg-gold-light transition-colors cursor-pointer"
+          className="w-full py-3 px-4 rounded-lg bg-gold text-navy font-bold text-sm hover:bg-gold-light active:scale-[0.98] transition-all cursor-pointer"
         >
           {event.name} - Review and Continue
         </button>
@@ -170,7 +170,7 @@ export default function EventCard({
                   className={`w-full text-left rounded-lg border p-3 md:p-4 transition-all ${
                     isLocked
                       ? 'opacity-50 cursor-not-allowed border-card-border bg-navy-dark'
-                      : 'border-card-border bg-navy-light hover:shadow-[0_0_12px_rgba(200,150,12,0.15)] cursor-pointer'
+                      : 'border-card-border bg-navy-light hover:shadow-[0_0_12px_rgba(200,150,12,0.15)] active:border-gold/70 active:scale-[0.99] cursor-pointer'
                   }`}
                 >
                   <div className="mb-1 flex items-start justify-between gap-2">

@@ -46,6 +46,7 @@ import {
 } from '@/engine/forcedChanges';
 import { playBoardSeatDrop, playBoardSeatRemove, playBoardConfirm, playDirectorSelect, ensureAudioContext } from '@/engine/soundEngine';
 import HintModal from '@/components/HintModal';
+import { isDesktopViewport } from '@/lib/breakpoints';
 
 // ── Dev-only pre-built boards ──
 const DEV_BOARD_HARWICK: { id: string; role: _DevBoardRole }[] = [
@@ -1345,7 +1346,7 @@ function BoardConstructionWrapper({
       const ref = touchDragRef.current;
       if (!ref) return;
       // On mobile viewports, don't intercept scroll when an overlay is open
-      if (mobileOverlayRef.current !== null && window.innerWidth < 768) { touchDragRef.current = null; return; }
+      if (mobileOverlayRef.current !== null && !isDesktopViewport()) { touchDragRef.current = null; return; }
       const touch = e.touches[0];
       const dx = touch.clientX - ref.startX;
       const dy = touch.clientY - ref.startY;
@@ -1378,8 +1379,8 @@ function BoardConstructionWrapper({
         if ((seatEl as HTMLElement).getAttribute('data-seat-interactive') === 'false') return;
         const idx = parseInt((seatEl as HTMLElement).getAttribute('data-seat-index') ?? '-1', 10);
         if (idx >= 0) handleAssignToSeatRef.current(ref.dirId, idx);
-      } else if (window.innerWidth >= 768 && (el as HTMLElement).closest('[data-pool-drop-zone]')) {
-        // Tablet only: drop onto the director pool removes the director from the board
+      } else if (isDesktopViewport() && (el as HTMLElement).closest('[data-pool-drop-zone]')) {
+        // Desktop layout only: drop onto the director pool removes the director from the board
         handleRemoveDirectorRef.current(ref.dirId);
       }
     };
@@ -1586,9 +1587,13 @@ function BoardConstructionWrapper({
           {/* Company card — elevated above gold tabs when expanded */}
           <div className={`flex-shrink-0 mb-2 relative${showCompanyInfo ? ' z-20' : ''}`}>{companyCardJsx}</div>
 
-          {/* Boardroom table */}
+          {/* Boardroom table — the inner box is height-driven and square, so on a
+              wide portrait tablet the seat ring stays circular instead of
+              stretching to the full viewport width */}
           <div className="flex-1 flex items-center justify-center min-h-0">
+            <div className="h-full max-w-full aspect-square flex items-center">
             <BoardroomTable seats={seats} directors={availableDirectors} activeSeatIndex={activeSeatIdx} onSeatClick={handleSeatClick} hasEnergyTransition={hasEnergyTransition} hasCsrd={hasCsrd} hasStrategy={hasStrategy} onDropOnSeat={handleAssignToSeat} companyShortName={company.shortName} companyShortNameSuffix={company.shortNameSuffix} jurisdiction={company.jurisdiction} combinedChairCeo={company.id === 'company_vantage'} workerRepIds={company.id === 'company_rheinfeld' ? ['rdir_w_koch', 'rdir_w_alrashid', 'rdir_w_hoffmann', 'rdir_w_mehta', 'rdir_w_gruber'] : []} lockedDirectorIds={company.id === 'company_rheinfeld' ? ['rdir_heinrich'] : []} companyId={company.id} onTouchDragStart={startTouchDrag} />
+            </div>
           </div>
           <p className="text-[10px] text-foreground/30 mt-1 text-center flex-shrink-0 mb-1">Tap a seat · tap filled seat to view profile</p>
 
@@ -1938,7 +1943,10 @@ function BoardConstructionWrapper({
                 <button onClick={() => setFilterDomain(null)} className="mt-2 text-[10px] text-gold/60 hover:text-gold transition-colors">Clear filter</button>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-1.5">
+              // 3 columns below xl: the pool panel is 35% of the viewport, so on a
+              // landscape tablet (1133–1180px) four columns give ~93px cards and
+              // truncate most names. Wide desktops keep four.
+              <div className="grid grid-cols-3 xl:grid-cols-4 gap-1.5">
                 {sortedPool.map((d) => (
                   <PoolCard key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} displayFee={budget === 0 ? 0 : undefined} onTouchStart={(e) => { const t = e.touches[0]; startTouchDrag(d.id, t.clientX, t.clientY); }} />
                 ))}

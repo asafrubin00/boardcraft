@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import TabletRotateGate from "@/components/TabletRotateGate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -70,9 +69,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <TabletRotateGate>
-          {children}
-        </TabletRotateGate>
+        {children}
       </body>
     </html>
   );

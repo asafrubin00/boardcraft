@@ -16,6 +16,7 @@ import ForcedChangeModal from './ForcedChangeModal';
 import NewsTicker from './NewsTicker';
 import SiteFooter from './SiteFooter';
 import { useNewsTicker } from '@/hooks/useNewsTicker';
+import { hasRoomForBoardAndEvent } from '@/lib/breakpoints';
 import {
   isSoundEnabled, setSoundEnabled, playCardDeal, playDirectorSelect,
   ensureAudioContext, cycleVolume, getVolumeLevel,
@@ -87,10 +88,13 @@ export default function GameBoardScreen({
   const [waitingForNext, setWaitingForNext] = useState(false);
   const [flashingIds, setFlashingIds] = useState<Set<string>>(new Set());
   const [selectedDirectorId, setSelectedDirectorId] = useState<string | null>(null);
-  // Mobile: board collapses while an event is active; strip toggle re-opens it
+  // Touch layout: the board collapses behind a strip while an event is active so
+  // the event card gets the whole screen. Portrait tablets are tall enough to
+  // show both, so there it starts open — otherwise the flagship iPad in portrait
+  // renders one card and 900px of empty navy. The strip still toggles either way.
   const [mobileBoardOpen, setMobileBoardOpen] = useState(false);
   const currentEventId = currentEvent?.id;
-  useEffect(() => { setMobileBoardOpen(false); }, [currentEventId]);
+  useEffect(() => { setMobileBoardOpen(hasRoomForBoardAndEvent()); }, [currentEventId]);
   const boardVisibleMobile = !currentEvent || mobileBoardOpen;
 
   // Ensure AudioContext is ready on first user click
@@ -488,8 +492,11 @@ export default function GameBoardScreen({
               </span>
             </button>
           )}
-          {/* Boardroom Table — larger fixed height on mobile, flex-1 on desktop */}
-          <div className={`overflow-hidden items-center justify-center p-3 md:h-auto md:flex-1 md:min-h-0 ${boardVisibleMobile ? 'flex h-[min(100vw,52dvh)]' : 'hidden md:flex'}`} style={{ paddingTop: '8px' }}>
+          {/* Boardroom Table — fixed height in the touch layout, flex-1 on desktop.
+              The 460px term only binds on portrait tablets, where 100vw/52dvh
+              would otherwise give the board 700px+ and push the event card off
+              screen; on phones min() still picks 100vw or 52dvh as before. */}
+          <div className={`overflow-hidden items-center justify-center p-3 md:h-auto md:flex-1 md:min-h-0 ${boardVisibleMobile ? 'flex h-[min(100vw,52dvh,460px)]' : 'hidden md:flex'}`} style={{ paddingTop: '8px' }}>
             {/* Height-capped square: on short phones the table shrinks to fit
                 45dvh instead of clipping the bottom row of seat labels */}
             <div className="h-full max-w-full aspect-square">
@@ -578,8 +585,15 @@ export default function GameBoardScreen({
         </div>
 
         {/* Right panel — Event Area */}
-        <main className="flex-1 min-h-0 overflow-y-auto pt-3 pb-[calc(84px+env(safe-area-inset-bottom))] md:py-6 px-3 md:px-5 md:pb-6">
-          <div className="w-full">
+        {/* md:pb clears the fixed footer (bottom-[52px], ~16px tall) and the 40px
+            news ticker below it — without it the last strategy card scrolls
+            under both, which is most obvious on short landscape-tablet
+            viewports (744px) but happens on any desktop height. */}
+        <main className="flex-1 min-h-0 overflow-y-auto pt-3 pb-[calc(84px+env(safe-area-inset-bottom))] md:py-6 px-3 md:px-5 md:pb-[80px]">
+          {/* max-w keeps the line length readable on portrait tablets, where the
+              touch layout is a single column 700–1000px wide; no effect on
+              phones (narrower) or the desktop layout (md:max-w-none) */}
+          <div className="w-full max-w-2xl mx-auto md:max-w-none">
             <AnimatePresence mode="wait">
               {currentEvent ? (
                 <EventCard
