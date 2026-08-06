@@ -103,10 +103,11 @@ const EU_ROLE_TOOLTIPS: RoleTooltipMap = {
 // Per-company overrides (applied after jurisdiction overrides)
 const COMPANY_ROLE_TOOLTIPS: Partial<Record<string, RoleTooltipMap>> = {
   company_vantage: {
-    // US Chair: Stakeholder & Comms not checked; independence is a warning not a hard requirement
+    // US Chair: combined with the CEO role, so the seat is not the player's to
+    // fill — the tooltip says so rather than listing appointment requirements.
     chair: {
-      description: 'Leads the board and provides oversight of the combined Chair/CEO dynamic.',
-      requirements: ['Must be independent', 'Strategy & Markets ≥ 60'],
+      description: 'Held by the incumbent CEO under Vantage\'s combined Chair/CEO structure. This seat cannot be appointed — the Lead Independent Director offsets it.',
+      requirements: [],
     },
     // US Rem Chair (Compensation Committee): independence required (NYSE §303A.05)
     remChair: {
@@ -644,7 +645,11 @@ export default function BoardroomTable({
           const isHovered = hoveredSeatIdx === index && !isNonInteractive;
           const isHighlighted = highlightSet.has(index);
           const roleLabelFull = getRoleLabel(pos.defaultRole, jurisdiction, companyId);
-          const ariaLabel = director ? `${director.name}, ${roleLabelFull}` : `Empty seat: ${roleLabelFull}`;
+          const ariaLabel = isLockedChairCeo
+            ? 'Chair/CEO — combined role held by the CEO; not appointable'
+            : director
+              ? `${director.name}, ${roleLabelFull}`
+              : `Empty seat: ${roleLabelFull}`;
           const ringColor = isWorkerRep ? '#5B9BD5' : '#C8960C';
 
           return (
@@ -652,8 +657,10 @@ export default function BoardroomTable({
               key={`seat-${index}`}
               data-seat-index={index}
               data-seat-interactive={isNonInteractive ? 'false' : 'true'}
-              className={`bcraft-seat-pos bcraft-seat-group ${isNonInteractive ? '' : 'cursor-pointer'}`}
-              style={{ transform: `translate(${point.x}px, ${point.y}px)` }}
+              className={`bcraft-seat-pos bcraft-seat-group ${isLockedChairCeo ? 'cursor-not-allowed' : isNonInteractive ? '' : 'cursor-pointer'}`}
+              // The locked Chair/CEO is not focusable, so the browser's default
+              // focus box on click would read as a selection it never made.
+              style={{ transform: `translate(${point.x}px, ${point.y}px)`, ...(isLockedChairCeo ? { outline: 'none' } : {}) }}
               role="button"
               tabIndex={isNonInteractive ? -1 : 0}
               aria-label={ariaLabel}
@@ -689,10 +696,12 @@ export default function BoardroomTable({
               />
 
               <g className="bcraft-seat-scale" style={{ transform: isHovered ? 'scale(1.06)' : 'scale(1)' }}>
-                {director && isLockedChairCeo ? (
+                {isLockedChairCeo ? (
                   <>
-                    {/* Combined Chair/CEO (Vantage): locked, no portrait — a light
-                        red tint + lock glyph, matching the pre-rewrite treatment. */}
+                    {/* Combined Chair/CEO (Vantage): locked whether or not a
+                        director sits there — no portrait, no "+" affordance. A
+                        light red tint + red ring + lock glyph so it reads as a
+                        seat the player cannot fill. */}
                     <circle r={r} fill="#D94040" fillOpacity={0.05} />
                     <circle r={r} fill="none" stroke="#D94040" strokeOpacity={0.6} strokeWidth={3} />
                     <text textAnchor="middle" dominantBaseline="central" fontSize={r * 0.7} fill="#D94040" fillOpacity={0.5}>🔒</text>
@@ -800,7 +809,7 @@ export default function BoardroomTable({
           const isLockedChairCeo = combinedChairCeo && pos.isChair;
 
           const actualLabel = isLockedChairCeo
-            ? 'CEO/Chair'
+            ? 'Chair/CEO'
             : seat && seat.role !== pos.defaultRole
               ? shortRoleLabel(seat.role, jurisdiction, directorId, workerRepSet, companyId)
               : shortRoleLabel(pos.defaultRole, jurisdiction, directorId, workerRepSet, companyId);
@@ -830,13 +839,24 @@ export default function BoardroomTable({
                   </text>
                 </>
               ) : (() => {
-                const emptyRoleLabel = shortRoleLabel(pos.defaultRole, jurisdiction, null, undefined, companyId);
+                // Locked Chair/CEO (Vantage) keeps its own label and a red tint
+                // even while unfilled — it is never a seat the player can take.
+                const emptyRoleLabel = isLockedChairCeo
+                  ? actualLabel
+                  : shortRoleLabel(pos.defaultRole, jurisdiction, null, undefined, companyId);
                 const emptyDisplay = labelMode === 'compact' ? compactRoleLabel(emptyRoleLabel) : emptyRoleLabel;
                 const emptySize = unitsForPx(fitFontPx(emptyDisplay, labelMode === 'compact' ? 11 : 9));
                 return (
-                  <text y={nameY} textAnchor="middle" fontSize={emptySize} fontFamily="var(--font-mono, monospace)" fill="#E8E4DC" opacity={0.5}>
+                  <text
+                    y={nameY}
+                    textAnchor="middle"
+                    fontSize={emptySize}
+                    fontFamily="var(--font-mono, monospace)"
+                    fill={isLockedChairCeo ? '#D94040' : '#E8E4DC'}
+                    opacity={isLockedChairCeo ? 0.8 : 0.5}
+                  >
                     {truncateForWidth(emptyDisplay, nameMaxWidth, emptySize)}
-                    <title>{emptyRoleLabel}</title>
+                    <title>{isLockedChairCeo ? 'Chair/CEO — held by the CEO; not appointable' : emptyRoleLabel}</title>
                   </text>
                 );
               })()}
@@ -887,8 +907,11 @@ export default function BoardroomTable({
                 padding: '8px 10px',
               }}
             >
-              <div className="font-semibold text-gold mb-1" style={{ fontSize: '10px' }}>
-                {getRoleLabel(role, jurisdiction, companyId)}
+              <div
+                className={`font-semibold mb-1 ${combinedChairCeo && pos.isChair ? 'text-error' : 'text-gold'}`}
+                style={{ fontSize: '10px' }}
+              >
+                {combinedChairCeo && pos.isChair ? 'Chair/CEO — locked' : getRoleLabel(role, jurisdiction, companyId)}
               </div>
               <div className="text-foreground/70 mb-2 leading-snug" style={{ fontSize: '9px' }}>
                 {tooltip.description}
