@@ -313,7 +313,7 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="font-narrative text-gold text-4xl md:text-5xl tracking-[0.3em] mb-3 pl-[0.3em]"
+        className="font-narrative text-gold text-4xl md:text-5xl tracking-[0.18em] md:tracking-[0.3em] mb-3 pl-[0.18em] md:pl-[0.3em]"
       >
         BOARDCRAFT
       </motion.h1>
