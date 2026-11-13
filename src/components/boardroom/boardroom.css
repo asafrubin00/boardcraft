@@ -21,7 +21,34 @@
   50% { opacity: 0.9; }
 }
 
+/* One-shot brass ring + flash when a director takes a seat */
+.bcraft-seat-burst {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bcraft-burst 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.bcraft-seat-burst-late {
+  animation-delay: 140ms;
+}
+.bcraft-seat-flash {
+  animation: bcraft-flash 520ms ease-out both;
+}
+
+@keyframes bcraft-burst {
+  0% { transform: scale(1); opacity: 0.95; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+@keyframes bcraft-flash {
+  0% { opacity: 0.75; }
+  100% { opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .bcraft-seat-burst,
+  .bcraft-seat-flash {
+    animation: none !important;
+    opacity: 0 !important;
+  }
   .bcraft-seat-pos,
   .bcraft-seat-scale {
     transition: none !important;
@@ -31,3 +58,7 @@
     opacity: 0.6 !important;
   }
 }
+
+/* Mouse clicks shouldn't leave the browser's square focus box on a round seat;
+   keyboard focus still gets the brass ring via :focus-visible above. */
+.bcraft-seat-group:focus { outline: none; }

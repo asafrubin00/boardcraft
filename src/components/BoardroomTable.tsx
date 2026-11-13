@@ -448,6 +448,17 @@ function compactRoleLabel(label: string): string {
     .replace('Tech/Cyber', 'Tech');
 }
 
+/** Rotation (deg) that points a chair's backrest away from the table: square to
+ *  the edge along the straight runs of the seat ring, radial around its corners. */
+function chairAngle(x: number, y: number): number {
+  const dx = x - 500;
+  const dy = y - 500;
+  const straight = 250;
+  if (Math.abs(dx) <= straight && Math.abs(dy) > Math.abs(dx)) return dy < 0 ? 0 : 180;
+  if (Math.abs(dy) <= straight && Math.abs(dx) > Math.abs(dy)) return dx > 0 ? 90 : -90;
+  return (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+}
+
 function truncateForWidth(text: string, maxWidth: number, fontSize: number): string {
   const avgCharWidth = fontSize * 0.62;
   const maxChars = Math.max(3, Math.floor(maxWidth / avgCharWidth));
@@ -515,6 +526,28 @@ export default function BoardroomTable({
   const avatarRefs = useRef<Map<number, SVGGElement>>(new Map());
   const [containerWidth, setContainerWidth] = useState(1000);
 
+  // Seats that have just gone from empty to filled get a one-shot brass "burst".
+  // Keyed on the slot → director mapping; the first render seeds the ref so the
+  // inherited board doesn't all fire at once.
+  const prevPositionsRef = useRef<(string | null)[] | null>(null);
+  const [burstSeats, setBurstSeats] = useState<Record<number, number>>({});
+  const positionsKey = positions.join('|');
+  useEffect(() => {
+    const prev = prevPositionsRef.current;
+    prevPositionsRef.current = positions;
+    if (!prev) return;
+    const fresh: number[] = [];
+    positions.forEach((id, i) => { if (id && id !== prev[i]) fresh.push(i); });
+    if (fresh.length === 0) return;
+    const stamp = Date.now();
+    setBurstSeats((b) => { const next = { ...b }; fresh.forEach((i) => { next[i] = stamp; }); return next; });
+    const t = setTimeout(() => {
+      setBurstSeats((b) => { const next = { ...b }; fresh.forEach((i) => { if (next[i] === stamp) delete next[i]; }); return next; });
+    }, 1300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [positionsKey]);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
@@ -545,7 +578,7 @@ export default function BoardroomTable({
 
   const cx = 500;
   const cy = 500;
-  const tableRect = { x: cx - 200, y: cy - 200, w: 400, h: 400, rx: 56 };
+  const tableRect = { x: cx - 232, y: cy - 232, w: 464, h: 464, rx: 84 };
   // Label width budget: at least ~92 on-screen px so full surnames fit even on
   // phones (tighter on very small boards where adjacent labels would collide).
   // Long labels shrink their font (min 8px, via fitFontPx) rather than
@@ -566,14 +599,41 @@ export default function BoardroomTable({
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          {/* Wood-grain texture */}
-          <pattern id={`${uid}-woodGrain`} width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
-            <line x1="0" y1="10" x2="20" y2="10" stroke="#2A5580" strokeWidth="0.75" opacity="0.2" />
-          </pattern>
-          {/* Radial gradient - lighter centre */}
-          <radialGradient id={`${uid}-tableGrad`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#1A3A5C" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#0D1B2A" stopOpacity="0" />
+          {/* Walnut: turbulence stretched along one axis reads as grain */}
+          <filter id={`${uid}-grain`} x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.006 0.11" numOctaves={3} seed={7} result="n" />
+            <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.16  0 0 0 0 0.09  0 0 0 0 0.04  0 0 0 -1.6 1.05" />
+            <feComposite operator="in" in2="SourceGraphic" />
+          </filter>
+          <linearGradient id={`${uid}-walnut`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#5A3A22" />
+            <stop offset="45%" stopColor="#3F2715" />
+            <stop offset="100%" stopColor="#2A190D" />
+          </linearGradient>
+          <linearGradient id={`${uid}-brass`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#F0CE6E" />
+            <stop offset="35%" stopColor="#C8960C" />
+            <stop offset="65%" stopColor="#8A6A0A" />
+            <stop offset="100%" stopColor="#E0B044" />
+          </linearGradient>
+          {/* Overhead pendant light pooling on the tabletop */}
+          <radialGradient id={`${uid}-tableGrad`} cx="42%" cy="36%" r="70%">
+            <stop offset="0%" stopColor="#FFE9B8" stopOpacity="0.20" />
+            <stop offset="45%" stopColor="#FFE9B8" stopOpacity="0.05" />
+            <stop offset="100%" stopColor="#000000" stopOpacity="0.38" />
+          </radialGradient>
+          <linearGradient id={`${uid}-leather`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#12283F" />
+            <stop offset="100%" stopColor="#0A1727" />
+          </linearGradient>
+          <linearGradient id={`${uid}-chair`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3D5068" />
+            <stop offset="100%" stopColor="#1B2838" />
+          </linearGradient>
+          <radialGradient id={`${uid}-floorLight`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#E0B044" stopOpacity="0.10" />
+            <stop offset="60%" stopColor="#E0B044" stopOpacity="0.03" />
+            <stop offset="100%" stopColor="#E0B044" stopOpacity="0" />
           </radialGradient>
           <radialGradient id={`${uid}-selectedGlow`} cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#E0B044" stopOpacity="0.55" />
@@ -582,53 +642,75 @@ export default function BoardroomTable({
           <filter id={`${uid}-seatShadow`} x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.25" />
           </filter>
+          <filter id={`${uid}-tableShadow`} x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="18" stdDeviation="22" floodColor="#000" floodOpacity="0.55" />
+          </filter>
+          <filter id={`${uid}-chairShadow`} x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#000" floodOpacity="0.5" />
+          </filter>
         </defs>
 
-        {/* Outer table surface - rounded rectangle */}
-        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill="#0D1B2A" stroke="#C8960C" strokeWidth={3} />
-        {/* Wood-grain overlay */}
-        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill={`url(#${uid}-woodGrain)`} />
-        {/* Gradient overlay */}
-        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill={`url(#${uid}-tableGrad)`} />
-        {/* Inner edge highlight */}
-        <rect
-          x={tableRect.x + 8}
-          y={tableRect.y + 8}
-          width={tableRect.w - 16}
-          height={tableRect.h - 16}
-          rx={tableRect.rx - 8}
-          fill="none"
-          stroke="#C8960C"
-          strokeWidth={1}
-          opacity={0.4}
-        />
+        {/* Pool of light on the floor around the table */}
+        <circle cx={cx} cy={cy} r={490} fill={`url(#${uid}-floorLight)`} />
 
-        {/* Company wordmark, centred in the table */}
+        {/* Chairs — drawn under the table so the tabletop overlaps their fronts */}
+        {effectivePositions.map((_, index) => {
+          const point = seatPoints[index];
+          if (!point) return null;
+          const filled = Boolean(positions[index]);
+          const w = r * 2.5;
+          const h = r * 2.2;
+          return (
+            <g key={`chair-${index}`} className="bcraft-seat-pos" style={{ transform: `translate(${point.x}px, ${point.y}px)` }}>
+              <g transform={`rotate(${chairAngle(point.x, point.y)})`} filter={`url(#${uid}-chairShadow)`} opacity={filled ? 1 : 0.7}>
+                {/* seat pad */}
+                <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={r * 0.55} fill={`url(#${uid}-chair)`} stroke="#3A4C63" strokeWidth={1.5} />
+                {/* backrest (outward side) */}
+                <rect x={-w / 2 + 3} y={-h / 2 - r * 0.2} width={w - 6} height={r * 0.62} rx={r * 0.3} fill="#2A3A4E" stroke="#5A708A" strokeWidth={1.5} />
+                {/* arm rests */}
+                <rect x={-w / 2 - r * 0.1} y={-h * 0.2} width={r * 0.3} height={h * 0.6} rx={r * 0.14} fill="#1C2A3B" stroke="#3A4C63" strokeWidth={1} />
+                <rect x={w / 2 - r * 0.2} y={-h * 0.2} width={r * 0.3} height={h * 0.6} rx={r * 0.14} fill="#1C2A3B" stroke="#3A4C63" strokeWidth={1} />
+              </g>
+            </g>
+          );
+        })}
+
+        {/* Tabletop */}
+        <g filter={`url(#${uid}-tableShadow)`}>
+          <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill={`url(#${uid}-walnut)`} />
+        </g>
+        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill="#000" filter={`url(#${uid}-grain)`} opacity={0.9} />
+        <rect x={tableRect.x} y={tableRect.y} width={tableRect.w} height={tableRect.h} rx={tableRect.rx} fill={`url(#${uid}-tableGrad)`} />
+        {/* Bevelled edge + brass inlay */}
+        <rect x={tableRect.x + 1.5} y={tableRect.y + 1.5} width={tableRect.w - 3} height={tableRect.h - 3} rx={tableRect.rx - 1.5} fill="none" stroke="#7A5232" strokeWidth={3} opacity={0.9} />
+        <rect x={tableRect.x + 22} y={tableRect.y + 22} width={tableRect.w - 44} height={tableRect.h - 44} rx={tableRect.rx - 22} fill="none" stroke={`url(#${uid}-brass)`} strokeWidth={2.5} opacity={0.85} />
+
+        {/* Leather inset carrying the company wordmark */}
+        <rect x={cx - 150} y={cy - 78} width={300} height={156} rx={14} fill={`url(#${uid}-leather)`} stroke="#000" strokeOpacity={0.5} strokeWidth={2} />
+        <rect x={cx - 142} y={cy - 70} width={284} height={140} rx={9} fill="none" stroke={`url(#${uid}-brass)`} strokeWidth={1.2} strokeDasharray="1 5" strokeLinecap="round" opacity={0.7} />
         <text
           x={cx}
-          y={cy - 8}
+          y={cy - 4}
           textAnchor="middle"
-          fill="#C8960C"
-          fontSize={34}
+          fill={`url(#${uid}-brass)`}
+          fontSize={companyShortName.length > 9 ? 30 : 36}
           fontFamily="var(--font-serif, Georgia, serif)"
           fontWeight={700}
-          letterSpacing="2"
-          opacity={0.75}
+          letterSpacing="3"
         >
           {companyShortName}
         </text>
         <text
           x={cx}
-          y={cy + 20}
+          y={cy + 26}
           textAnchor="middle"
           fill="#C8960C"
-          fontSize={15}
+          fontSize={14}
           fontFamily="var(--font-serif, Georgia, serif)"
-          letterSpacing="1.5"
-          fontVariant="small-caps"
-          opacity={0.55}
+          letterSpacing="3"
+          opacity={0.7}
         >
-          {companyShortNameSuffix}
+          {companyShortNameSuffix.toUpperCase()}
         </text>
 
         {/* Seats — equal arc-length spacing around a rounded-rect ring, N = effectivePositions.length */}
@@ -680,6 +762,13 @@ export default function BoardroomTable({
 
               {isHighlighted && (
                 <circle className="bcraft-seat-event-highlight" r={r + 10} fill="none" stroke="#C8960C" strokeWidth={4} />
+              )}
+              {burstSeats[index] !== undefined && (
+                <g key={burstSeats[index]} pointerEvents="none">
+                  <circle className="bcraft-seat-burst" r={r} fill="none" stroke="#F0CE6E" strokeWidth={5} />
+                  <circle className="bcraft-seat-burst bcraft-seat-burst-late" r={r} fill="none" stroke="#C8960C" strokeWidth={3} />
+                  <circle className="bcraft-seat-flash" r={r + 4} fill="#F0CE6E" />
+                </g>
               )}
               {isActive && <circle r={r + 9} fill={`url(#${uid}-selectedGlow)`} />}
               {dragOverIdx === index && (
@@ -738,8 +827,8 @@ export default function BoardroomTable({
                   </>
                 ) : (
                   <>
-                    <circle r={r} fill="rgba(13, 27, 42, 0.4)" stroke="#E8E4DC" strokeOpacity={0.2} strokeWidth={2} strokeDasharray="6 6" />
-                    <text textAnchor="middle" dominantBaseline="central" fontSize={r * 0.55} fill="#E8E4DC" opacity={0.45}>
+                    <circle r={r} fill="rgba(8, 16, 27, 0.55)" stroke="#C8960C" strokeOpacity={isHovered ? 0.9 : 0.45} strokeWidth={2} strokeDasharray="6 6" />
+                    <text textAnchor="middle" dominantBaseline="central" fontSize={r * 0.55} fill="#E0B044" opacity={isHovered ? 0.95 : 0.6}>
                       +
                     </text>
                   </>

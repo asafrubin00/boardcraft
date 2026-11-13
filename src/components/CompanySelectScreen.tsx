@@ -42,15 +42,59 @@ const difficultyColor = (tier: number) => {
   }
 };
 
-const jurisdictionFlag = (jurisdiction: string) => {
-  switch (jurisdiction) {
-    case 'UK': return '🇬🇧 UK';
-    case 'US': return '🇺🇸 US';
-    case 'EU': return '🇪🇺 EU';
-    case 'AU': return '🇦🇺 AU';
-    default: return jurisdiction;
-  }
+
+/** Governance regime each company is played under, shown on its tile. */
+const FRAMEWORK: Record<string, { place: string; code: string }> = {
+  company_harwick: { place: 'UK', code: 'UK Corporate Governance Code' },
+  company_vantage: { place: 'US', code: 'NYSE listing standards · SEC' },
+  company_rheinfeld: { place: 'Germany', code: 'GCGC · AktG two-tier board' },
+  company_meridian: { place: 'UK', code: 'Charity Governance Code' },
+  company_sfg: { place: 'Singapore', code: 'MAS guidelines · SGX Code' },
 };
+
+const compactMoney = (v: string) =>
+  v.split(' (')[0].replace(' annual income', '').replace(' billion', 'bn').replace(' million', 'm');
+
+function tileStats(company: Company): { label: string; value: string }[] {
+  if (company.boardBudget === 0) {
+    return [
+      { label: 'Income', value: compactMoney(company.marketCap) },
+      { label: 'Trustees', value: 'Unpaid' },
+      { label: 'Staff', value: company.employees.toLocaleString('en-GB') },
+    ];
+  }
+  return [
+    { label: 'Market cap', value: compactMoney(company.marketCap) },
+    { label: 'Revenue', value: compactMoney(company.annualRevenue) },
+    { label: 'Employees', value: company.employees.toLocaleString('en-GB') },
+  ];
+}
+
+/** Governance Health as a ring gauge. */
+function HealthGauge({ value, size = 58 }: { value: number; size?: number }) {
+  const r = 24;
+  const c = 2 * Math.PI * r;
+  const color = value >= 60 ? '#E0B044' : value >= 50 ? '#D08A2E' : '#D9603F';
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }} title={`Governance Health ${value}/100`}>
+      <svg viewBox="0 0 60 60" width={size} height={size}>
+        <circle cx="30" cy="30" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+        <motion.circle
+          cx="30" cy="30" r={r} fill="none" stroke={color} strokeWidth="5" strokeLinecap="round"
+          strokeDasharray={c}
+          initial={{ strokeDashoffset: c }}
+          animate={{ strokeDashoffset: c * (1 - value / 100) }}
+          transition={{ delay: 0.35, duration: 1, ease: 'easeOut' }}
+          transform="rotate(-90 30 30)"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+        <span className="text-[15px] font-bold text-foreground tabular-nums">{value}</span>
+        <span className="text-[7px] uppercase tracking-[0.14em] text-foreground/45 mt-0.5">Health</span>
+      </div>
+    </div>
+  );
+}
 
 function getFirstTwoSentences(text: string): string {
   const sentences = text.match(/[^.!?]+[.!?]+/g);
@@ -249,49 +293,67 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
   }
 
   return (
-    <div className="min-h-screen bg-navy flex flex-col items-center px-6 pt-12 pb-20">
+    <div
+      className="min-h-screen flex flex-col items-center px-6 pt-10 pb-20"
+      style={{
+        background:
+          'radial-gradient(ellipse 70% 45% at 50% 0%, rgba(224,176,68,0.10) 0%, rgba(224,176,68,0) 70%), linear-gradient(180deg, #0a1626 0%, #0d1d31 55%, #070f1b 100%)',
+      }}
+    >
       {/* Header */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="text-[10px] uppercase tracking-[0.4em] text-gold/60 mb-3"
+      >
+        Corporate governance strategy
+      </motion.p>
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="font-narrative text-gold text-4xl tracking-widest mb-2"
+        className="font-narrative text-gold text-4xl md:text-5xl tracking-[0.3em] mb-3 pl-[0.3em]"
       >
         BOARDCRAFT
       </motion.h1>
+      <div className="w-24 h-px mb-4" style={{ background: 'linear-gradient(90deg, transparent, #C8960C, transparent)' }} />
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.5 }}
-        className="text-foreground text-lg mb-10 opacity-80"
+        className="text-foreground text-lg mb-2 opacity-85 font-narrative"
       >
         Select Your Company
       </motion.p>
+      <p className="text-[11px] text-foreground/45 mb-8 text-center">
+        {companies.length} boards · {new Set(companies.map((c) => FRAMEWORK[c.id]?.place ?? c.jurisdiction)).size} jurisdictions · each plays under its own governance code
+      </p>
 
       {/* Play Mode Selector */}
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex items-center gap-1 mb-8 p-1 rounded-xl border border-white/10 bg-black/30">
         <button
           onClick={() => setPlayMode('general')}
-          className={`px-5 py-2 rounded-lg border text-sm font-semibold transition-colors cursor-pointer ${
+          className={`px-5 py-1.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
             playMode === 'general'
-              ? 'bg-gold/15 border-gold text-gold'
-              : 'bg-card-bg border-card-border text-foreground/60 hover:border-foreground/40'
+              ? 'bg-gold text-navy-dark'
+              : 'text-foreground/60 hover:text-foreground'
           }`}
         >
           General Play
         </button>
         <button
           onClick={() => { setPlayMode('focus'); setFocusModalOpen(true); }}
-          className={`flex items-center gap-1.5 px-5 py-2 rounded-lg border text-sm font-semibold transition-colors cursor-pointer ${
+          className={`flex items-center gap-1.5 px-5 py-1.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
             playMode === 'focus'
-              ? 'bg-gold/15 border-gold text-gold'
-              : 'bg-card-bg border-card-border text-foreground/60 hover:border-foreground/40'
+              ? 'bg-gold text-navy-dark'
+              : 'text-foreground/60 hover:text-foreground'
           }`}
         >
           Focus Play
           <span
             onClick={(e) => { e.stopPropagation(); setFocusModalOpen(true); }}
-            className="text-foreground/40 hover:text-foreground/70 text-xs leading-none"
+            className="opacity-50 hover:opacity-90 text-xs leading-none"
             title="What is Focus Play?"
           >
             ⓘ
@@ -300,75 +362,78 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl w-full">
-        {/* Playable Company Tiles — selected company reorders to the front */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl w-full">
         {/* Mobile (single column): the selected card expands IN PLACE — no
             reordering, so it never jumps out from under the player's thumb.
             Desktop (multi column): sm:order-first moves it to the top so the
             full-width expansion doesn't leave a hole in the grid. */}
-        {companies.map((company) => {
+        {companies.map((company, tileIdx) => {
           const isExpanded = selectedId === company.id;
           const isRecommended = !!skillLevel && (SKILL_LEVELS.find((s) => s.value === skillLevel)?.recommended ?? []).includes(company.id);
+          const fw = FRAMEWORK[company.id] ?? { place: company.jurisdiction, code: '' };
+          const stats = tileStats(company);
           return (
             <motion.div
               key={isRecommended ? `${company.id}-${jiggleKey}` : company.id}
               layoutId={`company-tile-${company.id}`}
               layout
               onClick={() => setSelectedId(isExpanded ? null : company.id)}
-              className={`relative rounded-xl border cursor-pointer transition-colors
+              className={`group relative rounded-2xl border cursor-pointer transition-[border-color,box-shadow] duration-200 overflow-hidden
                 ${isExpanded
-                  ? 'bg-card-bg border-gold col-span-1 sm:col-span-2 lg:col-span-3 sm:order-first'
-                  : 'bg-card-bg border-card-border hover:border-gold hover:bg-navy-light'
-                }
-                p-5`}
-              animate={isRecommended ? { x: [0, -6, 6, -4, 4, -2, 2, 0] } : { x: 0 }}
+                  ? 'border-gold col-span-1 sm:col-span-2 lg:col-span-3 sm:order-first shadow-[0_0_0_1px_rgba(200,150,12,0.35),0_30px_60px_-30px_rgba(0,0,0,0.9)]'
+                  : 'border-white/10 hover:border-gold/70 hover:shadow-[0_24px_50px_-28px_rgba(224,176,68,0.55)]'
+                }`}
+              style={{ background: 'linear-gradient(160deg, rgba(26,53,82,0.75) 0%, rgba(12,26,44,0.92) 55%, rgba(8,18,31,0.96) 100%)' }}
+              initial={{ opacity: 0, y: 14 }}
+              animate={isRecommended ? { opacity: 1, y: 0, x: [0, -6, 6, -4, 4, -2, 2, 0] } : { opacity: 1, y: 0, x: 0 }}
               transition={isRecommended
                 ? { duration: 0.45, ease: 'easeInOut', delay: 0.1 }
-                : { layout: { duration: 0.4, type: 'spring', stiffness: 200, damping: 25 } }}
+                : { duration: 0.35, delay: 0.06 * tileIdx, layout: { duration: 0.4, type: 'spring', stiffness: 200, damping: 25 } }}
             >
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3">
-                  <CompanyLogo companyId={company.id} size={40} />
-                  <h2 className="font-narrative text-foreground text-xl font-semibold">
-                    {company.name}
-                  </h2>
-                </div>
-                <p className="text-foreground text-sm opacity-70">
-                  {company.industry}
-                </p>
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="text-foreground">{jurisdictionFlag(company.jurisdiction)}</span>
-                  <span className="bg-navy-dark text-foreground px-2 py-0.5 rounded text-xs">
-                    {company.stockExchange} - {company.marketCap}
-                  </span>
+              {/* brass hairline */}
+              <div className="absolute inset-x-0 top-0 h-px opacity-70 group-hover:opacity-100 transition-opacity" style={{ background: 'linear-gradient(90deg, transparent, #E0B044 30%, #E0B044 70%, transparent)' }} />
+
+              <div className="p-5">
+                <div className="flex items-start gap-3.5">
+                  <div className="shrink-0 rounded-full p-[3px]" style={{ background: 'linear-gradient(135deg, #F0CE6E, #8A6A0A 55%, #E0B044)', boxShadow: '0 6px 14px rgba(0,0,0,0.5)' }}>
+                    <div className="rounded-full bg-[#0A1524]"><CompanyLogo companyId={company.id} size={50} /></div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="font-narrative text-foreground text-[19px] leading-tight font-semibold">
+                      {company.name}
+                    </h2>
+                    <p className="text-foreground/55 text-[12px] leading-snug mt-1 line-clamp-2">
+                      {company.industry}
+                    </p>
+                  </div>
+                  <HealthGauge value={company.startingGovernanceHealth} />
                 </div>
 
-                {/* Governance Health Bar */}
-                <div className="mt-2">
-                  <div className="flex items-center justify-between text-xs text-foreground opacity-70 mb-1">
-                    <span>Governance Health</span>
-                    <span>{company.startingGovernanceHealth}/100</span>
-                  </div>
-                  <div className="w-full h-2 bg-navy-dark rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full bg-gold rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${company.startingGovernanceHealth}%` }}
-                      transition={{ delay: 0.3, duration: 0.8, ease: 'easeOut' }}
-                    />
-                  </div>
+                <div className="flex items-center flex-wrap gap-1.5 mt-4">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.14em] px-2 py-1 rounded bg-gold/15 text-gold border border-gold/30">{fw.place}</span>
+                  <span className="text-[10.5px] px-2 py-1 rounded bg-black/35 text-foreground/75 border border-white/10">{fw.code}</span>
+                </div>
+                <p className="text-[11px] text-foreground/40 mt-2 truncate" title={company.stockExchange}>{company.stockExchange}</p>
+
+                <div className="grid grid-cols-3 mt-4 rounded-lg border border-white/[0.07] bg-black/25 divide-x divide-white/[0.07]">
+                  {stats.map((st) => (
+                    <div key={st.label} className="px-3 py-2">
+                      <p className="text-[8.5px] uppercase tracking-[0.16em] text-foreground/40">{st.label}</p>
+                      <p className="text-[13px] font-semibold text-foreground/90 tabular-nums mt-0.5 truncate">{st.value}</p>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Mission Integrity Score — Meridian Foundation only */}
                 {company.id === 'company_meridian' && (
-                  <div className="mt-1">
-                    <div className="flex items-center justify-between text-xs text-foreground opacity-70 mb-1">
-                      <span>Mission Integrity Score</span>
-                      <span>{company.startingSvIndex}/100</span>
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-[10px] text-foreground/55 mb-1">
+                      <span className="uppercase tracking-[0.14em]">Mission Integrity Score</span>
+                      <span className="tabular-nums">{company.startingSvIndex}/100</span>
                     </div>
-                    <div className="w-full h-2 bg-navy-dark rounded-full overflow-hidden">
+                    <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
                       <motion.div
-                        className="h-full bg-emerald-500/70 rounded-full"
+                        className="h-full bg-emerald-500/80 rounded-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${company.startingSvIndex}%` }}
                         transition={{ delay: 0.4, duration: 0.8, ease: 'easeOut' }}
@@ -377,24 +442,26 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
                   </div>
                 )}
 
-                {/* Difficulty Badge & Event count */}
-                <div className="flex items-center gap-3 mt-1 flex-wrap">
-                  <span className={`text-xs ${difficultyColor(company.difficultyTier)}`}>
-                    Difficulty: {difficultyLabel(company.difficultyTier)}
+                {/* Difficulty & event count */}
+                <div className="flex items-center gap-3 mt-4 flex-wrap">
+                  <span className="flex items-center gap-1.5" title={`Difficulty: ${difficultyLabel(company.difficultyTier)}`}>
+                    <span className="flex gap-[3px]">
+                      {[1, 2, 3, 4].map((n) => (
+                        <span key={n} className={`w-1.5 h-3 rounded-[1px] ${n <= company.difficultyTier ? (company.difficultyTier >= 4 ? 'bg-error' : 'bg-gold') : 'bg-white/12'}`} />
+                      ))}
+                    </span>
+                    <span className={`text-xs ${difficultyColor(company.difficultyTier)}`}>
+                      Difficulty: {difficultyLabel(company.difficultyTier)}
+                    </span>
                   </span>
-                  {isRecommended && (
-                    <span className="text-xs bg-gold/10 text-gold border border-gold/30 px-2 py-0.5 rounded font-semibold">
-                      Recommended for you
-                    </span>
-                  )}
-                  {company.id === 'company_meridian' && (
-                    <span className="text-xs bg-emerald-900/50 text-emerald-300 border border-emerald-700/40 px-2 py-0.5 rounded">
-                      UK Charity (CIO)
-                    </span>
-                  )}
                   <span className="text-xs text-foreground/40">
                     {company.eventSchedule.length} events
                   </span>
+                  {isRecommended && (
+                    <span className="text-[10px] uppercase tracking-wider bg-gold/10 text-gold border border-gold/30 px-2 py-0.5 rounded font-semibold">
+                      Recommended for you
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -408,20 +475,28 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
                     transition={{ duration: 0.3 }}
                     className="overflow-hidden"
                   >
-                    <p className="font-narrative text-foreground text-sm leading-relaxed mt-4 opacity-85">
-                      {getFirstTwoSentences(company.narrative)}
-                    </p>
-                    <motion.button
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectCompany(company);
-                      }}
-                      className="mt-5 w-full bg-gold hover:bg-gold-light text-navy-dark font-semibold py-3 px-6 rounded-lg transition-colors text-sm tracking-wide"
-                    >
-                      Start Game
-                    </motion.button>
+                    <div className="px-5 pb-5 border-t border-white/[0.07] pt-4 md:flex md:items-end md:gap-8">
+                      <div className="flex-1">
+                        <p className="text-[9px] uppercase tracking-[0.22em] text-gold/70 mb-1.5">The situation</p>
+                        <p className="font-narrative text-foreground text-sm leading-relaxed opacity-85">
+                          {getFirstTwoSentences(company.narrative)}
+                        </p>
+                        <p className="text-[11px] text-foreground/45 mt-3">
+                          {company.headquarters} · {company.inheritedBoard.length} inherited board {company.inheritedBoard.length === 1 ? 'member' : 'members'}
+                        </p>
+                      </div>
+                      <motion.button
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectCompany(company);
+                        }}
+                        className="mt-5 md:mt-0 w-full md:w-64 bg-gold hover:bg-gold-light text-navy-dark font-semibold py-3 px-6 rounded-lg transition-colors text-sm tracking-wide shadow-[0_10px_30px_-10px_rgba(224,176,68,0.8)]"
+                      >
+                        Start Game
+                      </motion.button>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -433,28 +508,21 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
         {lockedCompanies.map((company) => (
           <div
             key={company.name}
-            className="relative rounded-xl border border-card-border bg-card-bg p-5 opacity-40 select-none"
+            className="relative rounded-2xl border border-dashed border-white/15 bg-black/20 p-5 select-none min-h-[180px] flex flex-col items-center justify-center text-center"
           >
-            {/* Lock Overlay */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-10 rounded-xl bg-navy-dark/50">
-              <span className="text-3xl mb-2">🔒</span>
-              <span className="text-foreground text-xs font-semibold tracking-wide uppercase">
-                Coming Soon
-              </span>
-            </div>
-
-            {/* Tile Content (greyed out behind overlay) */}
-            <div className="flex flex-col gap-2">
-              <h2 className="font-narrative text-foreground text-xl font-semibold">
-                {company.name}
-              </h2>
-              <p className="text-foreground text-sm opacity-70">
-                {company.region} - {company.industry}
-              </p>
-              <span className={`text-xs ${difficultyColor(company.difficulty)}`}>
-                Difficulty: {difficultyLabel(company.difficulty)}
-              </span>
-            </div>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C8960C" strokeWidth="1.5" opacity="0.6">
+              <rect x="5" y="11" width="14" height="9" rx="2" />
+              <path d="M8 11V8a4 4 0 018 0v3" />
+            </svg>
+            <span className="text-gold/70 text-[10px] font-semibold tracking-[0.25em] uppercase mt-3">
+              Coming Soon
+            </span>
+            <h2 className="font-narrative text-foreground/60 text-lg font-semibold mt-1.5">
+              {company.name}
+            </h2>
+            <p className="text-foreground/35 text-xs mt-1">
+              {company.region} · {company.industry} · {difficultyLabel(company.difficulty)}
+            </p>
           </div>
         ))}
       </div>

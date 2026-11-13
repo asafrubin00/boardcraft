@@ -13,8 +13,8 @@ export default function CompliancePanel({ errors, title = 'FRC Code Compliance' 
   const hasWarnings = errors.some((e) => e.severity === 'warning');
 
   return (
-    <div className="rounded-lg bg-card-bg border border-card-border p-4">
-      <h3 className="text-sm font-semibold text-foreground mb-3">
+    <div className="rounded-xl bg-black/25 border border-card-border md:border-gold/20 p-4">
+      <h3 className="text-[11px] font-semibold text-foreground/70 uppercase tracking-[0.18em] mb-3">
         {title}
       </h3>
 
@@ -52,10 +52,10 @@ export default function CompliancePanel({ errors, title = 'FRC Code Compliance' 
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className={`flex items-start gap-2 px-3 py-2 rounded text-sm ${
+                className={`flex items-start gap-2 px-3 py-2 rounded-md text-[13px] leading-snug border-l-[3px] ${
                   err.severity === 'error'
-                    ? 'bg-error/10 border border-error/30'
-                    : 'bg-warning/10 border border-warning/30'
+                    ? 'bg-error/10 border-error'
+                    : 'bg-warning/[0.07] border-warning/70'
                 }`}
               >
                 {err.severity === 'error' ? (
@@ -89,7 +89,7 @@ export default function CompliancePanel({ errors, title = 'FRC Code Compliance' 
                 )}
                 <span
                   className={
-                    err.severity === 'error' ? 'text-error' : 'text-warning'
+                    err.severity === 'error' ? 'text-[#ff8f8f]' : 'text-foreground/85'
                   }
                 >
                   {err.message}

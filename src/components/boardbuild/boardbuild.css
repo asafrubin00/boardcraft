@@ -1,0 +1,130 @@
+/* ── Board construction: desktop "boardroom at night" scene ──────────────
+   Everything here is scoped to the desktop layout (same condition as the
+   app's `md:` variant). The touch layout is deliberately left untouched. */
+
+@media (min-width: 64rem) and (orientation: landscape) {
+  .bc-build-root {
+    background:
+      radial-gradient(ellipse 60% 70% at 50% 58%, #17304d 0%, rgba(23, 48, 77, 0) 70%),
+      linear-gradient(180deg, #081220 0%, #0b1a2d 45%, #060d18 100%);
+  }
+  .bc-build-root > header {
+    background: rgba(6, 13, 24, 0.75);
+    border-color: rgba(200, 150, 12, 0.22);
+  }
+}
+
+/* The desk the candidate files sit on */
+.bc-desk {
+  background:
+    radial-gradient(ellipse 120% 60% at 30% 0%, rgba(255, 233, 184, 0.07), transparent 60%),
+    linear-gradient(180deg, #0d1c2f 0%, #091524 100%);
+}
+
+.bc-panel {
+  background: linear-gradient(180deg, rgba(13, 28, 47, 0.92), rgba(8, 17, 30, 0.92));
+}
+
+.bc-stage {
+  background:
+    radial-gradient(ellipse 55% 50% at 50% 52%, rgba(255, 226, 160, 0.10) 0%, rgba(255, 226, 160, 0.03) 45%, transparent 72%);
+}
+
+/* ── Paper ── */
+.bc-paper {
+  --ink: #1b2430;
+  --ink-soft: #4a5565;
+  --rule: #cfc2a6;
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 22%),
+    repeating-linear-gradient(0deg, rgba(120, 100, 60, 0.035) 0 1px, transparent 1px 3px),
+    #f3ecdc;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 18px 36px -12px rgba(0, 0, 0, 0.75),
+    0 3px 8px rgba(0, 0, 0, 0.35);
+}
+
+.bc-paper-under {
+  background: #e6dcc6;
+  box-shadow: 0 10px 22px -10px rgba(0, 0, 0, 0.7);
+}
+
+.bc-serif {
+  font-family: var(--font-serif, Georgia, 'Times New Roman', serif);
+}
+
+/* Rubber-stamp */
+.bc-stamp {
+  display: inline-block;
+  padding: 2px 7px 1px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  transform: rotate(-3deg);
+  opacity: 0.82;
+  mix-blend-mode: multiply;
+}
+.bc-stamp-green { color: #1f6b3a; }
+.bc-stamp-amber { color: #9a5b00; }
+.bc-stamp-grey { color: #5b6470; }
+.bc-stamp-red { color: #a32222; }
+.bc-stamp-navy { color: #1a3a5c; transform: rotate(2deg); }
+
+/* Paperclip */
+.bc-clip {
+  position: absolute;
+  width: 14px;
+  height: 38px;
+  border: 2.5px solid #9aa3ad;
+  border-radius: 8px;
+  box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.25);
+}
+.bc-clip::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 6px;
+  bottom: -2px;
+  border: 2px solid #b9c1ca;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+}
+
+/* Mini candidate sheet in the desk grid */
+.bc-mini {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms ease;
+  box-shadow: 0 6px 12px -6px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+.bc-mini:hover {
+  transform: translateY(-4px) rotate(0deg) scale(1.03) !important;
+  box-shadow: 0 16px 22px -10px rgba(0, 0, 0, 0.85), 0 2px 4px rgba(0, 0, 0, 0.4);
+  z-index: 2;
+}
+.bc-mini-selected {
+  transform: translateY(-5px) rotate(0deg) scale(1.04) !important;
+  outline: 2px solid #e0b044;
+  outline-offset: 2px;
+  z-index: 3;
+}
+
+/* Readiness bar sheen */
+.bc-meter-fill {
+  background: linear-gradient(90deg, #8a6a0a, #e0b044 60%, #f6dc8c);
+  box-shadow: 0 0 12px rgba(224, 176, 68, 0.55);
+  transition: width 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bc-meter-fill-ok {
+  background: linear-gradient(90deg, #1f7a45, #3ba55c 60%, #8fe0a8);
+  box-shadow: 0 0 14px rgba(59, 165, 92, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bc-mini, .bc-meter-fill { transition: none; }
+}

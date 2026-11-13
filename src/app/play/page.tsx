@@ -44,7 +44,7 @@ import {
   applySfgAcChairResignation,
   applySfgAcChairAppointment,
 } from '@/engine/forcedChanges';
-import { playBoardSeatDrop, playBoardSeatRemove, playBoardConfirm, playDirectorSelect, ensureAudioContext } from '@/engine/soundEngine';
+import { playBoardSeatDrop, playBoardSeatRemove, playBoardConfirm, playDirectorSelect, playCardDeal, ensureAudioContext } from '@/engine/soundEngine';
 import HintModal from '@/components/HintModal';
 import { isDesktopViewport } from '@/lib/breakpoints';
 
@@ -801,6 +801,9 @@ function PlayPageInner() {
 import { directors as allDirectors } from '@/data/directors';
 import { computeFeeWithPremium, checkCompliance } from '@/engine/compliance';
 import CompliancePanel from '@/components/CompliancePanel';
+import CvSheet from '@/components/boardbuild/CvSheet';
+import ReadinessPanel, { type ReadinessMeter } from '@/components/boardbuild/ReadinessPanel';
+import '@/components/boardbuild/boardbuild.css';
 import BoardGuideModal from '@/components/BoardGuideModal';
 import BoardroomTable, {
   computeGridPositions,
@@ -1474,11 +1477,72 @@ function BoardConstructionWrapper({
     });
   }, [hasEnergyTransition, hasSafetyEnv, hasCsrd, hasStrategy]);
 
+  const complianceTitle =
+    company.id === 'company_meridian' ? 'Charity Governance Code'
+    : company.jurisdiction === 'EU' ? 'GCGC / AktG Compliance'
+    : company.jurisdiction === 'US' ? 'NYSE / SEC Compliance'
+    : company.jurisdiction === 'SG' ? 'MAS / SGX Compliance'
+    : 'FRC Code Compliance';
+
+  // ── Board readiness (desktop scorecard) ──
+  // Derived purely from the live compliance check: blocking issues weigh twice
+  // advisory ones, measured against the worst state seen since this screen
+  // opened. No additional rules are introduced here.
+  const blockingCount = complianceErrors.filter((e) => e.severity === 'error').length;
+  const advisoryCount = complianceErrors.length - blockingCount;
+  const issueWeight = blockingCount * 2 + advisoryCount;
+  const [worstIssueWeight, setWorstIssueWeight] = useState(issueWeight);
+  if (issueWeight > worstIssueWeight) setWorstIssueWeight(issueWeight);
+  const readiness = worstIssueWeight === 0 ? 100 : Math.round(100 * (1 - issueWeight / Math.max(worstIssueWeight, issueWeight)));
+
+  const readinessMeters = useMemo((): ReadinessMeter[] => {
+    const allSeated = seats.map((s) => directorMap.get(s.directorId)).filter((d): d is Director => Boolean(d));
+    // Rheinfeld: employee representatives sit outside the independence test,
+    // which GCGC applies to the shareholder side only.
+    const shareholderSideOnly = company.id === 'company_rheinfeld';
+    const seatedDirs = shareholderSideOnly ? allSeated.filter((d) => !d.id.startsWith('rdir_w_')) : allSeated;
+    const independent = seatedDirs.filter((d) => d.independence === 'independent').length;
+    const covered = ALL_DOMAINS.filter((dom) => allSeated.some((d) => d.domainRatings[dom] >= 60)).length;
+    const totalSeats = tablePos.length;
+    const filled = tablePos.filter(Boolean).length;
+    const meters: ReadinessMeter[] = [
+      { label: 'Seats filled', value: `${filled} / ${totalSeats}`, pct: totalSeats ? filled / totalSeats : 0 },
+      { label: shareholderSideOnly ? 'Indep. (shareholder side)' : 'Independent', value: seatedDirs.length ? `${independent} of ${seatedDirs.length}` : '—', pct: seatedDirs.length ? independent / seatedDirs.length : 0, hint: shareholderSideOnly ? 'Shareholder-side Supervisory Board members classed as independent' : 'Seated directors classed as independent' },
+      { label: 'Skills covered', value: `${covered} / ${ALL_DOMAINS.length}`, pct: covered / ALL_DOMAINS.length, hint: 'Competency domains where at least one seated director is rated 60 or above' },
+    ];
+    if (budget > 0) {
+      meters.push({ label: 'Budget', value: `${fmt(committed)} of ${fmt(budget)}`, pct: committed / budget, tone: remaining < 0 ? 'bad' : 'gold' });
+    }
+    return meters;
+  }, [seats, directorMap, tablePos, budget, committed, remaining, fmt, company.id]);
+
+  // Leafing through the candidate stack (desktop CV sheet)
+  const selPoolIdx = selectedDirId ? sortedPool.findIndex((d) => d.id === selectedDirId) : -1;
+  const [leafDir, setLeafDir] = useState<1 | -1>(1);
+  const leafBy = useCallback((step: 1 | -1) => {
+    if (selPoolIdx < 0 || sortedPool.length < 2) return;
+    const next = sortedPool[(selPoolIdx + step + sortedPool.length) % sortedPool.length];
+    setLeafDir(step);
+    setSelectedDirId(next.id);
+    playCardDeal();
+  }, [selPoolIdx, sortedPool]);
+  useEffect(() => {
+    if (mode !== 'profile-pool') return;
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); leafBy(1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); leafBy(-1); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mode, leafBy]);
+
   // ── Render helpers (shared between mobile overlays and desktop panels) ──
 
   const companyCardJsx = (
     <div
-      className="rounded-lg border border-gold/40 bg-navy cursor-pointer"
+      className="rounded-lg border border-gold/40 bg-navy md:bg-black/30 md:backdrop-blur-sm cursor-pointer"
       onClick={() => setShowCompanyInfo((p) => !p)}
     >
       <div className="flex items-center justify-between px-3 py-2">
@@ -1543,12 +1607,12 @@ function BoardConstructionWrapper({
   ) : null;
 
   return (
-    <div className="h-dvh bg-navy text-foreground flex flex-col overflow-hidden">
+    <div className="bc-build-root h-dvh bg-navy text-foreground flex flex-col overflow-hidden">
       {/* Header */}
       <header className="border-b border-card-border px-6 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gold tracking-wide font-narrative">BOARDCRAFT</h1>
+            <h1 className="text-xl font-bold text-gold tracking-wide md:tracking-[0.28em] font-narrative">BOARDCRAFT</h1>
             <p className="text-xs text-gold-dim mt-0.5">Board Construction - {company.name}</p>
           </div>
           <div className="text-right text-xs text-foreground/50">
@@ -1831,7 +1895,7 @@ function BoardConstructionWrapper({
                     <button onClick={handleUndo} disabled={history.length === 0} className={`text-[11px] px-2.5 py-1 rounded border transition-colors ${history.length > 0 ? 'border-foreground/30 text-foreground/70 hover:border-gold hover:text-gold' : 'border-card-border text-foreground/20 cursor-not-allowed'}`}>↩ Undo</button>
                     <button onClick={handleRedo} disabled={future.length === 0} className={`text-[11px] px-2.5 py-1 rounded border transition-colors ${future.length > 0 ? 'border-foreground/30 text-foreground/70 hover:border-gold hover:text-gold' : 'border-card-border text-foreground/20 cursor-not-allowed'}`}>↪ Redo</button>
                   </div>
-                  <CompliancePanel errors={complianceErrors} title={company.id === 'company_meridian' ? 'Charity Governance Code' : company.jurisdiction === 'EU' ? 'GCGC / AktG Compliance' : 'FRC Code Compliance'} />
+                  <CompliancePanel errors={complianceErrors} title={complianceTitle} />
                   <button onClick={() => setShowBoardGuide(true)} className="w-full py-2 rounded-lg border border-gold/30 text-gold/70 text-xs font-medium hover:border-gold/60 hover:text-gold transition-colors text-center cursor-pointer">
                     &#x2197; {company.id === 'company_meridian' ? 'Trustee Guide — Charity Governance Code' : `Board Guide — ${company.jurisdiction} Governance Rules`}
                   </button>
@@ -1885,9 +1949,12 @@ function BoardConstructionWrapper({
           ═══════════════════════════════════════ */}
       <div className="hidden md:flex flex-1 overflow-hidden">
         {/* ═══ LEFT: Director Pool (35%) ═══ */}
-        <div className="w-[35%] border-r border-card-border flex flex-col overflow-hidden">
-          <div className="p-3 border-b border-card-border flex-shrink-0 space-y-2">
-            <h2 className="text-sm font-bold text-gold">{company.id === 'company_meridian' ? 'Trustee Candidates' : 'Director Pool'}</h2>
+        <div className="bc-desk order-1 w-[28%] border-r border-gold/15 flex flex-col overflow-hidden">
+          <div className="p-3 border-b border-gold/15 flex-shrink-0 space-y-2">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-sm font-bold text-gold font-narrative tracking-wide">{company.id === 'company_meridian' ? 'Trustee Candidates' : 'Candidate Files'}</h2>
+              <span className="text-[10px] text-foreground/40">{sortedPool.length} on the desk</span>
+            </div>
             {/* Row 1: Filter by highest domain */}
             <div>
               <span className="text-[9px] text-foreground/40 uppercase tracking-wide">Filter by domain (≥60)</span>
@@ -1946,9 +2013,9 @@ function BoardConstructionWrapper({
               // 3 columns below xl: the pool panel is 35% of the viewport, so on a
               // landscape tablet (1133–1180px) four columns give ~93px cards and
               // truncate most names. Wide desktops keep four.
-              <div className="grid grid-cols-3 xl:grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-3 gap-x-2.5 gap-y-3 px-1 pt-1 pb-3">
                 {sortedPool.map((d) => (
-                  <PoolCard key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} displayFee={budget === 0 ? 0 : undefined} onTouchStart={(e) => { const t = e.touches[0]; startTouchDrag(d.id, t.clientX, t.clientY); }} />
+                  <PoolCard paper key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} displayFee={budget === 0 ? 0 : undefined} onTouchStart={(e) => { const t = e.touches[0]; startTouchDrag(d.id, t.clientX, t.clientY); }} />
                 ))}
               </div>
             )}
@@ -1956,7 +2023,7 @@ function BoardConstructionWrapper({
         </div>
 
         {/* ═══ CENTRE (30%) ═══ */}
-        <div className="w-[30%] border-r border-card-border flex flex-col overflow-hidden">
+        <div className="bc-panel order-3 w-[30%] border-l border-gold/15 flex flex-col overflow-hidden">
           {/* Sticky header: Back to Overview + Undo/Redo */}
           <div className="flex-shrink-0 p-3 pb-0 space-y-2">
             {mode !== 'default' && (
@@ -1976,34 +2043,16 @@ function BoardConstructionWrapper({
           <div className="flex-1 overflow-y-auto">
           <AnimatePresence mode="wait">
             {mode === 'default' && (
-              <motion.div key="def" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col p-5 space-y-5">
-                <div className="text-center pt-4">
-                  <h2 className="text-3xl font-bold text-gold tracking-widest font-narrative">BOARDCRAFT</h2>
-                  <p className="text-xs text-foreground/50 mt-2 font-narrative italic">
-                    {company.id === 'company_meridian'
-                      ? 'Appoint your trustees. Protect mission integrity. Defend the charity.'
-                      : 'Build your board. Navigate the crises. Maximise shareholder value.'}
+              <motion.div key="def" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col p-4 space-y-4">
+                <ReadinessPanel readiness={readiness} blocking={blockingCount} advisory={advisoryCount} meters={readinessMeters} />
+                {budget === 0 && (
+                  <p className="text-[10px] text-foreground/40 text-center">
+                    {seats.length} trustee{seats.length !== 1 ? 's' : ''} appointed · All roles are voluntary (unpaid)
                   </p>
-                </div>
-                {budget > 0 ? (
-                  <div>
-                    <div className="w-full h-3 bg-navy-dark rounded-full overflow-hidden">
-                      <div className="h-full bg-gold rounded-full transition-all" style={{ width: `${Math.min((committed / budget) * 100, 100)}%` }} />
-                    </div>
-                    <p className="text-[10px] text-foreground/40 text-center mt-1.5">
-                      {fmt(committed)} committed · {fmt(Math.max(0, remaining))} remaining · {fmt(budget)} total
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <p className="text-[10px] text-foreground/40">
-                      {seats.length} trustee{seats.length !== 1 ? 's' : ''} appointed · All roles are voluntary (unpaid)
-                    </p>
-                  </div>
                 )}
                 <CompliancePanel
                   errors={complianceErrors}
-                  title={company.id === 'company_meridian' ? 'Charity Governance Code' : company.jurisdiction === 'EU' ? 'GCGC / AktG Compliance' : 'FRC Code Compliance'}
+                  title={complianceTitle}
                 />
                 {/* Board Guide button */}
                 <button
@@ -2102,66 +2151,56 @@ function BoardConstructionWrapper({
               const seat = seated ? seatRec : undefined;
               const ind = INDEP_BADGE[dir.independence];
               const ti = TIER_BADGE[dir.availabilityTier];
+              const pos = !seated && selPoolIdx >= 0 ? { index: selPoolIdx, total: sortedPool.length } : null;
+              const noun = company.id === 'company_meridian' ? 'Trustee' : 'Director';
               return (
-                <motion.div key={`prof-${dir.id}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col p-5 overflow-y-auto">
-                  <div className="space-y-4">
-                    <div className="flex flex-col items-center text-center">
-                      <div
-                        className="rounded-full border-2 border-gold overflow-hidden cursor-grab active:cursor-grabbing"
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData('text/plain', dir.id);
-                          e.dataTransfer.effectAllowed = 'move';
-                          (e.currentTarget as HTMLElement).style.opacity = '0.5';
-                        }}
-                        onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
-                      ><DirectorPortrait directorId={dir.id} size={80} /></div>
-                      <h2 className="text-lg font-bold font-narrative text-foreground mt-3">{dir.name}</h2>
-                      <div className="flex flex-wrap justify-center gap-1.5 mt-2">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ind.cls}`}>{ind.label}</span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ti.cls}`}>{ti.label}</span>
-                        {dir.inherited && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-warning/10 text-warning border border-warning/30">Inherited</span>}
-                      </div>
-                      <span className="text-gold font-semibold text-sm mt-2">{fmt(dir.annualFee)} p.a.</span>
-                      {seat && seat.role !== 'ned' && <span className="text-[10px] text-foreground/40 mt-1">Role premium: {fmt(seat.feeWithPremium)} total</span>}
-                    </div>
-                    <div className="space-y-1.5">
-                      <h4 className="text-[10px] text-foreground/40 uppercase tracking-wide">Competency Profile</h4>
-                      {ALL_DOMAINS.map((domain) => { const sc = dir.domainRatings[domain]; return (
-                        <div key={domain} className="flex items-center gap-2 text-[11px]">
-                          <span className="w-16 text-foreground/60 truncate">{DOMAIN_SHORT[domain]}</span>
-                          <div className="flex-1 h-1.5 bg-navy-dark rounded-full overflow-hidden"><div className="h-full bg-gold rounded-full" style={{ width: `${sc}%` }} /></div>
-                          <span className="w-6 text-right text-foreground/50">{sc}</span>
-                        </div>
-                      ); })}
-                    </div>
-                    <div><h4 className="text-[10px] text-foreground/40 uppercase tracking-wide mb-1">Background</h4><p className="text-xs text-foreground/70 font-narrative leading-relaxed">{dir.background}</p></div>
-                    {Object.keys(dir.jurisdictionScores).length > 0 && (
-                      <div className="text-xs"><span className="text-foreground/40">Jurisdiction: </span>{Object.entries(dir.jurisdictionScores).map(([j, s]) => <span key={j} className="text-foreground/60 mr-2">{j} {s}</span>)}</div>
-                    )}
-                    {dir.riskFlag && !dir.riskFlag.activated && (
-                      <div className="flex items-center gap-1.5 text-xs text-warning/80">
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 14h14L8 1zm0 4v4m0 2v1" /><path d="M8 5v4" stroke="#0D1B2A" strokeWidth="1.5" strokeLinecap="round" fill="none" /><circle cx="8" cy="11.5" r="0.8" fill="#0D1B2A" /></svg>
-                        <span className="text-foreground/40">Potential risk flag</span>
-                      </div>
-                    )}
+                <motion.div
+                  key={`prof-${dir.id}`}
+                  initial={{ opacity: 0, x: 70 * leafDir, rotate: 5 * leafDir }}
+                  animate={{ opacity: 1, x: 0, rotate: 0 }}
+                  exit={{ opacity: 0, x: -90 * leafDir, rotate: -7 * leafDir }}
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex-1 flex flex-col px-5 pt-5 pb-6"
+                >
+                  <CvSheet
+                    director={dir}
+                    companyName={company.name}
+                    noun={noun}
+                    feeLabel={budget <= 0 ? null : seated && seat ? `${fmt(seat.feeWithPremium)} p.a.${seat.role !== 'ned' ? ' incl. role premium' : ''}` : `${fmt(dir.annualFee)} p.a.`}
+                    seatedLine={seated && seat ? getRoleLabel(seat.role, company.jurisdiction, company.id) : null}
+                    highlightDomain={filterDomain}
+                    position={pos}
+                    onPrev={() => leafBy(-1)}
+                    onNext={() => leafBy(1)}
+                    onPhotoDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', dir.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                      (e.currentTarget as HTMLElement).style.opacity = '0.5';
+                    }}
+                    onPhotoDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+                  >
                     {seated && (
-                      <div>
-                        <label className="text-[10px] text-foreground/40 uppercase tracking-wide">Role Assignment</label>
-                        <select value={seat?.role ?? 'ned'} onChange={(e) => handleRoleChange(dir.id, e.target.value as BoardRole)} className="w-full mt-1 text-xs bg-navy-dark text-foreground border border-card-border rounded px-2 py-1.5 focus:outline-none focus:border-gold">
+                      <div className="space-y-2">
+                        <label className="block text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--ink-soft)' }}>Role assignment</label>
+                        <select value={seat?.role ?? 'ned'} onChange={(e) => handleRoleChange(dir.id, e.target.value as BoardRole)} className="w-full text-xs bg-white/70 text-[#1b2430] border border-[#cfc2a6] rounded px-2 py-1.5 focus:outline-none focus:border-[#1a3a5c]">
                           {availableBoardRoles.map((r) => <option key={r} value={r}>{getRoleLabel(r, company.jurisdiction, company.id)}</option>)}
                         </select>
+                        <button onClick={() => handleRemoveDirector(dir.id)} className="w-full py-2 text-xs font-semibold text-[#a32222] border border-[#a32222]/50 rounded hover:bg-[#a32222]/10 transition-colors">{company.id === 'company_meridian' ? 'Remove Trustee' : 'Remove from Board'}</button>
                       </div>
                     )}
-                    <AnimatePresence>
-                      {swapMessage && (
-                        <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="text-[11px] text-gold bg-gold/10 border border-gold/30 rounded-lg px-3 py-2 text-center">
-                          {swapMessage}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    {seated && <button onClick={() => handleRemoveDirector(dir.id)} className="w-full py-2 text-sm bg-error/15 text-error border border-error/30 rounded-lg hover:bg-error/25 transition-colors">{company.id === 'company_meridian' ? 'Remove Trustee' : 'Remove from Board'}</button>}
-                  </div>
+                  </CvSheet>
+                  {!seated && (
+                    <p className="text-[11px] text-foreground/45 text-center mt-5 font-narrative italic">
+                      Drag the photograph onto a seat — or click an empty seat, then pick a file.
+                    </p>
+                  )}
+                  <AnimatePresence>
+                    {swapMessage && (
+                      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="mt-3 text-[11px] text-gold bg-gold/10 border border-gold/30 rounded-lg px-3 py-2 text-center">
+                        {swapMessage}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               );
             })()}
@@ -2220,12 +2259,13 @@ function BoardConstructionWrapper({
         </div>
 
         {/* ═══ RIGHT: Boardroom Table (35%) ═══ */}
-        <div className="w-[35%] flex flex-col p-4 overflow-y-auto">
+        <div className="bc-stage order-2 w-[42%] flex flex-col p-4 overflow-y-auto">
           {/* Company info box */}
-          <div className="mb-3 flex-shrink-0">{companyCardJsx}</div>
+          <div className="mb-2 flex-shrink-0">{companyCardJsx}</div>
 
           {/* Boardroom table */}
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center min-h-0">
+            <div className="w-full" style={{ maxWidth: 'max(380px, calc(100dvh - 285px))' }}>
             <BoardroomTable
               seats={seats}
               directors={availableDirectors}
@@ -2244,6 +2284,7 @@ function BoardConstructionWrapper({
               companyId={company.id}
               onTouchDragStart={startTouchDrag}
             />
+            </div>
           </div>
           <p className="text-[10px] text-foreground/30 mt-2 text-center flex-shrink-0">Click a seat to assign · Click a filled seat to view profile</p>
 
@@ -2267,7 +2308,7 @@ function BoardConstructionWrapper({
         if (hintsShown === 0)
           return <HintModal body="Browse directors and drag them onto the board seats. Each seat shows a suggested role — you can reassign roles after placing a director." onDismiss={dismissHint} />;
         if (hintsShown === 1)
-          return <HintModal body="Resolve all compliance errors before starting — red means blocked, amber means a warning. The Compliance panel on the right shows what needs fixing." onDismiss={dismissHint} />;
+          return <HintModal body="Resolve all compliance errors before starting — red means blocked, amber means a warning. The Compliance panel shows what needs fixing." onDismiss={dismissHint} />;
         if (hintsShown === 2)
           return <HintModal body="Happy with your board? Lock it in — your picks are permanent until the AGM. You can still adjust roles and committee assignments before locking." onDismiss={dismissHint} />;
         if (hintsShown === 3 && hint3Ready)
@@ -2333,11 +2374,52 @@ function BoardConstructionWrapper({
 }
 
 // ── Pool Card (compact, for 4-column grid) ──
-function PoolCard({ director, selected, onBoard, overflow, onClick, jurisdiction = 'UK', displayFee, onTouchStart }: {
-  director: Director; selected: boolean; onBoard: boolean; overflow?: boolean; onClick: () => void; jurisdiction?: string; displayFee?: number; onTouchStart?: (e: React.TouchEvent) => void;
+function PoolCard({ director, selected, onBoard, overflow, onClick, jurisdiction = 'UK', displayFee, onTouchStart, paper = false }: {
+  director: Director; selected: boolean; onBoard: boolean; overflow?: boolean; onClick: () => void; jurisdiction?: string; displayFee?: number; onTouchStart?: (e: React.TouchEvent) => void; paper?: boolean;
 }) {
   const ind = INDEP_BADGE[director.independence];
   const canDrag = !onBoard || overflow;
+  if (paper) {
+    // Desktop: a small sheet of paper on the desk. Tilt is seeded from the id so
+    // each file keeps its angle between renders.
+    let h = 0;
+    for (let i = 0; i < director.id.length; i++) h = (h * 31 + director.id.charCodeAt(i)) | 0;
+    const tilt = ((Math.abs(h) % 9) - 4) * 0.55;
+    const top = topDomains(director.domainRatings, 1)[0];
+    const fee = displayFee ?? director.annualFee;
+    return (
+      <div
+        draggable={canDrag}
+        onDragStart={(e) => {
+          if (!canDrag) { e.preventDefault(); return; }
+          e.dataTransfer.setData('text/plain', director.id);
+          e.dataTransfer.effectAllowed = 'move';
+          (e.currentTarget as HTMLElement).style.opacity = '0.5';
+        }}
+        onDragEnd={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+        onTouchStart={canDrag ? onTouchStart : undefined}
+        onClick={onBoard && !overflow ? undefined : onClick}
+        style={{ transform: `rotate(${tilt}deg)` }}
+        className={`bc-paper bc-mini relative rounded-[2px] px-2 pt-2 pb-1.5 ${selected ? 'bc-mini-selected' : ''} ${onBoard && !overflow ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'} ${overflow ? 'outline outline-2 outline-warning/70' : ''}`}
+      >
+        <div className="flex items-start gap-1.5">
+          <div className="shrink-0 bg-white p-[2px]" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
+            <div className="overflow-hidden bg-[#0d1b2a]" style={{ width: 34, height: 34 }}><DirectorPortrait directorId={director.id} size={34} /></div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="bc-serif text-[10.5px] font-bold leading-[1.15] line-clamp-2">{director.name}</h4>
+            {fee > 0 && <span className="text-[10px] font-semibold" style={{ color: '#7a5a06' }}>{fmtFee(fee, jurisdiction)}</span>}
+          </div>
+        </div>
+        <div className="mt-1.5 pt-1 flex items-center justify-between gap-1 text-[8.5px]" style={{ borderTop: '1px solid var(--rule)', color: 'var(--ink-soft)' }}>
+          <span className="truncate">{DOMAIN_SHORT[top.domain]} <b style={{ color: 'var(--ink)' }}>{top.score}</b></span>
+          <span className="shrink-0 font-bold uppercase tracking-wider" style={{ color: director.independence === 'independent' ? '#1f6b3a' : director.independence === 'questionable' ? '#9a5b00' : '#5b6470' }}>
+            {director.independence === 'independent' ? 'Indep.' : director.independence === 'questionable' ? 'Quest.' : 'Non-ind.'}
+          </span>
+        </div>
+      </div>
+    );
+  }
   return (
     <div
       draggable={canDrag}
