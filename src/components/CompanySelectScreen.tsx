@@ -1,11 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { companies } from '@/data/company';
 import SiteFooter from './SiteFooter';
 import type { Company } from '@/types/game';
 import CompanyLogo from './CompanyLogo';
+import { isDesktopViewport } from '@/lib/breakpoints';
+import type { OfficeFolder } from './office/OfficeScene';
+import './boardbuild/boardbuild.css';
+import './office/office.css';
+
+// The 3D office is desktop-only and heavy (three.js + models), so it loads on demand.
+const OfficeScene = dynamic(() => import('./office/OfficeScene'), { ssr: false });
+
+function webglAvailable(): boolean {
+  try {
+    const c = document.createElement('canvas');
+    return !!(c.getContext('webgl2'));
+  } catch {
+    return false;
+  }
+}
 
 interface CompanySelectScreenProps {
   onSelectCompany: (company: Company) => void;
@@ -276,20 +293,169 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [jiggleKey, setJiggleKey] = useState(0);
 
+  // Desktop gets the 3D office; phones, tablets in portrait, machines without
+  // WebGL and anyone who chose "List view" get the tiles. null = not decided yet
+  // (first client render), so neither flashes before the other.
+  const [view, setView] = useState<'office' | 'list' | null>(null);
+  const [skipIntro, setSkipIntro] = useState(false);
+  const [canOffice, setCanOffice] = useState(false);
+
   useEffect(() => {
     const saved = localStorage.getItem('boardcraft_skill_level') as SkillLevel | null;
+    const office = isDesktopViewport() && webglAvailable();
+    const wantsList = localStorage.getItem('boardcraft_select_view') === 'list';
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setCanOffice(office);
+    setSkipIntro(reduced || localStorage.getItem('boardcraft_office_seen') === '1');
+    setView(office && !wantsList ? 'office' : 'list');
     if (saved) {
       setSkillLevel(saved);
-    } else {
+    } else if (!office || wantsList) {
       setOnboardingOpen(true);
     }
+    // In the office the skill question waits until you've sat down (onSeated)
   }, []);
+
+  const chooseView = useCallback((v: 'office' | 'list') => {
+    localStorage.setItem('boardcraft_select_view', v);
+    setView(v);
+  }, []);
+
+  const recommendedIds = useMemo(
+    () => (skillLevel ? SKILL_LEVELS.find((s) => s.value === skillLevel)?.recommended ?? [] : []),
+    [skillLevel],
+  );
+
+  const officeFolders = useMemo((): OfficeFolder[] => [
+    ...companies.map((c) => {
+      const fw = FRAMEWORK[c.id];
+      return { id: c.id, name: c.name, regime: fw ? `${fw.place} · ${fw.code}` : c.jurisdiction, sealed: false, recommended: recommendedIds.includes(c.id) };
+    }),
+    ...lockedCompanies.map((c) => ({ id: `locked:${c.name}`, name: c.name, regime: `${c.region} · ${c.industry}`, sealed: true, recommended: false })),
+  ], [recommendedIds]);
+
+  const renderPaper = useCallback((folderId: string, actions: { onStart: () => void; onBack: () => void }) => {
+    const company = companies.find((c) => c.id === folderId);
+    if (!company) return null;
+    const fw = FRAMEWORK[company.id] ?? { place: company.jurisdiction, code: '' };
+    const gh = company.startingGovernanceHealth;
+    return (
+      <article className="bc-paper of-paper">
+        <div className="flex items-baseline justify-between gap-4 pb-3" style={{ borderBottom: '2px solid var(--ink)' }}>
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em]">Board file</p>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-right" style={{ color: 'var(--ink-soft)' }}>{company.stockExchange}</p>
+        </div>
+        <div className="flex items-start gap-4 mt-5">
+          <div className="shrink-0 rounded-full" style={{ boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}><CompanyLogo companyId={company.id} size={68} /></div>
+          <div className="min-w-0 flex-1">
+            <h2 className="bc-serif text-[30px] leading-[1.1] font-bold">{company.name}</h2>
+            <p className="bc-serif italic text-[14px] mt-1.5" style={{ color: 'var(--ink-soft)' }}>{company.industry} · {company.headquarters}</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 mt-4">
+          <span className="bc-stamp bc-stamp-navy" style={{ transform: 'rotate(-2deg)' }}>{fw.place}</span>
+          <span className="text-[12px] font-semibold">{fw.code}</span>
+          {recommendedIds.includes(company.id) && <span className="bc-stamp bc-stamp-green" style={{ transform: 'rotate(1.5deg)' }}>Recommended for you</span>}
+        </div>
+
+        <div className="grid grid-cols-4 mt-5" style={{ borderTop: '1px solid var(--rule)', borderBottom: '1px solid var(--rule)' }}>
+          {[...tileStats(company), { label: 'Governance health', value: `${gh} / 100` }].map((st, i) => (
+            <div key={st.label} className="py-3 pr-3" style={i > 0 ? { borderLeft: '1px solid var(--rule)', paddingLeft: 12 } : undefined}>
+              <p className="text-[8.5px] uppercase tracking-[0.16em]" style={{ color: 'var(--ink-soft)' }}>{st.label}</p>
+              <p className="bc-serif text-[18px] font-bold tabular-nums mt-0.5" style={st.label === 'Governance health' ? { color: gh >= 60 ? '#1f6b3a' : gh >= 50 ? '#9a5b00' : '#a32222' } : undefined}>{st.value}</p>
+            </div>
+          ))}
+        </div>
+
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.24em] mt-5 mb-2" style={{ color: 'var(--ink-soft)' }}>The situation</h3>
+        <p className="bc-serif text-[15px] leading-[1.7]">{company.narrative}</p>
+
+        <p className="text-[12px] mt-4" style={{ color: 'var(--ink-soft)' }}>
+          Difficulty: <b style={{ color: 'var(--ink)' }}>{difficultyLabel(company.difficultyTier)}</b> · {company.eventSchedule.length} events · {company.inheritedBoard.length} inherited board {company.inheritedBoard.length === 1 ? 'member' : 'members'}
+          {company.id === 'company_meridian' ? ` · Mission Integrity Score ${company.startingSvIndex}/100` : ''}
+        </p>
+
+        <div className="flex items-center justify-between gap-4 mt-6 pt-4" style={{ borderTop: '1px solid var(--rule)' }}>
+          <button className="of-btn of-btn-back" onClick={actions.onBack}>‹ Go back</button>
+          <button className="of-btn of-btn-start" onClick={actions.onStart}>Start →</button>
+        </div>
+      </article>
+    );
+  }, [recommendedIds]);
+
+  const handleLaunch = useCallback((folderId: string) => {
+    const company = companies.find((c) => c.id === folderId);
+    if (company) onSelectCompany(company);
+  }, [onSelectCompany]);
 
   function handleSkillSelect(level: SkillLevel) {
     setSkillLevel(level);
     setJiggleKey((k) => k + 1);
     localStorage.setItem('boardcraft_skill_level', level);
     setOnboardingOpen(false);
+  }
+
+  const onboardingModal = (
+      <AnimatePresence>
+        {onboardingOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.25 }}
+              className="bg-navy border border-card-border rounded-xl p-6 w-full max-w-md"
+            >
+              <p className="text-xs text-foreground/40 uppercase tracking-widest mb-1">Welcome to BoardCraft</p>
+              <h2 className="text-xl font-narrative font-bold text-gold mb-2">Where are you in your governance journey?</h2>
+              <p className="text-sm text-foreground/60 mb-5">We&apos;ll suggest the best company to start with.</p>
+              <div className="space-y-3">
+                {SKILL_LEVELS.map((level) => (
+                  <button
+                    key={level.value}
+                    onClick={() => handleSkillSelect(level.value)}
+                    className="w-full text-left px-4 py-3 rounded-lg bg-card-bg border border-card-border hover:border-gold/50 hover:bg-gold/5 transition-colors cursor-pointer"
+                  >
+                    <p className="text-sm font-semibold text-foreground">{level.label}</p>
+                    <p className="text-xs text-foreground/50 mt-0.5">{level.description}</p>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setOnboardingOpen(false)}
+                className="mt-4 w-full text-xs text-foreground/30 hover:text-foreground/50 transition-colors cursor-pointer text-center"
+              >
+                Skip
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+  );
+
+  if (view === null) return <div className="min-h-screen" style={{ background: '#081220' }} />;
+
+  if (view === 'office') {
+    return (
+      <>
+        <OfficeScene
+          folders={officeFolders}
+          skipIntro={skipIntro}
+          renderPaper={renderPaper}
+          onLaunch={handleLaunch}
+          onListView={() => chooseView('list')}
+          onSeated={() => { if (!localStorage.getItem('boardcraft_skill_level')) setOnboardingOpen(true); }}
+          onUnsupported={() => { setCanOffice(false); setView('list'); }}
+        />
+        {onboardingModal}
+      </>
+    );
   }
 
   return (
@@ -329,6 +495,15 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
       <p className="text-[11px] text-foreground/45 mb-8 text-center">
         {companies.length} boards · {new Set(companies.map((c) => FRAMEWORK[c.id]?.place ?? c.jurisdiction)).size} jurisdictions · each plays under its own governance code
       </p>
+
+      {canOffice && (
+        <button
+          onClick={() => chooseView('office')}
+          className="fixed top-5 right-6 z-20 text-xs font-semibold tracking-wide text-foreground/70 hover:text-gold border border-white/20 hover:border-gold rounded-full px-3.5 py-1.5 bg-black/30 backdrop-blur-sm transition-colors cursor-pointer"
+        >
+          Office view
+        </button>
+      )}
 
       {/* Play Mode Selector */}
       <div className="flex items-center gap-1 mb-8 p-1 rounded-xl border border-white/10 bg-black/30">
@@ -547,48 +722,7 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
         )}
       </AnimatePresence>
 
-      {/* Onboarding skill-level modal */}
-      <AnimatePresence>
-        {onboardingOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.25 }}
-              className="bg-navy border border-card-border rounded-xl p-6 w-full max-w-md"
-            >
-              <p className="text-xs text-foreground/40 uppercase tracking-widest mb-1">Welcome to BoardCraft</p>
-              <h2 className="text-xl font-narrative font-bold text-gold mb-2">Where are you in your governance journey?</h2>
-              <p className="text-sm text-foreground/60 mb-5">We&apos;ll suggest the best company to start with.</p>
-              <div className="space-y-3">
-                {SKILL_LEVELS.map((level) => (
-                  <button
-                    key={level.value}
-                    onClick={() => handleSkillSelect(level.value)}
-                    className="w-full text-left px-4 py-3 rounded-lg bg-card-bg border border-card-border hover:border-gold/50 hover:bg-gold/5 transition-colors cursor-pointer"
-                  >
-                    <p className="text-sm font-semibold text-foreground">{level.label}</p>
-                    <p className="text-xs text-foreground/50 mt-0.5">{level.description}</p>
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => setOnboardingOpen(false)}
-                className="mt-4 w-full text-xs text-foreground/30 hover:text-foreground/50 transition-colors cursor-pointer text-center"
-              >
-                Skip
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {onboardingModal}
     </div>
   );
 }
