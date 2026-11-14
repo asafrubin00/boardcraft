@@ -142,6 +142,7 @@ function PlayPageInner() {
     resolution2Pass: boolean;
     resolution3Pass: boolean;
     narrative: string;
+    outcomeTier?: string;
   } | null>(null);
   const [regenDirectorIds, setRegenDirectorIds] = useState<string[]>([]);
   const [isRestart, setIsRestart] = useState(false);
@@ -660,6 +661,7 @@ function PlayPageInner() {
         resolution2Pass,
         resolution3Pass,
         narrative: output.narrativeText,
+        outcomeTier: output.outcomeTier,
       });
     },
     [gameState]

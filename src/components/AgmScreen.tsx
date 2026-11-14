@@ -23,6 +23,8 @@ interface AgmResults {
   resolution2Pass: boolean;
   resolution3Pass: boolean;
   narrative: string;
+  /** Tier of the single AGM roll — used to check the story line against the three results */
+  outcomeTier?: string;
 }
 
 interface AgmScreenProps {
@@ -647,6 +649,13 @@ export default function AgmScreen({
   // ── Results view ───────────────────────────────────────────────────────────
   if (results) {
     const ghLevel = gameState.governanceHealth >= 70 ? 'strong' : gameState.governanceHealth >= 50 ? 'adequate' : 'weak';
+    // Governance health is quoted as a reason only where it points the same way
+    // as the result. A pass on weak health, or a defeat on strong health, is
+    // worded as happening despite it — never "Failed — strong governance health…".
+    const passGh = (becauseOf: string, despiteWeak: string) =>
+      ghLevel === 'weak' ? despiteWeak : becauseOf.replace('{gh}', ghLevel);
+    const failGh = (becauseOf: string, despiteStrong: string) =>
+      ghLevel === 'strong' ? despiteStrong : becauseOf.replace('{gh}', ghLevel === 'adequate' ? 'only adequate' : 'weak');
 
     let res1Label: string;
     let res2Label: string;
@@ -665,11 +674,11 @@ export default function AgmScreen({
       if (results.resolution1Pass) {
         res1Explanation = mevent01 && (mevent01.outcomeTier === 'FAILURE' || mevent01.outcomeTier === 'CRITICAL_FAILURE')
           ? `Passed — members ratified the trustee appointments despite the earlier conflict of interest concerns.`
-          : `Passed — ${ghLevel} governance health gave members confidence in the trustee appointments.`;
+          : passGh(`Passed — {gh} governance health gave members confidence in the trustee appointments.`, `Passed — members ratified the trustee appointments despite weak governance health.`);
       } else {
         res1Explanation = mevent01 && (mevent01.outcomeTier === 'FAILURE' || mevent01.outcomeTier === 'CRITICAL_FAILURE')
           ? `Failed — the unresolved conflict of interest eroded member confidence in the trustee appointments.`
-          : `Failed — ${ghLevel} governance health undermined member confidence in the current trustee slate.`;
+          : failGh(`Failed — {gh} governance health undermined member confidence in the current trustee slate.`, `Failed — strong governance health was not enough to hold member confidence in the current trustee slate.`);
       }
 
       // Res2 explanations
@@ -691,7 +700,7 @@ export default function AgmScreen({
       } else {
         res3Explanation = mevent03 && (mevent03.outcomeTier === 'SUCCESS' || mevent03.outcomeTier === 'CRITICAL_SUCCESS')
           ? `Failed — the board's demonstrated mission discipline persuaded members a formal review was unnecessary.`
-          : `Failed — ${ghLevel} governance health and insufficient member support meant the review motion fell.`;
+          : `Failed — the review motion did not secure sufficient member support to pass.`;
       }
 
     } else if (isVantage) {
@@ -702,7 +711,7 @@ export default function AgmScreen({
 
       if (results.resolution1Pass) {
         res1Explanation = gameState.apexActive
-          ? `Passed — the slate survived Apex Capital's withhold campaign; ${ghLevel} governance health held the institutional base.`
+          ? passGh(`Passed — the slate survived Apex Capital's withhold campaign; {gh} governance health held the institutional base.`, `Passed — the slate survived Apex Capital's withhold campaign despite weak governance health.`)
           : `Passed — with Apex neutralised, the slate was re-elected comfortably.`;
       } else {
         res1Explanation = `Failed — Apex's withhold campaign found its mark; several incumbents fell below majority support.`;
@@ -733,7 +742,7 @@ export default function AgmScreen({
       if (results.resolution1Pass) {
         res1Explanation = gameState.heinrichConflictRevealed
           ? `Passed — discharge granted, but narrowly; the conflict disclosures cost Heinrich the customary unanimity.`
-          : `Passed — the Supervisory Board's acts were ratified; ${ghLevel} governance health carried the floor.`;
+          : passGh(`Passed — the Supervisory Board's acts were ratified; {gh} governance health carried the floor.`, `Passed — the Supervisory Board's acts were ratified despite weak governance health.`);
       } else {
         res1Explanation = `Failed — discharge refused. In German corporate life there is no louder vote of no confidence.`;
       }
@@ -763,13 +772,13 @@ export default function AgmScreen({
           ? sfgRenewalRoadmapDisclosed
             ? `Passed — the renewal roadmap secured Glass Lewis Asia's support, carrying the minority Tier 2 vote.`
             : `Passed — both tiers approved the re-election despite Glass Lewis Asia's concerns.`
-          : `Passed — the director slate was re-elected with ${ghLevel} governance health and no SGX tenure concerns.`;
+          : passGh(`Passed — the director slate was re-elected with {gh} governance health and no SGX tenure concerns.`, `Passed — the director slate was re-elected despite weak governance health; no SGX tenure concerns arose.`);
       } else {
         res1Explanation = sfgHasTwoTierVote
           ? !sfgTier2Pass
             ? `Failed — the Tier 2 minority vote fell below 50%; without Glass Lewis Asia's support, minority shareholders rejected the re-election. The director(s) must stand down.`
             : `Failed — the Tier 1 all-shareholder vote failed to carry the re-election.`
-          : `Failed — ${ghLevel} governance health undermined institutional confidence in the director slate.`;
+          : failGh(`Failed — {gh} governance health undermined institutional confidence in the director slate.`, `Failed — strong governance health was not enough to hold institutional confidence in the director slate.`);
       }
 
       if (results.resolution2Pass) {
@@ -779,7 +788,7 @@ export default function AgmScreen({
       } else {
         res2Explanation = gameState.acChairVacant
           ? `Failed — the unresolved AC Chair vacancy was cited as a material deficiency in the compliance disclosure vote.`
-          : `Failed — ${ghLevel} governance health left shareholders unconvinced on MAS compliance disclosures.`;
+          : failGh(`Failed — {gh} governance health left shareholders unconvinced on MAS compliance disclosures.`, `Failed — shareholders were unconvinced on the MAS compliance disclosures despite strong governance health.`);
       }
 
       if (results.resolution3Pass) {
@@ -789,7 +798,7 @@ export default function AgmScreen({
       } else {
         res3Explanation = gameState.ceoWhistleblower === 'substantiated'
           ? `Failed — the CEO conduct investigation fatally undermined shareholder confidence in the remuneration framework.`
-          : `Failed — ${ghLevel} governance health and minority shareholder concerns defeated the Say-on-Pay resolution.`;
+          : failGh(`Failed — {gh} governance health and minority shareholder concerns defeated the Say-on-Pay resolution.`, `Failed — minority shareholder concerns defeated the Say-on-Pay resolution despite strong governance health.`);
       }
 
     } else {
@@ -800,24 +809,24 @@ export default function AgmScreen({
 
       if (results.resolution1Pass) {
         res1Explanation = craneOnBoard
-          ? `Passed - ${ghLevel} governance health offset Crane's 12-year tenure concerns.`
-          : `Passed - ${ghLevel} governance health and no tenure flags on the board.`;
+          ? passGh(`Passed - {gh} governance health offset Crane's 12-year tenure concerns.`, `Passed - the slate was re-elected despite Crane's 12-year tenure and weak governance health.`)
+          : passGh(`Passed - {gh} governance health and no tenure flags on the board.`, `Passed - no tenure flags on the board, despite weak governance health.`);
       } else {
         res1Explanation = craneOnBoard
-          ? `Failed - Geoffrey Crane's 12-year tenure flagged by Meridian Governance, compounded by ${ghLevel} governance health.`
-          : `Failed - ${ghLevel} governance health undermined institutional confidence in the board slate.`;
+          ? failGh(`Failed - Geoffrey Crane's 12-year tenure flagged by Meridian Governance, compounded by {gh} governance health.`, `Failed - Geoffrey Crane's 12-year tenure, flagged by Meridian Governance, outweighed strong governance health.`)
+          : failGh(`Failed - {gh} governance health undermined institutional confidence in the board slate.`, `Failed - strong governance health was not enough to hold institutional confidence in the board slate.`);
       }
 
       if (results.resolution2Pass) {
         res2Explanation = ev06
           ? (ev06.outcomeTier === 'SUCCESS' || ev06.outcomeTier === 'CRITICAL_SUCCESS')
             ? `Passed - prior remuneration review strengthened the case for Blaine's package.`
-            : `Passed - ${ghLevel} governance health and proxy adviser recommendation carried the vote.`
-          : `Passed - ${ghLevel} governance health and proxy adviser recommendation carried the vote.`;
+            : passGh(`Passed - {gh} governance health and proxy adviser recommendation carried the vote.`, `Passed - the proxy adviser recommendation carried the vote despite weak governance health.`)
+          : passGh(`Passed - {gh} governance health and proxy adviser recommendation carried the vote.`, `Passed - the proxy adviser recommendation carried the vote despite weak governance health.`);
       } else {
         res2Explanation = ev06 && (ev06.outcomeTier === 'FAILURE' || ev06.outcomeTier === 'CRITICAL_FAILURE')
           ? `Failed - earlier remuneration controversy eroded shareholder support for Blaine's £4.1m package.`
-          : `Failed - ${ghLevel} governance health left shareholders unconvinced on executive pay.`;
+          : failGh(`Failed - {gh} governance health left shareholders unconvinced on executive pay.`, `Failed - shareholders were unconvinced on executive pay despite strong governance health.`);
       }
 
       const etActive = gameState.committees.energyTransition?.active;
@@ -825,7 +834,7 @@ export default function AgmScreen({
       if (results.resolution3Pass) {
         res3Explanation = etActive
           ? `Passed - the Energy Transition Committee demonstrated credible ESG governance.`
-          : `Passed - ${ghLevel} governance health and proxy adviser support swung the vote.`;
+          : passGh(`Passed - {gh} governance health and proxy adviser support swung the vote.`, `Passed - proxy adviser support swung the vote despite weak governance health.`);
       } else {
         if (ev05Failed && !etActive) {
           res3Explanation = `Failed - prior ESG incident and absence of an Energy Transition Committee undermined credibility.`;
@@ -834,7 +843,7 @@ export default function AgmScreen({
         } else if (!etActive) {
           res3Explanation = `Failed - no Energy Transition Committee left shareholders sceptical of ESG commitment.`;
         } else {
-          res3Explanation = `Failed - ${ghLevel} governance health eroded shareholder confidence on ESG disclosure.`;
+          res3Explanation = failGh(`Failed - {gh} governance health eroded shareholder confidence on ESG disclosure.`, `Failed - shareholders were not persuaded on ESG disclosure despite strong governance health.`);
         }
       }
     }
@@ -849,6 +858,41 @@ export default function AgmScreen({
       { label: res2Label, pass: results.resolution2Pass, explanation: res2Explanation, twoTier: null },
       { label: res3Label, pass: results.resolution3Pass, explanation: res3Explanation, twoTier: null },
     ];
+
+    // The closing line. Each AGM event carries one story line per outcome tier,
+    // and several of them state how many resolutions carried ("Two pass, one
+    // fails"). The three results above are derived separately (company levers,
+    // SFG's two-tier vote), so the story can disagree with them. Show it only
+    // where it is consistent with what the player has just been shown;
+    // otherwise state the result plainly.
+    const passFlags = resolutions.map((r) => r.pass);
+    const passCount = passFlags.filter(Boolean).length;
+    const tier = results.outcomeTier;
+    const storyAgrees = ((): boolean => {
+      if (!tier) return false;
+      const top = tier === 'CRITICAL_SUCCESS' || tier === 'SUCCESS';
+      if (isMeridian) return true; // its story is about the CEO, not the vote count
+      if (isSfg) {
+        if (top) return passCount === 3;
+        if (tier === 'CRITICAL_FAILURE') return !passFlags[0];
+        return false; // partial / failure stories describe outcomes the vote display can contradict
+      }
+      if (top) return passCount === 3;
+      if (tier === 'CRITICAL_FAILURE') return passCount === 0;
+      if (isVantage) return tier === 'PARTIAL_SUCCESS' ? passCount === 1 || passCount === 2 : passCount === 0;
+      if (isRheinfeld) return tier === 'PARTIAL_SUCCESS' ? passCount === 2 : !passFlags[0];
+      // Harwick: partial says two pass, failure says one passes
+      return tier === 'PARTIAL_SUCCESS' ? passCount === 2 : passCount === 1;
+    })();
+    const shortLabel = (label: string) => label.replace(/^Resolution \d+:\s*/, '');
+    const defeated = resolutions.filter((r) => !r.pass).map((r) => shortLabel(r.label));
+    const plainSummary =
+      passCount === 3
+        ? 'All three resolutions carried.'
+        : passCount === 0
+          ? 'All three resolutions were defeated.'
+          : `${passCount === 2 ? 'Two resolutions carried and one was defeated' : 'One resolution carried and two were defeated'}: ${defeated.join('; ')}.`;
+    const summaryLine = storyAgrees ? results.narrative : plainSummary;
 
     const agmDebriefParams = {
       governanceHealth: gameState.governanceHealth,
@@ -944,7 +988,7 @@ export default function AgmScreen({
               transition={{ duration: 0.6 }}
             >
               <p className="font-narrative italic text-foreground/80 text-center leading-relaxed mb-8 pt-6" style={{ borderTop: '1px solid var(--rule)' }}>
-                {results.narrative}
+                {summaryLine}
               </p>
               <div className="flex justify-center">
                 <button
