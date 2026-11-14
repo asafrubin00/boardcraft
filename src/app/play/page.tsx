@@ -2357,9 +2357,10 @@ function BoardConstructionWrapper({
       {/* Lock modal */}
       <AnimatePresence>
         {showLockConfirm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowLockConfirm(false)}>
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-navy-light border border-gold/30 rounded-lg p-8 max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-xl font-bold text-gold mb-4">Lock Board?</h3>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowLockConfirm(false)}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bc-dialog rounded-2xl p-8 max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+              <p className="bc-overline text-foreground/45 mb-1.5">Final check</p>
+              <h3 className="text-2xl font-narrative font-bold text-foreground mb-4">Lock the board?</h3>
               <p className="font-narrative text-foreground/80 mb-6">Once locked, your board composition cannot be changed until the AGM. Director roles, committee assignments, and budget allocation will be final.</p>
               <div className="flex gap-4">
                 <button onClick={() => setShowLockConfirm(false)} className="flex-1 py-2 rounded border border-card-border text-foreground/80 hover:border-gold/50 transition-colors">Review Board</button>

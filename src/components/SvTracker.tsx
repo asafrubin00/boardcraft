@@ -69,7 +69,7 @@ export default function SvTracker({ svIndex, svHistory, onOpenDashboard, company
         <span className="text-sm text-foreground/70 font-narrative cursor-help">{metricLabel}</span>
         <span className={`text-2xl font-bold ${svColor}`}>{svIndex}</span>
         {showTooltip && (
-          <div className="absolute top-full left-0 mt-2 z-50 w-72 bg-navy border border-gold/40 rounded-lg p-3 shadow-lg pointer-events-none">
+          <div className="absolute top-full left-0 mt-2 z-50 w-72 bc-dialog rounded-xl p-3.5 pointer-events-none">
             <p className="text-xs text-foreground/90 font-narrative leading-relaxed">
               <span className="text-gold font-bold">{metricFullName}</span> &mdash; {metricDescription}
             </p>

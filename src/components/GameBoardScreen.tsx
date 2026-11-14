@@ -426,11 +426,11 @@ export default function GameBoardScreen({
       {/* Top Bar
           Mobile:  two rows — Row1: logo + company + volume | Row2: quarter + metrics
           Desktop: single row — logo | quarter/turn | SvTracker + GH + AGM | company + volume */}
-      <header className="border-b border-card-border px-3 md:px-4 py-1.5 md:py-2 bg-navy-dark/50 shrink-0 flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-0">
+      <header className="border-b border-gold/20 px-3 md:px-5 py-1.5 md:py-2.5 bg-black/35 shrink-0 flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-0">
 
         {/* ── Row 1 (mobile) / Left (desktop): Logo + mobile company name + mobile volume ── */}
         <div className="flex items-center justify-between md:justify-start">
-          <h1 className="text-base md:text-lg font-bold text-gold tracking-wide shrink-0">BOARDCRAFT</h1>
+          <h1 className="text-base md:text-lg font-bold text-gold tracking-wide md:tracking-[0.28em] font-narrative shrink-0">BOARDCRAFT</h1>
           {/* Company name + volume — mobile only */}
           <div className="flex items-center gap-2 md:hidden">
             <span className="text-sm text-foreground/50 truncate max-w-[160px]">
@@ -883,7 +883,7 @@ export default function GameBoardScreen({
       {/* Quit confirmation */}
       {showQuitConfirm && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-navy border border-card-border rounded-xl p-6 w-full max-w-sm mx-4">
+          <div className="bc-dialog rounded-2xl p-7 w-full max-w-sm mx-4">
             <h3 className="text-lg font-narrative font-bold text-foreground mb-2">Quit game?</h3>
             <p className="text-sm text-foreground/60 mb-6">
               All progress will be lost. Closing the tab instead will save your progress so you can return later.

@@ -1,6 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import './boardbuild/boardbuild.css';
 
 interface HintModalProps {
   /** Optional title shown in gold serif above the body text */
@@ -27,7 +28,7 @@ export default function HintModal({ title, body, onDismiss }: HintModalProps) {
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.50)',
+          background: 'rgba(0,0,0,0.55)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -43,23 +44,24 @@ export default function HintModal({ title, body, onDismiss }: HintModalProps) {
           exit={{ scale: 0.9, opacity: 0 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
           onClick={(e) => e.stopPropagation()}
+          className="bc-paper"
           style={{
-            background: '#0D1B2A',
-            border: '2px solid #C8960C',
-            borderRadius: '12px',
+            borderRadius: '3px',
             padding: 'clamp(20px, 5vw, 36px) clamp(16px, 5vw, 40px) clamp(20px, 4vw, 32px)',
             minWidth: 'min(480px, calc(100vw - 32px))',
             maxWidth: '600px',
             width: '90vw',
-            boxShadow: '0 24px 64px rgba(0,0,0,0.60)',
           }}
         >
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#4a5565', paddingBottom: 10, marginBottom: 16, borderBottom: '2px solid #1b2430' }}>
+            Note from the company secretary
+          </p>
           {title && (
             <h3
               style={{
                 fontFamily: 'Georgia, "Times New Roman", serif',
-                color: '#C8960C',
-                fontSize: '20px',
+                color: '#1b2430',
+                fontSize: '22px',
                 fontWeight: 'bold',
                 marginBottom: '16px',
                 lineHeight: 1.3,
@@ -70,9 +72,9 @@ export default function HintModal({ title, body, onDismiss }: HintModalProps) {
           )}
           <p
             style={{
-              fontFamily: "'Calibri', 'Segoe UI', Arial, sans-serif",
-              color: '#E8E0D0',
-              fontSize: '15px',
+              fontFamily: 'Georgia, "Times New Roman", serif',
+              color: '#1b2430',
+              fontSize: '16px',
               lineHeight: 1.65,
               marginBottom: '28px',
             }}
@@ -83,12 +85,13 @@ export default function HintModal({ title, body, onDismiss }: HintModalProps) {
             <button
               onClick={onDismiss}
               style={{
-                background: '#C8960C',
-                color: '#0D1B2A',
+                background: '#1a3a5c',
+                color: '#f3ecdc',
+                boxShadow: '0 6px 14px -6px rgba(26,58,92,0.8)',
                 fontWeight: 700,
                 fontSize: '14px',
                 padding: '10px 28px',
-                borderRadius: '6px',
+                borderRadius: '3px',
                 border: 'none',
                 cursor: 'pointer',
                 fontFamily: "'Calibri', 'Segoe UI', Arial, sans-serif",

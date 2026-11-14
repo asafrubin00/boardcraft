@@ -410,7 +410,7 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.25 }}
-              className="bg-navy border border-card-border rounded-xl p-6 w-full max-w-md"
+              className="bc-dialog rounded-2xl p-7 w-full max-w-md"
             >
               <p className="text-xs text-foreground/40 uppercase tracking-widest mb-1">Welcome to BoardCraft</p>
               <h2 className="text-xl font-narrative font-bold text-gold mb-2">Where are you in your governance journey?</h2>

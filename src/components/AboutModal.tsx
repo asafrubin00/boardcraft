@@ -26,7 +26,7 @@ export default function AboutModal({ isOpen, onClose, showNavButtons = false, on
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="bg-navy border border-gold/30 rounded-xl p-8 w-full max-w-[560px] mx-4"
+            className="bc-dialog rounded-2xl p-9 w-full max-w-[560px] mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <h2

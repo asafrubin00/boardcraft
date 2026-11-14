@@ -208,8 +208,9 @@ export default function BoardGuideModal({ isOpen, onClose, company }: BoardGuide
             transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: '#0D2237',
-              border: '1px solid rgba(200,150,12,0.35)',
+              background: 'linear-gradient(180deg, #0f2134 0%, #091524 100%)',
+              border: '1px solid rgba(200,150,12,0.32)',
+              boxShadow: 'inset 0 1px 0 rgba(240,206,110,0.16), 0 40px 80px -30px rgba(0,0,0,0.95)',
               borderRadius: 14,
               width: '100%',
               maxWidth: 680,
@@ -224,7 +225,7 @@ export default function BoardGuideModal({ isOpen, onClose, company }: BoardGuide
               padding: '16px 20px',
               borderBottom: '1px solid rgba(200,150,12,0.2)',
               position: 'sticky', top: 0,
-              background: '#0D2237', zIndex: 1,
+              background: '#0f2134', zIndex: 1,
             }}>
               <div>
                 <div style={{ fontSize: 10, color: '#B08A30', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>
