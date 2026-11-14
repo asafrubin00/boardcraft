@@ -8,6 +8,10 @@ import { generateAgmResolutionDebrief } from '@/engine/agmNarrative';
 import { DOMAIN_SHORT } from '@/engine/boardConstants';
 import { playAGMBell, playAGMApplause, playResolutionPass, playResolutionFail } from '@/engine/soundEngine';
 import SiteFooter from './SiteFooter';
+import CompanyLogo from './CompanyLogo';
+import DirectorPortrait from './DirectorPortrait';
+import './boardbuild/boardbuild.css';
+import './scenario/scenario.css';
 
 const ALL_DOMAINS: CompetencyDomain[] = [
   'financialOversight', 'regulatoryLegal', 'strategyMarkets', 'peopleCulture',
@@ -210,7 +214,7 @@ function VoteBar({ forPercent, againstPercent }: { forPercent: number; againstPe
         <span>For: {forPercent}%</span>
         <span>Against: {againstPercent}%</span>
       </div>
-      <div className="w-full h-4 rounded-full overflow-hidden flex bg-navy-dark">
+      <div className="w-full h-2.5 rounded-[2px] overflow-hidden flex bg-navy-dark">
         <motion.div
           className="h-full bg-success"
           initial={{ width: 0 }}
@@ -875,24 +879,21 @@ export default function AgmScreen({
             &larr; Change Company
           </button>
         )}
-        <div className="w-full max-w-xl mb-6 relative rounded-lg overflow-hidden" style={{ height: 200 }}>
-          <img
-            src="/images/agm-hero.jpg"
-            alt={meetingName}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(13,27,42,0.3) 0%, rgba(13,27,42,0.7) 100%)' }} />
-        </div>
-        <motion.h1
-          className="text-3xl md:text-4xl font-narrative font-bold text-gold text-center mb-4"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+        <motion.article
+          className="bc-doc bc-paper w-full max-w-2xl rounded-[3px] px-5 md:px-12 pt-8 md:pt-10 pb-8"
+          initial={{ opacity: 0, y: -40, rotate: -2 }}
+          animate={{ opacity: 1, y: 0, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 170, damping: 22 }}
         >
-          {meetingName} Results — {gameState.company.name}
-        </motion.h1>
+        <header className="flex items-center gap-4 pb-4" style={{ borderBottom: '2px solid var(--ink)' }}>
+          <div className="shrink-0 rounded-full" style={{ boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}><CompanyLogo companyId={gameState.company.id} size={52} /></div>
+          <div className="min-w-0">
+            <p className="bc-overline" style={{ color: 'var(--ink-soft)' }}>Minutes · Results of the poll</p>
+            <h1 className="bc-serif text-2xl md:text-3xl font-bold leading-tight mt-1">{meetingName} — {gameState.company.name}</h1>
+          </div>
+        </header>
 
-        <div className="flex flex-col gap-4 w-full max-w-xl mt-8">
+        <div className="flex flex-col gap-4 w-full mt-6">
           {resolutions.map((res, idx) => (
             <AnimatePresence key={idx}>
               {revealedCount > idx && (
@@ -903,11 +904,17 @@ export default function AgmScreen({
                   transition={{ duration: 0.5 }}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-foreground font-medium">{res.label}</span>
+                    <span className="bc-serif text-foreground font-bold text-[17px] leading-snug">{res.label}</span>
                     {!res.twoTier && (
-                      <span className={`text-lg font-bold ${res.pass ? 'text-success' : 'text-error'}`}>
-                        {res.pass ? 'PASSED ✓' : 'FAILED ✗'}
-                      </span>
+                      <motion.span
+                        className={`sc-outcome-stamp shrink-0 ml-3 text-sm ${res.pass ? 'text-success' : 'text-error'}`}
+                        style={{ padding: '3px 10px 2px', borderWidth: 3 }}
+                        initial={{ opacity: 0, scale: 2.4, rotate: -14 }}
+                        animate={{ opacity: 0.9, scale: 1, rotate: res.pass ? -4 : 4 }}
+                        transition={{ delay: 0.25, type: 'spring', stiffness: 420, damping: 17 }}
+                      >
+                        {res.pass ? 'Passed' : 'Failed'}
+                      </motion.span>
                     )}
                   </div>
                   {res.twoTier && (
@@ -931,12 +938,12 @@ export default function AgmScreen({
         <AnimatePresence>
           {revealedCount >= 4 && (
             <motion.div
-              className="mt-8 max-w-xl w-full"
+              className="mt-8 w-full"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6 }}
             >
-              <p className="font-narrative italic text-foreground/80 text-center leading-relaxed mb-8">
+              <p className="font-narrative italic text-foreground/80 text-center leading-relaxed mb-8 pt-6" style={{ borderTop: '1px solid var(--rule)' }}>
                 {results.narrative}
               </p>
               <div className="flex justify-center">
@@ -950,6 +957,7 @@ export default function AgmScreen({
             </motion.div>
           )}
         </AnimatePresence>
+        </motion.article>
       {/* Copyright — pinned on desktop; in-flow on mobile so it never overlaps content */}
       <div className="hidden md:block">
         <SiteFooter vertical className="fixed bottom-4 right-4 z-10" />
@@ -964,18 +972,23 @@ export default function AgmScreen({
   return (
     <div className="min-h-screen bg-navy px-4 py-8 md:py-12">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <motion.h1
-          className="text-3xl md:text-4xl font-narrative font-bold text-gold text-center mb-3"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+        <motion.article
+          className="bc-doc bc-paper relative rounded-[3px] px-5 md:px-12 pt-8 md:pt-10 pb-8 md:pb-10 mb-10"
+          initial={{ opacity: 0, y: -40, rotate: 1.5 }}
+          animate={{ opacity: 1, y: 0, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 170, damping: 22 }}
         >
-          {meetingName} — {gameState.company.name}
-        </motion.h1>
+        {/* Header */}
+        <header className="flex items-center gap-4 pb-4 mb-5" style={{ borderBottom: '2px solid var(--ink)' }}>
+          <div className="shrink-0 rounded-full" style={{ boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}><CompanyLogo companyId={gameState.company.id} size={56} /></div>
+          <div className="min-w-0 flex-1">
+            <p className="bc-overline" style={{ color: 'var(--ink-soft)' }}>Notice of meeting</p>
+            <h1 className="bc-serif text-2xl md:text-4xl font-bold leading-tight mt-1">{meetingName} — {gameState.company.name}</h1>
+          </div>
+        </header>
 
         <motion.p
-          className="font-narrative italic text-foreground/70 text-center max-w-3xl mx-auto mb-6 md:mb-8 leading-relaxed text-sm md:text-base"
+          className="bc-serif text-foreground/85 max-w-4xl mb-5 leading-relaxed text-sm md:text-[16px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
@@ -994,7 +1007,7 @@ export default function AgmScreen({
         </motion.p>
 
         {/* Rating badge */}
-        <div className="text-center mb-8">
+        <div className="mb-7">
           <span className="text-xs uppercase tracking-wide text-foreground/50">
             {isMeridian ? 'Charity Governance Code Assessor:' : 'Proxy Adviser Rating:'}
           </span>{' '}
@@ -1013,19 +1026,19 @@ export default function AgmScreen({
 
         {/* Three resolution panels */}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {resolutionPanels}
         </div>
 
         {/* Strategy Selection */}
         <motion.div
-          className="mb-10"
+          className="mb-0"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.5 }}
         >
-          <h2 className="text-lg font-narrative font-bold text-gold mb-4">
-            Select Your {meetingNameShort} Strategy
+          <h2 className="bc-overline mb-3" style={{ color: 'var(--ink-soft)' }}>
+            Select your {meetingNameShort} strategy
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {STRATEGIES.map((strat) => (
@@ -1036,16 +1049,18 @@ export default function AgmScreen({
                 onClick={() => setSelectedStrategy(strat.id)}
                 className={`text-left rounded-lg border p-4 transition-colors cursor-pointer ${
                   selectedStrategy === strat.id
-                    ? 'bg-gold/20 border-gold text-gold'
-                    : 'bg-card-bg border-card-border text-foreground hover:border-gold/50'
+                    ? 'bg-gold/15 border-gold text-foreground shadow-[inset_4px_0_0_#7a5a06]'
+                    : 'bg-card-bg border-card-border text-foreground hover:border-gold/60'
                 }`}
               >
-                <h4 className="font-bold text-sm mb-1">{strat.label}</h4>
-                <p className="text-xs text-foreground/60">{strat.description}</p>
+                <h4 className="bc-serif font-bold text-[16px] mb-1 leading-snug">{strat.label}</h4>
+                <p className="text-[13px] text-foreground/65 leading-snug">{strat.description}</p>
               </motion.button>
             ))}
           </div>
         </motion.div>
+
+        </motion.article>
 
         {/* Director / Trustee Deployment */}
         <motion.div
@@ -1054,7 +1069,7 @@ export default function AgmScreen({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7, duration: 0.5 }}
         >
-          <h2 className="text-lg font-narrative font-bold text-gold mb-2">
+          <h2 className="text-xl font-narrative font-bold text-foreground mb-1">
             Deploy {isMeridian ? 'Trustees' : 'Directors'} to the {isMeridian ? 'Annual Members Meeting' : meetingNameShort}
           </h2>
           <p className="text-foreground/50 text-sm mb-4">
@@ -1086,8 +1101,11 @@ export default function AgmScreen({
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-bold text-foreground truncate">
-                      {dir.name}
+                    <span className="flex items-center gap-2.5 min-w-0">
+                      <span className={`shrink-0 rounded-full overflow-hidden ${isSelected ? 'ring-2 ring-gold' : 'ring-1 ring-white/15'}`}><DirectorPortrait directorId={dir.id} size={34} /></span>
+                      <span className="font-narrative text-[15px] font-bold text-foreground truncate">
+                        {dir.name}
+                      </span>
                     </span>
                     {isSelected && (
                       <span className="text-[10px] text-gold font-bold shrink-0 ml-2">SELECTED</span>

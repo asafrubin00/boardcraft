@@ -19,6 +19,9 @@ import {
 } from '@/engine/governanceCapital';
 import { playYearEnd } from '@/engine/soundEngine';
 import SiteFooter from './SiteFooter';
+import CompanyLogo from './CompanyLogo';
+import './boardbuild/boardbuild.css';
+import './scenario/scenario.css';
 
 interface AgmResults {
   resolution1Pass: boolean;
@@ -347,18 +350,18 @@ function SvSparkline({ data }: { data: { turn: string; sv: number }[] }) {
         const y = padY + chartH - ((val - minSv) / range) * chartH;
         return (
           <g key={val}>
-            <line x1={padX} y1={y} x2={width - padX} y2={y} stroke="#2A5580" strokeWidth={0.5} />
-            <text x={padX - 8} y={y + 4} textAnchor="end" fill="#E8E4DC" fontSize={10} opacity={0.6}>{Math.round(val)}</text>
+            <line x1={padX} y1={y} x2={width - padX} y2={y} stroke="#cfc2a6" strokeWidth={0.7} />
+            <text x={padX - 8} y={y + 4} textAnchor="end" fill="#4a5565" fontSize={10}>{Math.round(val)}</text>
           </g>
         );
       })}
-      <line x1={padX} y1={baselineY} x2={width - padX} y2={baselineY} stroke="#C8960C" strokeWidth={1} strokeDasharray="6 4" opacity={0.5} />
-      <path d={linePath} fill="none" stroke="#C8960C" strokeWidth={2.5} strokeLinejoin="round" />
+      <line x1={padX} y1={baselineY} x2={width - padX} y2={baselineY} stroke="#7a5a06" strokeWidth={1} strokeDasharray="6 4" opacity={0.6} />
+      <path d={linePath} fill="none" stroke="#1a3a5c" strokeWidth={2.5} strokeLinejoin="round" />
       {points.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r={3.5} fill="#C8960C" stroke="#1A3A5C" strokeWidth={1.5} />
+        <circle key={i} cx={p.x} cy={p.y} r={3.5} fill="#1a3a5c" stroke="#f3ecdc" strokeWidth={1.5} />
       ))}
       {points.map((p, i) => (
-        <text key={`l${i}`} x={p.x} y={height - 6} textAnchor="middle" fill="#E8E4DC" fontSize={9} opacity={0.6}>{p.turn}</text>
+        <text key={`l${i}`} x={p.x} y={height - 6} textAnchor="middle" fill="#4a5565" fontSize={9}>{p.turn}</text>
       ))}
     </svg>
   );
@@ -609,11 +612,11 @@ function LeaderboardModal({ isOpen, onClose, currentEntryId }: { isOpen: boolean
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-navy border border-card-border rounded-xl p-6 w-full max-w-3xl max-h-[80dvh] overflow-y-auto"
+        className="bc-dialog rounded-2xl p-7 w-full max-w-3xl max-h-[80dvh] overflow-y-auto cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-narrative font-bold text-gold">Leaderboard</h2>
+          <div><p className="bc-overline text-foreground/45">Career record</p><h2 className="text-2xl font-narrative font-bold text-foreground mt-1">Leaderboard</h2></div>
           <button onClick={onClose} className="text-foreground/40 hover:text-foreground text-xl cursor-pointer">&times;</button>
         </div>
 
@@ -725,7 +728,7 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany, a
 
   return (
     <div className="min-h-screen bg-navy px-4 py-8 md:py-12">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Change Company - subtle top-left */}
         {onChangeCompany && (
           <button onClick={onChangeCompany} className="text-xs text-foreground/40 hover:text-foreground/70 transition-colors mb-4 cursor-pointer">
@@ -733,25 +736,30 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany, a
           </button>
         )}
 
-        {/* Contextual Header Image */}
-        <div className="w-full mb-6 relative rounded-lg overflow-hidden" style={{ height: 200 }}>
-          <img
-            src={gameState.svIndex > 105 ? '/images/year-end-success.jpg' : gameState.svIndex < 95 ? '/images/year-end-failure.jpg' : '/images/year-end-neutral.jpg'}
-            alt="Year End"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(13,27,42,0.2) 0%, rgba(13,27,42,0.8) 100%)' }} />
-        </div>
-
-        {/* Header */}
-        <motion.h1
-          className="text-3xl md:text-4xl font-narrative font-bold text-gold text-center mb-10"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+        {/* The year-end summary is a document: the board's annual governance review */}
+        <motion.article
+          className="bc-doc bc-paper relative rounded-[3px] px-5 md:px-14 pt-8 md:pt-12 pb-4 md:pb-8 mb-10"
+          initial={{ opacity: 0, y: 30, rotate: -1 }}
+          animate={{ opacity: 1, y: 0, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 160, damping: 22 }}
         >
-          Year End Summary - {gameState.company.name}
-        </motion.h1>
+        <header className="flex items-start justify-between gap-6 pb-5 mb-8" style={{ borderBottom: '2px solid var(--ink)' }}>
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="shrink-0 rounded-full" style={{ boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}><CompanyLogo companyId={gameState.company.id} size={60} /></div>
+            <div className="min-w-0">
+              <p className="bc-overline" style={{ color: 'var(--ink-soft)' }}>Annual governance review · Year end</p>
+              <h1 className="bc-serif text-3xl md:text-4xl font-bold leading-tight mt-1">{gameState.company.name}</h1>
+            </div>
+          </div>
+          <motion.span
+            className={`sc-outcome-stamp hidden md:inline-block shrink-0 text-[13px] max-w-[230px] text-center leading-snug ${getProxyColor(proxyRating)}`}
+            initial={{ opacity: 0, scale: 2.4, rotate: -14 }}
+            animate={{ opacity: 0.9, scale: 1, rotate: 4 }}
+            transition={{ delay: 0.9, type: 'spring', stiffness: 420, damping: 17 }}
+          >
+            {proxyRating}
+          </motion.span>
+        </header>
 
         {/* Three metric cards */}
         <motion.div
@@ -933,6 +941,8 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany, a
             ))}
           </div>
         </motion.div>
+
+        </motion.article>
 
         {/* Action Buttons */}
         <motion.div

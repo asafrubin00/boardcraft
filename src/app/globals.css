@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --navy: #0F2238;
-  --navy-light: #1A3552;
-  --navy-dark: #081423;
+  --navy: #0B1727;
+  --navy-light: #16293F;
+  --navy-dark: #060E19;
   --gold: #C8960C;
   --gold-light: #E0B044;
   --gold-dim: #8A6A0A;
-  --background: #0F2238;
+  --background: #0B1727;
   --foreground: #E8E4DC;
-  --card-bg: #142B45;
-  --card-border: #264566;
+  --card-bg: #0F2032;
+  --card-border: #24384F;
   --error: #D94040;
   --success: #3BA55C;
   --warning: #E0B044;
@@ -56,7 +56,9 @@
 
 body {
   background: var(--background);
-  background-image: radial-gradient(ellipse 90% 70% at 50% 0%, #17304d 0%, rgba(23, 48, 77, 0) 65%);
+  background-image:
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(224, 176, 68, 0.07) 0%, rgba(224, 176, 68, 0) 70%),
+    linear-gradient(180deg, #081220 0%, #0b1a2d 45%, #060d18 100%);
   background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-sans);
@@ -80,3 +82,105 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--gold-dim);
 }
+
+
+/* ══ House style ══════════════════════════════════════════════════════════
+   Two materials run through the whole game, set by the office and the
+   boardroom: dark glass with a brass hairline for instruments (dashboards,
+   panels, pop-ups), and cream paper for documents (CVs, board papers,
+   minutes, reports). The rules below apply the first to the utility classes
+   the screens already use, so every panel picks it up without being rewritten.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Full-screen pages share the office's night gradient rather than a flat fill */
+.bg-navy.min-h-screen,
+.bg-navy.h-dvh,
+.bg-navy.min-h-dvh {
+  background-image:
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(224, 176, 68, 0.07) 0%, rgba(224, 176, 68, 0) 70%),
+    linear-gradient(180deg, #081220 0%, #0b1a2d 45%, #060d18 100%);
+}
+
+/* Panels: glass with a lit top edge */
+.bg-card-bg {
+  background-image: linear-gradient(165deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0) 42%);
+  box-shadow: inset 0 1px 0 rgba(240, 206, 110, 0.14), 0 18px 40px -28px rgba(0, 0, 0, 0.9);
+}
+
+/* Primary buttons: brass, not flat yellow */
+button.bg-gold,
+a.bg-gold {
+  background-image: linear-gradient(180deg, #e6bb52 0%, #c8960c 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 10px 24px -12px rgba(224, 176, 68, 0.75);
+}
+button.bg-gold:disabled {
+  background-image: none;
+  box-shadow: none;
+}
+
+/* Dialog shell used by the pop-ups */
+.bc-dialog {
+  background: linear-gradient(180deg, #0f2134 0%, #091524 100%);
+  border: 1px solid rgba(200, 150, 12, 0.32);
+  box-shadow: inset 0 1px 0 rgba(240, 206, 110, 0.16), 0 40px 80px -30px rgba(0, 0, 0, 0.95);
+}
+.bc-overline {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+/* Status chip: outlined, with a dot — replaces solid coloured pills */
+.bc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid color-mix(in srgb, var(--chip, #e8e4dc) 45%, transparent);
+  background: color-mix(in srgb, var(--chip, #e8e4dc) 10%, transparent);
+  color: color-mix(in srgb, var(--chip, #e8e4dc) 85%, white);
+}
+.bc-chip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--chip, #e8e4dc);
+}
+.bc-chip[data-zero='true'] { opacity: 0.4; }
+
+/* ── Documents ──
+   Anything inside .bc-doc is on paper: the theme colours are re-pointed at
+   ink, so existing text/border/bar utilities recolour themselves. */
+.bc-doc {
+  --foreground: #1b2430;
+  --gold: #7a5a06;
+  --gold-light: #9a7412;
+  --gold-dim: #6b5a2e;
+  --card-bg: transparent;
+  --card-border: #cfc2a6;
+  --navy: #efe7d4;
+  --navy-dark: rgba(27, 36, 48, 0.12);
+  --navy-light: #e6dcc6;
+  --success: #1f6b3a;
+  --error: #a32222;
+  --warning: #9a5b00;
+  --ink: #1b2430;
+  --ink-soft: #4a5565;
+  --rule: #cfc2a6;
+  color: #1b2430;
+}
+.bc-doc .bg-card-bg {
+  background-image: none;
+  box-shadow: none;
+}
+.bc-doc button.bg-gold,
+.bc-doc a.bg-gold {
+  background: #1a3a5c;
+  color: #f3ecdc;
+  box-shadow: 0 6px 14px -6px rgba(26, 58, 92, 0.8);
+}
+.bc-doc .font-narrative { font-family: var(--font-serif, Georgia, serif); }

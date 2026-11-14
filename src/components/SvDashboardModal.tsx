@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { GovernanceHealthBreakdown, ResolvedEvent, Company } from '@/types/game';
+import './boardbuild/boardbuild.css';
 
 interface SvDashboardModalProps {
   isOpen: boolean;
@@ -19,11 +20,11 @@ interface SvDashboardModalProps {
 }
 
 const OUTCOME_TIERS = [
-  { key: 'CRITICAL_SUCCESS', label: 'Critical Success', color: 'bg-success', textColor: 'text-white' },
-  { key: 'SUCCESS', label: 'Success', color: 'bg-green-400', textColor: 'text-navy-dark' },
-  { key: 'PARTIAL_SUCCESS', label: 'Partial', color: 'bg-warning', textColor: 'text-navy-dark' },
-  { key: 'FAILURE', label: 'Failure', color: 'bg-error', textColor: 'text-white' },
-  { key: 'CRITICAL_FAILURE', label: 'Critical Failure', color: 'bg-red-800', textColor: 'text-white' },
+  { key: 'CRITICAL_SUCCESS', label: 'Critical success', chip: '#3BA55C' },
+  { key: 'SUCCESS', label: 'Success', chip: '#6FCF8E' },
+  { key: 'PARTIAL_SUCCESS', label: 'Partial', chip: '#E0B044' },
+  { key: 'FAILURE', label: 'Failure', chip: '#E0655A' },
+  { key: 'CRITICAL_FAILURE', label: 'Critical failure', chip: '#C0392B' },
 ] as const;
 
 const BREAKDOWN_LABELS: Record<keyof Omit<GovernanceHealthBreakdown, 'total'>, string> = {
@@ -44,8 +45,8 @@ function getProxyRatingColor(rating: string): string {
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-card-bg border border-card-border rounded-lg p-4 flex flex-col gap-3">
-      <h3 className="text-gold font-narrative font-bold text-sm uppercase tracking-wide">{title}</h3>
+    <div className="bg-card-bg border border-card-border rounded-xl p-5 flex flex-col gap-3">
+      <h3 className="bc-overline text-gold/80">{title}</h3>
       {children}
     </div>
   );
@@ -90,27 +91,36 @@ export default function SvDashboardModal({
           transition={{ duration: 0.2 }}
         >
           {/* Overlay */}
-          <div className="absolute inset-0 bg-navy-dark/80 cursor-pointer" onClick={onClose} />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm cursor-pointer" onClick={onClose} />
 
           {/* Modal */}
           <motion.div
-            className="relative z-10 w-full max-w-5xl max-h-[85dvh] overflow-y-auto bg-navy rounded-xl border border-card-border p-6 mx-4"
+            className="bc-dialog relative z-10 w-full max-w-5xl max-h-[88dvh] overflow-y-auto rounded-2xl p-6 md:p-7 mx-4"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-narrative font-bold text-gold">
-                {metricFullName} Dashboard — Current {metricLabel}: {svIndex}
-              </h2>
-              <button
-                onClick={onClose}
-                className="text-foreground/60 hover:text-foreground text-2xl leading-none transition-colors cursor-pointer"
-              >
-                ✕
-              </button>
+            <div className="flex items-start justify-between gap-6 mb-6 pb-5 border-b border-gold/20">
+              <div>
+                <p className="bc-overline text-foreground/45">{company?.name ?? 'Board'} · Dashboard</p>
+                <h2 className="text-2xl font-narrative font-bold text-foreground mt-1.5">{metricFullName}</h2>
+              </div>
+              <div className="flex items-center gap-5">
+                <Sparkline history={svHistory} />
+                <div className="text-right">
+                  <p className="bc-overline text-foreground/45">Current {metricLabel}</p>
+                  <p className="font-narrative text-4xl font-bold text-gold tabular-nums leading-none mt-1">{svIndex}</p>
+                </div>
+                <button
+                  onClick={onClose}
+                  aria-label="Close"
+                  className="self-start w-8 h-8 rounded-full border border-white/15 text-foreground/60 hover:text-gold hover:border-gold transition-colors cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             {/* 2x3 Grid */}
@@ -121,9 +131,11 @@ export default function SvDashboardModal({
                   {OUTCOME_TIERS.map((tier) => (
                     <span
                       key={tier.key}
-                      className={`${tier.color} ${tier.textColor} text-xs font-bold px-2 py-1 rounded-full`}
+                      className="bc-chip"
+                      data-zero={tierCounts[tier.key] === 0}
+                      style={{ '--chip': tier.chip } as React.CSSProperties}
                     >
-                      {tier.label}: {tierCounts[tier.key]}
+                      {tier.label} <b className="tabular-nums">{tierCounts[tier.key]}</b>
                     </span>
                   ))}
                 </div>
@@ -138,13 +150,13 @@ export default function SvDashboardModal({
 
               {/* 2. Governance Health */}
               <Panel title="Governance Health">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl font-bold text-gold">{governanceHealth}</span>
-                  <span className="text-foreground/50 text-lg">/ 100</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-narrative text-4xl font-bold text-gold tabular-nums leading-none">{governanceHealth}</span>
+                  <span className="text-foreground/45 text-sm">/ 100</span>
                 </div>
-                <div className="w-full bg-navy-dark rounded-full h-3">
+                <div className="w-full bg-black/45 rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-gold h-3 rounded-full transition-all"
+                    className="bc-meter-fill h-2 rounded-full"
                     style={{ width: `${Math.min(governanceHealth, 100)}%` }}
                   />
                 </div>
@@ -159,9 +171,9 @@ export default function SvDashboardModal({
                           {governanceBreakdown[key]}
                         </span>
                         <span className="text-xs text-foreground/50">/20</span>
-                        <div className="flex-1 bg-navy-dark rounded-full h-2">
+                        <div className="flex-1 bg-black/45 rounded-full h-1.5">
                           <div
-                            className="bg-gold-light h-2 rounded-full transition-all"
+                            className="bg-gold-light h-1.5 rounded-full transition-all"
                             style={{ width: `${(governanceBreakdown[key] / 20) * 100}%` }}
                           />
                         </div>
@@ -210,9 +222,9 @@ export default function SvDashboardModal({
                     return (
                       <div key={d.name} className="flex items-center gap-2">
                         <span className="text-xs text-foreground w-28 shrink-0 truncate">{d.name}</span>
-                        <div className="flex-1 bg-navy-dark rounded-full h-2.5">
+                        <div className="flex-1 bg-black/45 rounded-full h-1.5">
                           <div
-                            className={`${color} h-2.5 rounded-full transition-all`}
+                            className={`${color} h-1.5 rounded-full transition-all`}
                             style={{ width: `${Math.min(d.energy, 100)}%` }}
                           />
                         </div>
@@ -253,6 +265,25 @@ export default function SvDashboardModal({
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+/** The metric's path so far, as a small line in the header. */
+function Sparkline({ history }: { history: { turn: string; sv: number }[] }) {
+  if (history.length < 2) return null;
+  const w = 150;
+  const h = 44;
+  const vals = history.map((p) => p.sv);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const span = max - min || 1;
+  const pts = vals.map((v, i) => [4 + (i / (vals.length - 1)) * (w - 8), h - 5 - ((v - min) / span) * (h - 10)]);
+  const last = pts[pts.length - 1];
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="hidden md:block" aria-hidden>
+      <polyline points={pts.map((p) => p.join(',')).join(' ')} fill="none" stroke="#E0B044" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={last[0]} cy={last[1]} r="3" fill="#F0CE6E" />
+    </svg>
   );
 }
 

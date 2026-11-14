@@ -170,9 +170,10 @@ export default function ForcedChangeModal({
         animate={{ opacity: 1, scale: 1 }}
         className="flex flex-col"
         style={{
-          background: '#0D2237',
-          border: '2px solid rgba(220,60,60,0.45)',
-          borderRadius: 16,
+          background: 'linear-gradient(180deg, #0f2134 0%, #091524 100%)',
+          border: '1px solid rgba(224,101,90,0.5)',
+          boxShadow: 'inset 0 1px 0 rgba(240,206,110,0.14), 0 40px 80px -30px rgba(0,0,0,0.95), 0 0 0 1px rgba(0,0,0,0.4)',
+          borderRadius: 18,
           width: '100%',
           maxWidth: 940,
           maxHeight: '88dvh',
@@ -183,25 +184,28 @@ export default function ForcedChangeModal({
         {/* Header bar */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 12,
-          padding: '14px 20px',
-          borderBottom: '1px solid rgba(220,60,60,0.25)',
-          background: 'rgba(220,60,60,0.06)',
+          padding: '18px 24px',
+          borderBottom: '1px solid rgba(224,101,90,0.28)',
+          background: 'linear-gradient(90deg, rgba(224,101,90,0.12), rgba(224,101,90,0))',
           flexShrink: 0,
         }}>
-          <span style={{ fontSize: 20 }}>⚠</span>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#E05050', fontFamily: 'Georgia, serif', margin: 0 }}>
-            {typeLabel}
-          </h2>
+          <span style={{ width: 34, height: 34, borderRadius: '50%', border: '1.5px solid #E0655A', color: '#E0655A', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, flexShrink: 0 }}>!</span>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(232,228,220,0.45)' }}>Board notice</div>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#F1E9D9', fontFamily: 'Georgia, serif', margin: '2px 0 0' }}>
+              {typeLabel}
+            </h2>
+          </div>
           <div style={{ flex: 1 }} />
-          <span style={{ fontSize: 12, color: 'rgba(232,228,220,0.55)', fontStyle: 'italic' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#E0655A', border: '1px solid rgba(224,101,90,0.5)', borderRadius: 999, padding: '5px 12px' }}>
             {forcedChange.turnsRemaining} turn{forcedChange.turnsRemaining !== 1 ? 's' : ''} to resolve
           </span>
         </div>
 
         {/* Narrative */}
         <div style={{
-          padding: '10px 20px 0',
-          fontSize: 13, color: 'rgba(232,228,220,0.75)', fontStyle: 'italic', lineHeight: 1.55,
+          padding: '16px 24px 4px',
+          fontSize: 15, color: 'rgba(241,233,217,0.85)', fontFamily: 'Georgia, serif', lineHeight: 1.6,
           flexShrink: 0,
         }}>
           {forcedChange.narrative}
@@ -218,10 +222,10 @@ export default function ForcedChangeModal({
             style={{
               background: 'rgba(220,60,60,0.06)',
               border: '1px solid rgba(220,60,60,0.2)',
-              borderRadius: 10, padding: '14px 12px',
+              borderRadius: 14, padding: '16px 14px',
             }}
           >
-            <div style={{ fontSize: 10, color: '#B08A30', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, fontWeight: 600 }}>
+            <div style={{ fontSize: 10, color: '#C8960C', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 12, fontWeight: 700 }}>
               Departing Director
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 12 }}>
@@ -279,12 +283,12 @@ export default function ForcedChangeModal({
           <div
             className="order-3 shrink-0 md:shrink md:order-2 md:w-[32%] md:flex-none md:overflow-y-auto"
             style={{
-              background: 'rgba(26,58,92,0.25)',
+              background: 'linear-gradient(165deg, rgba(255,255,255,0.045), rgba(255,255,255,0) 45%)',
               border: '1px solid rgba(200,150,12,0.2)',
-              borderRadius: 10, padding: '14px 12px',
+              borderRadius: 14, padding: '16px 14px',
             }}
           >
-            <div style={{ fontSize: 10, color: '#B08A30', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, fontWeight: 600 }}>
+            <div style={{ fontSize: 10, color: '#C8960C', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 12, fontWeight: 700 }}>
               {hoverDir ? `Candidate: ${hoverDir.name}` : 'Your Board'}
             </div>
             {/* Harvey ball rows */}
@@ -388,7 +392,9 @@ export default function ForcedChangeModal({
               ) : (
                 availableDirectors.map((d) => {
                   const fee = computeFeeWithPremium(d.annualFee, selectedRole);
-                  const affordable = fee <= remaining;
+                  // Unpaid boards (the charity) have no budget to exceed, including for
+                  // candidates cross-listed from the paid pools
+                  const affordable = budget === 0 || fee <= remaining;
                   const isSelected = selectedDirId === d.id;
                   const isExpanded = expandedId === d.id;
                   const topDoms = ALL_DOMAINS
@@ -441,7 +447,7 @@ export default function ForcedChangeModal({
                         </div>
                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
                           <div style={{ fontSize: 11, color: affordable ? '#C8960C' : '#E05050', fontWeight: 600 }}>
-                            {currencySymbol}{Math.round(fee / 1000)}k
+                            {budget === 0 ? 'Unpaid' : `${currencySymbol}${Math.round(fee / 1000)}k`}
                           </div>
                           <div style={{
                             fontSize: 9, marginTop: 2,
