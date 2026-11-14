@@ -62,3 +62,25 @@
 /* Mouse clicks shouldn't leave the browser's square focus box on a round seat;
    keyboard focus still gets the brass ring via :focus-visible above. */
 .bcraft-seat-group:focus { outline: none; }
+
+/* Scenario play: directors strong in the event's lead domain breathe gently;
+   the ones picked to handle it get a slowly turning dashed ring. */
+.bcraft-seat-strong {
+  animation: bcraft-strong 2.2s ease-in-out infinite;
+}
+.bcraft-seat-picked {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bcraft-picked 9s linear infinite;
+}
+@keyframes bcraft-strong {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.85; }
+}
+@keyframes bcraft-picked {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bcraft-seat-strong { animation: none; opacity: 0.6; }
+  .bcraft-seat-picked { animation: none; }
+}

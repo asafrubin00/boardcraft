@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { ResolutionOutput, OutcomeTier, Director, GameEvent, DirectorDynamic } from '@/types/game';
 import { playOutcomeSound, playWildcard } from '@/engine/soundEngine';
 import { generateDebrief } from '@/engine/narrativeExplanation';
+import DirectorPortrait from './DirectorPortrait';
+import './boardbuild/boardbuild.css';
+import './scenario/scenario.css';
 
 interface OutcomeDisplayProps {
   outcome: ResolutionOutput | null;
@@ -22,27 +25,27 @@ const TIER_CONFIG: Record<
 > = {
   CRITICAL_SUCCESS: {
     label: 'CRITICAL SUCCESS',
-    color: '#22C55E',
+    color: '#1b7a3f',
     glow: 'shadow-[0_0_40px_rgba(34,197,94,0.3)]',
   },
   SUCCESS: {
     label: 'SUCCESS',
-    color: '#3BA55C',
+    color: '#2c7a4a',
     glow: 'shadow-[0_0_40px_rgba(59,165,92,0.3)]',
   },
   PARTIAL_SUCCESS: {
     label: 'PARTIAL SUCCESS',
-    color: '#E0B044',
+    color: '#9a5b00',
     glow: 'shadow-[0_0_40px_rgba(224,176,68,0.3)]',
   },
   FAILURE: {
     label: 'FAILURE',
-    color: '#D94040',
+    color: '#a32222',
     glow: 'shadow-[0_0_40px_rgba(217,64,64,0.3)]',
   },
   CRITICAL_FAILURE: {
     label: 'CRITICAL FAILURE',
-    color: '#991B1B',
+    color: '#7a1010',
     glow: 'shadow-[0_0_40px_rgba(153,27,27,0.3)]',
   },
 };
@@ -92,8 +95,6 @@ export default function OutcomeDisplay({
 
   const config = outcome ? TIER_CONFIG[outcome.outcomeTier] : null;
   const isCritFail = outcome?.outcomeTier === 'CRITICAL_FAILURE';
-  const isCritSuccess = outcome?.outcomeTier === 'CRITICAL_SUCCESS';
-  const svColor = outcome && outcome.svDelta >= 0 ? 'text-success' : 'text-error';
 
   const debrief = outcome && event && outcome.breakdown
     ? generateDebrief(outcome, deployedDirectors ?? [], event, directorDynamics ?? [])
@@ -113,19 +114,22 @@ export default function OutcomeDisplay({
             />
           )}
 
+          {/* Dim the room behind the minute */}
           <motion.div
-            initial={{ y: '100vh', opacity: 0, scale: 0.92 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: '100vh', opacity: 0, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 24 }}
-            className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg rounded-xl bg-card-bg overflow-hidden ${config.glow}`}
+            className="fixed inset-0 z-40 bg-black/55"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+          />
+
+          <motion.div
+            initial={{ y: '-60vh', opacity: 0, rotate: -5 }}
+            animate={{ y: 0, opacity: 1, rotate: 0 }}
+            exit={{ y: '100vh', opacity: 0, rotate: 4 }}
+            transition={{ type: 'spring', stiffness: 190, damping: 22 }}
+            className="bc-paper fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100%-24px)] max-w-lg md:max-w-2xl rounded-[3px] overflow-hidden"
             style={{
-              border: isCritSuccess
-                ? '2px solid rgba(200, 150, 12, 0.6)'
-                : '1px solid var(--card-border)',
-              ...(isCritSuccess ? {
-                boxShadow: '0 0 40px rgba(200,150,12,0.25), inset 0 0 30px rgba(200,150,12,0.08)',
-              } : {}),
               // dvh, not vh: on iOS Safari 90vh is taller than the visible area
               // (toolbars), which buried the Continue button off-screen.
               maxHeight: '85dvh',
@@ -134,38 +138,45 @@ export default function OutcomeDisplay({
             }}
           >
             {/* Scrollable body */}
-            <div className="overflow-y-auto flex-1 p-6">
-              {/* Tier label */}
-              <motion.h2
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3, duration: 0.3, type: 'spring' }}
-                className="text-3xl font-bold text-center mb-3"
-                style={{ color: config.color }}
-              >
-                {config.label}
-              </motion.h2>
+            <div className="overflow-y-auto flex-1 px-7 pt-6 pb-4">
+              <div className="flex items-baseline justify-between gap-3 pb-2.5" style={{ borderBottom: '2px solid var(--ink)' }}>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em]">Minute of the board</p>
+                <p className="text-[10px] uppercase tracking-[0.16em]" style={{ color: 'var(--ink-soft)' }}>Outcome</p>
+              </div>
+              <p className="bc-serif text-[19px] font-bold leading-snug mt-3">{eventName}</p>
+
+              {/* Tier — stamped onto the minute */}
+              <div className="text-center mt-5 mb-1">
+                <motion.h2
+                  initial={{ opacity: 0, scale: 2.8, rotate: -16 }}
+                  animate={{ opacity: 0.9, scale: 1, rotate: -5 }}
+                  transition={{ delay: 0.35, type: 'spring', stiffness: 420, damping: 17 }}
+                  className="sc-outcome-stamp text-2xl"
+                  style={{ color: config.color }}
+                >
+                  {config.label}
+                </motion.h2>
+              </div>
 
               {/* SV delta */}
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.3 }}
-                className={`text-center text-2xl font-bold mb-2 ${svColor}`}
+                transition={{ delay: 0.6, duration: 0.3 }}
+                className="bc-serif text-center text-[34px] font-bold mt-3 tabular-nums"
+                style={{ color: outcome.svDelta >= 0 ? '#1f6b3a' : '#a32222' }}
               >
                 <AnimatedNumber value={outcome.svDelta} />
               </motion.p>
-
-              {/* Event name */}
-              <p className="text-center text-sm text-gold-dim mb-4">{eventName}</p>
 
               {/* Wildcard indicator */}
               {outcome.wildcard && (
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7, duration: 0.3 }}
-                  className="text-center text-xs text-foreground/40 mb-3"
+                  transition={{ delay: 0.75, duration: 0.3 }}
+                  className="text-center text-xs mt-1"
+                  style={{ color: 'var(--ink-soft)' }}
                 >
                   &#9889; Unexpected outcome
                 </motion.p>
@@ -176,32 +187,47 @@ export default function OutcomeDisplay({
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.8, duration: 0.4 }}
-                  className="border-t border-card-border pt-4 mb-4"
+                  transition={{ delay: 0.85, duration: 0.4 }}
+                  className="pt-4 mt-4"
+                  style={{ borderTop: '1px solid var(--rule)' }}
                 >
-                  <p className="text-xs text-foreground/40 uppercase tracking-widest mb-2">The Debrief</p>
-                  <p className="font-narrative italic text-foreground/75 text-sm leading-relaxed">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] mb-2" style={{ color: 'var(--ink-soft)' }}>The debrief</p>
+                  <p className="bc-serif text-[14.5px] leading-[1.65]">
                     {debrief}
                   </p>
                 </motion.div>
               )}
 
-              {/* Energy updates */}
+              {/* Stamina spent by the directors sent */}
               {outcome.energyUpdates.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 1.0, duration: 0.3 }}
-                  className="border-t border-card-border pt-3 space-y-1"
+                  className="pt-4 mt-4 space-y-2"
+                  style={{ borderTop: '1px solid var(--rule)' }}
                 >
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: 'var(--ink-soft)' }}>Stamina</p>
                   {outcome.energyUpdates.map((update) => (
-                    <p
-                      key={update.directorId}
-                      className="text-xs text-foreground/50 text-center"
-                    >
-                      {directorNames[update.directorId] ?? update.directorId}: {update.previousEnergy}% →{' '}
-                      {update.newEnergy}%
-                    </p>
+                    <div key={update.directorId} className="flex items-center gap-2.5 text-[12px]">
+                      <span className="shrink-0 rounded-full overflow-hidden" style={{ boxShadow: '0 0 0 1.5px #c8960c' }}>
+                        <DirectorPortrait directorId={update.directorId} size={26} />
+                      </span>
+                      <span className="w-[34%] truncate font-semibold">{directorNames[update.directorId] ?? update.directorId}</span>
+                      <span className="relative flex-1 h-[7px] rounded-[1px]" style={{ background: 'rgba(27,36,48,0.12)' }}>
+                        <span className="absolute inset-y-0 left-0 rounded-[1px]" style={{ width: `${update.previousEnergy}%`, background: 'rgba(27,36,48,0.22)' }} />
+                        <motion.span
+                          className="absolute inset-y-0 left-0 rounded-[1px]"
+                          initial={{ width: `${update.previousEnergy}%` }}
+                          animate={{ width: `${update.newEnergy}%` }}
+                          transition={{ delay: 1.2, duration: 0.7, ease: 'easeOut' }}
+                          style={{ background: update.newEnergy >= 60 ? '#1f7a45' : update.newEnergy >= 20 ? '#b4761a' : '#a32222' }}
+                        />
+                      </span>
+                      <span className="w-[96px] shrink-0 whitespace-nowrap text-right tabular-nums" style={{ color: 'var(--ink-soft)' }}>
+                        {update.previousEnergy}% → <b style={{ color: 'var(--ink)' }}>{update.newEnergy}%</b>
+                      </span>
+                    </div>
                   ))}
                 </motion.div>
               )}
@@ -212,11 +238,12 @@ export default function OutcomeDisplay({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.0, duration: 0.3 }}
-              className="flex-shrink-0 px-6 pb-6 pt-3 border-t border-card-border"
+              className="flex-shrink-0 px-7 pb-6 pt-3"
+              style={{ borderTop: '1px solid var(--rule)' }}
             >
               <button
                 onClick={onDismiss}
-                className="w-full py-3 rounded-lg bg-gold/10 border border-gold/40 hover:bg-gold/20 transition-colors text-gold font-semibold text-sm cursor-pointer"
+                className="sc-confirm w-full py-3 rounded-[3px] font-bold text-sm cursor-pointer"
               >
                 Continue →
               </button>

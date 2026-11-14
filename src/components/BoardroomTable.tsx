@@ -406,6 +406,24 @@ interface BoardroomTableProps {
   onTouchDragStart?: (dirId: string, touchX: number, touchY: number) => void;
   /** Slot indices to render with a pulsing gold "event references this seat" glow */
   highlightedSeatIndices?: number[];
+  /** Per-director overlays for scenario play: a rating chip, a stamina arc,
+   *  and deployment-selection state. Keyed by director ID. */
+  seatOverlays?: Record<string, SeatOverlay>;
+  /** Fires with the slot index under the mouse / keyboard focus, or null */
+  onSeatHover?: (seatIndex: number | null) => void;
+}
+
+export interface SeatOverlay {
+  /** Number shown in the chip (e.g. rating in the event's primary domain) */
+  badge?: number;
+  /** strong = lit up, weak = dimmed back */
+  tone?: 'strong' | 'mid' | 'weak';
+  /** 0–100 stamina, drawn as an arc round the portrait */
+  energy?: number;
+  /** 1-based order in which the director was picked for deployment */
+  selectedOrder?: number;
+  /** Can't be picked (exhausted, or the team is already full) */
+  unavailable?: boolean;
 }
 
 // Optional committee chair positions — all in the left column (leftPct=10).
@@ -485,6 +503,8 @@ export default function BoardroomTable({
   companyId,
   onTouchDragStart,
   highlightedSeatIndices = [],
+  seatOverlays,
+  onSeatHover,
 }: BoardroomTableProps) {
   const uid = useId();
   const workerRepSet = new Set(workerRepIds);
@@ -723,7 +743,10 @@ export default function BoardroomTable({
           const isWorkerRep = directorId ? workerRepSet.has(directorId) : false;
           const isLockedSeat = directorId ? lockedSet.has(directorId) : false;
           const hasConflict = directorId ? conflictSet.has(directorId) : false;
-          const isNonInteractive = isLockedChairCeo || isWorkerRep || isLockedSeat;
+          const overlay = directorId && seatOverlays ? seatOverlays[directorId] : undefined;
+          // During scenario play every seated director can be picked, including
+          // worker reps and fixed seats that are otherwise display-only.
+          const isNonInteractive = isLockedChairCeo || ((isWorkerRep || isLockedSeat) && !overlay);
           const isHovered = hoveredSeatIdx === index && !isNonInteractive;
           const isHighlighted = highlightSet.has(index);
           const roleLabelFull = getRoleLabel(pos.defaultRole, jurisdiction, companyId);
@@ -748,8 +771,8 @@ export default function BoardroomTable({
               aria-label={ariaLabel}
               aria-disabled={isNonInteractive || undefined}
               opacity={isNonInteractive ? 0.75 : 1}
-              onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHoveredSeatIdx(index); }}
-              onPointerLeave={(e) => { if (e.pointerType === 'mouse') setHoveredSeatIdx(null); }}
+              onPointerEnter={(e) => { if (e.pointerType === 'mouse') { setHoveredSeatIdx(index); onSeatHover?.(index); } }}
+              onPointerLeave={(e) => { if (e.pointerType === 'mouse') { setHoveredSeatIdx(null); onSeatHover?.(null); } }}
               onFocus={() => setHoveredSeatIdx(index)}
               onBlur={() => setHoveredSeatIdx((cur) => (cur === index ? null : cur))}
               onClick={() => { setHoveredSeatIdx(null); if (!isNonInteractive) onSeatClick(index); }}
@@ -809,13 +832,59 @@ export default function BoardroomTable({
                         <DirectorPortrait directorId={director.id} size={r * 2} />
                       </g>
                     </g>
+                    {overlay?.tone === 'weak' && !overlay.selectedOrder && <circle r={r} fill="#060d18" opacity={0.55} />}
+                    {overlay?.unavailable && !overlay.selectedOrder && <circle r={r} fill="#060d18" opacity={0.6} />}
                     <circle
                       r={r}
                       fill="none"
-                      stroke={ringColor}
-                      strokeWidth={3}
+                      stroke={overlay?.selectedOrder ? '#F6DC8C' : ringColor}
+                      strokeWidth={overlay?.selectedOrder ? 5 : 3}
+                      strokeOpacity={overlay?.tone === 'weak' && !overlay.selectedOrder ? 0.4 : 1}
                       filter={`url(#${uid}-seatShadow)`}
                     />
+                    {overlay?.tone === 'strong' && !overlay.selectedOrder && (
+                      <circle className="bcraft-seat-strong" r={r + 9} fill="none" stroke="#F0CE6E" strokeWidth={3} />
+                    )}
+                    {overlay?.selectedOrder && (
+                      <circle className="bcraft-seat-picked" r={r + 10} fill="none" stroke="#F0CE6E" strokeWidth={2.5} strokeDasharray="3 7" strokeLinecap="round" />
+                    )}
+                    {overlay && overlay.energy !== undefined && (() => {
+                      // Stamina arc: bottom-centred sweep, coloured like the stamina bars
+                      const ar = r + 5;
+                      const sweep = 110 * (Math.max(0, Math.min(100, overlay.energy)) / 100);
+                      const a0 = ((90 + 55) * Math.PI) / 180;
+                      const a1 = ((90 + 55 - sweep) * Math.PI) / 180;
+                      const aEnd = ((90 - 55) * Math.PI) / 180;
+                      const pt = (a: number) => `${(ar * Math.cos(a)).toFixed(2)} ${(ar * Math.sin(a)).toFixed(2)}`;
+                      const col = overlay.energy >= 60 ? '#3BA55C' : overlay.energy >= 20 ? '#D08A2E' : '#D94040';
+                      return (
+                        <g pointerEvents="none">
+                          <path d={`M ${pt(a0)} A ${ar} ${ar} 0 0 0 ${pt(aEnd)}`} fill="none" stroke="#000" strokeOpacity={0.55} strokeWidth={5} strokeLinecap="round" />
+                          {sweep > 0.5 && <path d={`M ${pt(a0)} A ${ar} ${ar} 0 0 0 ${pt(a1)}`} fill="none" stroke={col} strokeWidth={5} strokeLinecap="round" />}
+                        </g>
+                      );
+                    })()}
+                    {overlay && overlay.badge !== undefined && (() => {
+                      const fs = unitsForPx(11);
+                      const bw = fs * 2.3;
+                      const bh = fs * 1.55;
+                      const strong = overlay.tone === 'strong';
+                      return (
+                        <g transform={`translate(${r * 0.78}, ${-r * 0.78})`} pointerEvents="none" opacity={overlay.tone === 'weak' ? 0.75 : 1}>
+                          <rect x={-bw / 2} y={-bh / 2} width={bw} height={bh} rx={bh / 2} fill={strong ? '#E0B044' : '#0A1524'} stroke={strong ? '#F6DC8C' : '#5A708A'} strokeWidth={1.5} />
+                          <text textAnchor="middle" dominantBaseline="central" fontSize={fs} fontWeight={700} fill={strong ? '#0A1524' : '#E8E4DC'} fontFamily="var(--font-mono, monospace)">{overlay.badge}</text>
+                        </g>
+                      );
+                    })()}
+                    {overlay?.selectedOrder && (() => {
+                      const fs = unitsForPx(12);
+                      return (
+                        <g transform={`translate(${-r * 0.78}, ${-r * 0.78})`} pointerEvents="none">
+                          <circle r={fs * 0.95} fill="#F0CE6E" stroke="#0A1524" strokeWidth={2} />
+                          <text textAnchor="middle" dominantBaseline="central" fontSize={fs} fontWeight={800} fill="#0A1524">{overlay.selectedOrder}</text>
+                        </g>
+                      );
+                    })()}
                     {hasConflict && (
                       <>
                         <circle cx={r * 0.72} cy={-r * 0.72} r={r * 0.28} fill="#D94040" />

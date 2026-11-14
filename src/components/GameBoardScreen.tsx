@@ -6,7 +6,9 @@ import type { GameState, GameEvent, BoardSeat, Director, ResolutionOutput, Board
 import { DOMAIN_SHORT, ALL_DOMAINS, getRoleLabel } from '@/engine/boardConstants';
 import DirectorPortrait from './DirectorPortrait';
 import { getMaxTurnsForQuarter } from '@/engine/gameStateManager';
-import BoardroomTable, { deriveTablePositions } from './BoardroomTable';
+import BoardroomTable, { deriveTablePositions, type SeatOverlay } from './BoardroomTable';
+import EventPaper, { MAX_DEPLOYED } from './scenario/EventPaper';
+import './scenario/scenario.css';
 import SvTracker from './SvTracker';
 import SvDashboardModal from './SvDashboardModal';
 import EventCard from './EventCard';
@@ -16,7 +18,7 @@ import ForcedChangeModal from './ForcedChangeModal';
 import NewsTicker from './NewsTicker';
 import SiteFooter from './SiteFooter';
 import { useNewsTicker } from '@/hooks/useNewsTicker';
-import { hasRoomForBoardAndEvent } from '@/lib/breakpoints';
+import { hasRoomForBoardAndEvent, isDesktopViewport, MD_QUERY } from '@/lib/breakpoints';
 import {
   isSoundEnabled, setSoundEnabled, playCardDeal, playDirectorSelect,
   ensureAudioContext, cycleVolume, getVolumeLevel,
@@ -88,6 +90,22 @@ export default function GameBoardScreen({
   const [waitingForNext, setWaitingForNext] = useState(false);
   const [flashingIds, setFlashingIds] = useState<Set<string>>(new Set());
   const [selectedDirectorId, setSelectedDirectorId] = useState<string | null>(null);
+
+  // Desktop scenario play: the event is a board paper, and directors are
+  // picked at the table itself rather than in the deployment modal (which the
+  // touch layout keeps).
+  const [isDesktop, setIsDesktop] = useState(() => isDesktopViewport());
+  useEffect(() => {
+    const mq = window.matchMedia(MD_QUERY);
+    const update = () => setIsDesktop(mq.matches);
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  const [deployIds, setDeployIds] = useState<string[]>([]);
+  const [hoveredDirectorId, setHoveredDirectorId] = useState<string | null>(null);
+  const [deliberating, setDeliberating] = useState(false);
+  const deliberateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (deliberateTimer.current) clearTimeout(deliberateTimer.current); }, []);
   // Touch layout: the board collapses behind a strip while an event is active so
   // the event card gets the whole screen. Portrait tablets are tall enough to
   // show both, so there it starts open — otherwise the flagship iPad in portrait
@@ -195,23 +213,43 @@ export default function GameBoardScreen({
     }
   }, [currentEvent]);
 
+  const pickingAtTable = isDesktop && !!currentEvent && !!selectedStrategy && !lastOutcome;
+
   // When a seat on the table is clicked, select the director sitting there
+  // (or, while a resolution is being staffed on desktop, pick / unpick them)
   const handleTableSeatClick = useCallback(
     (seatIndex: number) => {
       const dirId = tablePositions[seatIndex];
-      if (dirId) {
+      if (!dirId) return;
+      if (pickingAtTable) {
+        // Same rules as the deployment modal: no exhausted directors, three at most
+        const dir = gameState.directors.find((d) => d.id === dirId);
+        if (!dir || deliberating) return;
+        setDeployIds((prev) => {
+          if (prev.includes(dirId)) return prev.filter((x) => x !== dirId);
+          if (dir.currentEnergy === 0 || prev.length >= MAX_DEPLOYED) return prev;
+          return [...prev, dirId];
+        });
         playDirectorSelect();
-        setSelectedDirectorId((prev) => (prev === dirId ? null : dirId));
+        return;
       }
+      playDirectorSelect();
+      setSelectedDirectorId((prev) => (prev === dirId ? null : dirId));
     },
-    [tablePositions]
+    [tablePositions, pickingAtTable, gameState.directors, deliberating]
   );
+
+  const handleToggleDeploy = useCallback((dirId: string) => {
+    if (deliberating) return;
+    setDeployIds((prev) => (prev.includes(dirId) ? prev.filter((x) => x !== dirId) : prev));
+  }, [deliberating]);
 
   // Find the selected director's full data
   const selectedDir = useMemo(() => {
-    if (!selectedDirectorId) return null;
-    return boardDirectors.find((d) => d.id === selectedDirectorId) ?? null;
-  }, [selectedDirectorId, boardDirectors]);
+    const id = isDesktop && hoveredDirectorId ? hoveredDirectorId : selectedDirectorId;
+    if (!id) return null;
+    return boardDirectors.find((d) => d.id === id) ?? null;
+  }, [selectedDirectorId, hoveredDirectorId, isDesktop, boardDirectors]);
 
   // Handle strategy selection - Do Nothing bypasses deployment modal
   const handleSelectStrategy = useCallback((strategyId: string) => {
@@ -227,8 +265,13 @@ export default function GameBoardScreen({
       return;
     }
     setSelectedStrategy(strategyId);
-    setShowDeployment(true);
-  }, [currentEvent, onResolveEvent]);
+    setDeployIds([]);
+    if (isDesktop) {
+      setSelectedDirectorId(null);
+    } else {
+      setShowDeployment(true);
+    }
+  }, [currentEvent, onResolveEvent, isDesktop]);
 
   // Handle do-nothing / skip
   const handleDoNothing = useCallback(() => {
@@ -274,6 +317,45 @@ export default function GameBoardScreen({
     },
     [selectedStrategy, currentEvent, onResolveEvent, gameState.directors]
   );
+
+  // Desktop: a short "board in session" beat, then the engine resolves
+  const handlePutToBoard = useCallback(() => {
+    if (deployIds.length === 0 || deliberating) return;
+    setDeliberating(true);
+    playCardDeal();
+    deliberateTimer.current = setTimeout(() => {
+      setDeliberating(false);
+      handleConfirmDeployment(deployIds);
+      setDeployIds([]);
+    }, 1300);
+  }, [deployIds, deliberating, handleConfirmDeployment]);
+
+  const handleBackToResolutions = useCallback(() => {
+    if (deliberating) return;
+    setSelectedStrategy(null);
+    setDeployIds([]);
+  }, [deliberating]);
+
+  // What the table shows about each director while an event is on it. Nothing
+  // here goes beyond what the deployment modal already shows: the rating in
+  // the event's lead domain, and stamina.
+  const seatOverlays = useMemo((): Record<string, SeatOverlay> | undefined => {
+    if (!isDesktop || !currentEvent || currentEvent.strategies.length === 0 || lastOutcome) return undefined;
+    const out: Record<string, SeatOverlay> = {};
+    const full = deployIds.length >= MAX_DEPLOYED;
+    for (const d of boardDirectors) {
+      const rating = d.domainRatings[currentEvent.primaryDomain];
+      const order = deployIds.indexOf(d.id);
+      out[d.id] = {
+        badge: rating,
+        tone: rating >= 70 ? 'strong' : rating >= 50 ? 'mid' : 'weak',
+        energy: d.currentEnergy,
+        selectedOrder: order >= 0 ? order + 1 : undefined,
+        unavailable: pickingAtTable && order < 0 && (d.currentEnergy === 0 || full),
+      };
+    }
+    return out;
+  }, [isDesktop, currentEvent, lastOutcome, boardDirectors, deployIds, pickingAtTable]);
 
   // Handle outcome dismissal
   const handleDismissOutcome = useCallback(() => {
@@ -499,12 +581,40 @@ export default function GameBoardScreen({
           <div className={`overflow-hidden items-center justify-center p-3 md:h-auto md:flex-1 md:min-h-0 ${boardVisibleMobile ? 'flex h-[min(100vw,52dvh,460px)]' : 'hidden md:flex'}`} style={{ paddingTop: '8px' }}>
             {/* Height-capped square: on short phones the table shrinks to fit
                 45dvh instead of clipping the bottom row of seat labels */}
-            <div className="h-full max-w-full aspect-square">
+            <div className="relative h-full max-w-full aspect-square">
+            <AnimatePresence>
+              {pickingAtTable && !deliberating && (
+                <motion.div
+                  key="pick-banner"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="hidden md:flex absolute top-1 left-1/2 -translate-x-1/2 z-10 items-center gap-2 px-3.5 py-1.5 rounded-full bg-gold text-navy-dark text-xs font-bold shadow-[0_8px_24px_-8px_rgba(224,176,68,0.9)] whitespace-nowrap pointer-events-none"
+                >
+                  Pick who takes this on
+                  <span className="px-1.5 py-px rounded-full bg-navy-dark/15 tabular-nums">{deployIds.length}/{MAX_DEPLOYED}</span>
+                </motion.div>
+              )}
+              {deliberating && (
+                <motion.div
+                  key="session"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="sc-session absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none"
+                >
+                  <p className="font-narrative text-gold text-2xl tracking-[0.2em] uppercase">Board in session</p>
+                  <div className="flex gap-2 mt-3"><span className="sc-session-dot" /><span className="sc-session-dot" /><span className="sc-session-dot" /></div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             <BoardroomTable
               seats={gameState.board.seats}
               directors={gameState.directors}
-              activeSeatIndex={selectedDirectorId ? tablePositions.indexOf(selectedDirectorId) : null}
+              activeSeatIndex={selectedDirectorId && !pickingAtTable ? tablePositions.indexOf(selectedDirectorId) : null}
               onSeatClick={handleTableSeatClick}
+              seatOverlays={seatOverlays}
+              onSeatHover={(i) => setHoveredDirectorId(i === null ? null : tablePositions[i] ?? null)}
               hasEnergyTransition={hasEnergyTransition}
               hasCsrd={hasCsrd}
               hasStrategy={hasStrategy}
@@ -578,7 +688,7 @@ export default function GameBoardScreen({
               </div>
             ) : (
               <div className="flex items-center justify-center py-4 md:py-6">
-                <p className="text-foreground/40 italic text-sm font-narrative">Select a director to view their profile</p>
+                <p className="text-foreground/40 italic text-sm font-narrative">{pickingAtTable ? 'Hover a director to see their full profile' : 'Select a director to view their profile'}</p>
               </div>
             )}
           </div>
@@ -595,7 +705,23 @@ export default function GameBoardScreen({
               phones (narrower) or the desktop layout (md:max-w-none) */}
           <div className="w-full max-w-2xl mx-auto md:max-w-none">
             <AnimatePresence mode="wait">
-              {currentEvent ? (
+              {currentEvent && isDesktop ? (
+                <EventPaper
+                  key={`paper-${currentEvent.id}`}
+                  event={currentEvent}
+                  directors={gameState.directors}
+                  boardSeats={gameState.board.seats}
+                  companyName={gameState.company.name}
+                  agendaLine={`${gameState.currentQuarter} · Item ${gameState.currentTurn} of ${maxTurns}`}
+                  selectedStrategyId={lastOutcome ? null : selectedStrategy}
+                  deployIds={deployIds}
+                  onSelectStrategy={handleSelectStrategy}
+                  onDoNothing={handleDoNothing}
+                  onBack={handleBackToResolutions}
+                  onToggleDirector={handleToggleDeploy}
+                  onConfirm={handlePutToBoard}
+                />
+              ) : currentEvent ? (
                 <EventCard
                   key={currentEvent.id}
                   event={currentEvent}
