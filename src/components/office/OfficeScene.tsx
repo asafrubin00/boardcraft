@@ -8,7 +8,10 @@ import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import CompanyLogo from '../CompanyLogo';
-import { playCardDeal, playDirectorSelect } from '@/engine/soundEngine';
+import {
+  playDirectorSelect, playPaperSlide, playPageTurn, playFolderOpen, playFootstep, playDoorOpen,
+  playLaptopBoot, playZoomWhoosh, startOfficeAmbience, stopOfficeAmbience,
+} from '@/engine/soundEngine';
 import { buildOffice, ROOM, SEAT, SEAT_LOOK, type FolderSpec, type OfficeHandles } from './buildOffice';
 import { drawCover, drawPage, drawScreen } from './officeTextures';
 import { Tweens, ease } from './tween';
@@ -203,6 +206,7 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
       await reveal(1, 0.7);
       if (disposed || !at('door')) return;
       const door = office.doorPivot;
+      playDoorOpen();
       tweens.run(1.5, (k) => { door.rotation.y = 1.75 * k; }, ease.inOut);
       await tweens.wait(0.7);
       if (disposed || !at('door')) return;
@@ -210,6 +214,9 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
       await tweens.run(9, (k) => {
         if (!at('walk')) return;
         S.walkT = k;
+        // one footfall per half-cycle of the bob, until you're nearly seated
+        const step = Math.floor((k * 44) / Math.PI);
+        if (step !== lastStep && k < 0.93) { lastStep = step; playFootstep(step % 2 ? 1 : -1); }
         const p = walkPos.getPoint(k);
         // footfall: a small bob that fades out as you sit
         p.y += Math.sin(k * 44) * 0.012 * (1 - k);
@@ -258,6 +265,8 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
     };
 
     let active = -1;
+    let lastStep = -1;
+    let roamStepAt = 0;
 
     const openFolder = async (i: number) => {
       if (!office) return;
@@ -274,7 +283,7 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
       setHoverId(null);
       S.hover = -1;
       canvas.style.cursor = 'default';
-      playCardDeal();
+      playFolderOpen();
       if (camera.position.distanceTo(SEAT) > 0.05) await returnToSeat(0.9);
       S.scripted = true;
       active = i;
@@ -312,6 +321,7 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
       if (S.phase !== 'reading' || active < 0) return;
       setP('busy');
       setOpenId(null);
+      playPaperSlide();
       const i = active;
       const q0 = camera.quaternion.clone();
       const q1 = quatFromYawPitch(base.yaw, base.pitch);
@@ -329,7 +339,7 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
       const i = active;
       const lap = office.laptop;
       const name = specs[i].name;
-      playCardDeal();
+      playPageTurn();
 
       // Turn to the laptop while the folder goes back to its place
       const lapCentre = lap.group.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.1, 0));
@@ -341,6 +351,7 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
       active = -1;
 
       // Lid up, screen on
+      playLaptopBoot();
       tweens.run(0.95, (k) => { lap.lidPivot.rotation.x = -1.83 * k; }, ease.inOut);
       tweens.run(0.7, (k) => { lap.screenMat.color.setScalar(k); lap.glow.intensity = 0.16 * k; }, ease.out, 0.45);
       const boot = tweens.run(2.3, (k) => { drawScreen(lap.canvas, name, k); lap.texture.needsUpdate = true; }, ease.linear, 0.45);
@@ -361,6 +372,7 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
       const endQuat = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(rightV, up, normal));
       const p0 = camera.position.clone();
       const qa = camera.quaternion.clone();
+      playZoomWhoosh(1.6);
       await tweens.run(1.6, (k) => {
         camera.position.lerpVectors(p0, endPos, k);
         camera.quaternion.slerpQuaternions(qa, endQuat, Math.min(1, k * 1.25));
@@ -498,6 +510,7 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
           if (!blocked(x + dx, z)) x += dx;
           if (!blocked(x, z + dz)) z += dz;
           const moving = fwd !== 0 || strafe !== 0;
+          if (moving && elapsed - roamStepAt > 0.52) { roamStepAt = elapsed; playFootstep(Math.random() < 0.5 ? -1 : 1); }
           const targetY = 1.62 + (moving ? Math.sin(elapsed * 9) * 0.012 : 0);
           camera.position.set(x, camera.position.y + (targetY - camera.position.y) * (1 - Math.exp(-dt * 6)), z);
           camera.rotation.set(S.pitch, S.yaw, 0);
@@ -622,6 +635,7 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
         if (started || disposed) return;
         started = true;
         setProgress(1);
+        startOfficeAmbience();
         void runIntro();
       };
       manager.onLoad = () => window.setTimeout(begin, 250);
@@ -631,6 +645,7 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
 
     return () => {
       disposed = true;
+      stopOfficeAmbience();
       cancelAnimationFrame(raf);
       tweens.clear();
       api.current = null;

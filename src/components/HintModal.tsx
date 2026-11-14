@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './boardbuild/boardbuild.css';
+import { playPaperSlide } from '@/engine/soundEngine';
 
 interface HintModalProps {
   /** Optional title shown in gold serif above the body text */
@@ -17,6 +19,8 @@ interface HintModalProps {
  * tooltip bubbles. Animates in with a scale + fade (0.9 → 1.0).
  */
 export default function HintModal({ title, body, onDismiss }: HintModalProps) {
+  // A note arriving on the desk
+  useEffect(() => { playPaperSlide(); }, [body]);
   return (
     <AnimatePresence>
       <motion.div

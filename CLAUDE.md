@@ -40,6 +40,20 @@ Company-specific flags live directly on `GameState` (e.g. `apexStatus`, `heinric
 - **Verification:** prefer the `preview_*` tools + a `?dev=` shortcut to drive the real screen over assuming. Don't lean on tests as proof the app works — run it. For layout work use the Playwright harnesses against `npm run dev` on :3000 — `node scripts/mobile-shots.js` (phones) and `node scripts/tablet-shots.js` (six iPad viewports, both orientations). Both log horizontal/vertical clipping per shot, so regressions show up in the console, not just the images. Do **not** judge layout from the Claude browser pane: it starves requestAnimationFrame and freezes Framer Motion mid-animation, which reads as broken layout but isn't.
 - **Git:** this repo commits AND pushes to `main` routinely as work lands. Match that unless told otherwise.
 
+## House style (Nov 2026 makeover)
+
+Two materials, used everywhere — keep new UI inside them:
+
+- **Dark glass + brass** for instruments (panels, dashboards, pop-ups). Mostly automatic: `globals.css` styles `.bg-card-bg`, `button.bg-gold` and full-screen `.bg-navy` pages. Pop-up shells use `.bc-dialog`; status pills use `.bc-chip` (set `--chip`); small caps labels use `.bc-overline`.
+- **Cream paper** for documents (CVs, board papers, minutes, AGM notice, year-end review, hints). Wrap a block in `bc-doc bc-paper` and the theme colours re-point at ink, so existing `text-foreground`, `text-gold`, `border-card-border` etc. recolour themselves. Stamps: `.bc-stamp` (small) and `.sc-outcome-stamp` (result). Paper CSS lives in `components/boardbuild/boardbuild.css` and `components/scenario/scenario.css`.
+
+Other things added in the makeover:
+
+- `components/office/` — the 3D office that replaces the company tiles on desktop (three.js, loaded on demand; `CompanySelectScreen` falls back to the tiles on touch layouts, without WebGL, or when the player picks "List view"). Assets are CC0 from Poly Haven, credited in `public/office/CREDITS.md`. `window.__office` is a dev-only hook for scripted screenshots.
+- `components/scenario/EventPaper.tsx` — desktop scenario play: the event is a board paper and directors are deployed by clicking seats at the table (`BoardroomTable` `seatOverlays`). The touch layout still uses `EventCard` + `DeploymentModal`.
+- `engine/soundEngine.ts` — all sound is synthesised through one bus (master gain → compressor, shared reverb). `getBus()` returns null until the browser allows audio, so nothing queues up. Add voices with the `tone` / `noise` / `chime` helpers rather than raw oscillators.
+- Turbopack can serve a stale `globals.css` in dev after an edit; `rm -rf .next` and restart if a global style doesn't show up.
+
 ## Current state (June 2026)
 
 P0 hardening from the assessment is **done**: risk-flag probability bug, phantom follow-on events removed, working test suite + CI, code-vs-game compliance labels, mid-game persistence, bespoke Vantage/Rheinfeld AGMs.

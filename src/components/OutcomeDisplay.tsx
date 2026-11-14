@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ResolutionOutput, OutcomeTier, Director, GameEvent, DirectorDynamic } from '@/types/game';
-import { playOutcomeSound, playWildcard } from '@/engine/soundEngine';
+import { playOutcomeSound, playWildcard, playPaperSlide, playStamp } from '@/engine/soundEngine';
 import { generateDebrief } from '@/engine/narrativeExplanation';
 import DirectorPortrait from './DirectorPortrait';
 import './boardbuild/boardbuild.css';
@@ -85,12 +85,15 @@ export default function OutcomeDisplay({
 }: OutcomeDisplayProps) {
   // Play sound on outcome + wildcard
   useEffect(() => {
-    if (outcome) {
-      playOutcomeSound(outcome.outcomeTier);
-      if (outcome.wildcard) {
-        setTimeout(() => playWildcard(), 200);
-      }
-    }
+    if (!outcome) return;
+    // The minute lands, the result is stamped, then the tone of the outcome
+    playPaperSlide();
+    const timers = [
+      setTimeout(() => playStamp(), 380),
+      setTimeout(() => playOutcomeSound(outcome.outcomeTier), 560),
+    ];
+    if (outcome.wildcard) timers.push(setTimeout(() => playWildcard(), 900));
+    return () => timers.forEach(clearTimeout);
   }, [outcome]);
 
   const config = outcome ? TIER_CONFIG[outcome.outcomeTier] : null;

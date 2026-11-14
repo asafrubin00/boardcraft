@@ -20,7 +20,7 @@ import SiteFooter from './SiteFooter';
 import { useNewsTicker } from '@/hooks/useNewsTicker';
 import { hasRoomForBoardAndEvent, isDesktopViewport, MD_QUERY } from '@/lib/breakpoints';
 import {
-  isSoundEnabled, setSoundEnabled, playCardDeal, playDirectorSelect,
+  isSoundEnabled, setSoundEnabled, playCardDeal, playDirectorSelect, playPageTurn, playGavel, playDeliberation,
   ensureAudioContext, cycleVolume, getVolumeLevel,
   type VolumeLevel,
 } from '@/engine/soundEngine';
@@ -267,6 +267,7 @@ export default function GameBoardScreen({
     setSelectedStrategy(strategyId);
     setDeployIds([]);
     if (isDesktop) {
+      playPageTurn();
       setSelectedDirectorId(null);
     } else {
       setShowDeployment(true);
@@ -322,7 +323,8 @@ export default function GameBoardScreen({
   const handlePutToBoard = useCallback(() => {
     if (deployIds.length === 0 || deliberating) return;
     setDeliberating(true);
-    playCardDeal();
+    playGavel();
+    playDeliberation();
     deliberateTimer.current = setTimeout(() => {
       setDeliberating(false);
       handleConfirmDeployment(deployIds);

@@ -1,7 +1,11 @@
 // ── BoardCraft Web Audio Sound Engine ──
 // Pure Web Audio API synthesis. No external audio files.
 // AudioContext created lazily on first user interaction (autoplay policy).
-// Master volume: 0.5 for consistent, non-overwhelming sound levels.
+//
+// Everything runs through one bus: voices → master gain → gentle compressor,
+// with a shared room reverb they can send to. The palette is physical rather
+// than "beepy" — paper, a rubber stamp, a gavel, brass chimes, a quiet office —
+// to match the desk-and-boardroom look of the game.
 
 let audioCtx: AudioContext | null = null;
 let soundEnabled = true;
@@ -30,35 +34,92 @@ function getCtx(): AudioContext {
   return audioCtx;
 }
 
-/** Generate a reverb impulse response buffer (decaying white noise). */
-function createReverbImpulse(ctx: AudioContext, decaySeconds: number): AudioBuffer {
-  const sampleRate = ctx.sampleRate;
-  const length = sampleRate * decaySeconds;
-  const buffer = ctx.createBuffer(2, length, sampleRate);
-  for (let ch = 0; ch < 2; ch++) {
-    const data = buffer.getChannelData(ch);
-    for (let i = 0; i < length; i++) {
-      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+// ── Bus ──
+
+interface Bus {
+  ctx: AudioContext;
+  /** Master: every voice ends up here */
+  out: GainNode;
+  /** Send into the shared room reverb */
+  verb: GainNode;
+  white: AudioBuffer;
+  brown: AudioBuffer;
+}
+
+let bus: Bus | null = null;
+
+function makeNoise(ctx: AudioContext, seconds: number, brown: boolean): AudioBuffer {
+  const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * seconds), ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < data.length; i++) {
+    const w = Math.random() * 2 - 1;
+    if (brown) {
+      last = (last + 0.02 * w) / 1.02;
+      data[i] = last * 3.5;
+    } else {
+      data[i] = w;
     }
   }
   return buffer;
 }
 
-/** Create a convolver reverb node with given decay. */
-function getReverb(decaySeconds = 2): ConvolverNode {
-  const ctx = getCtx();
-  const convolver = ctx.createConvolver();
-  convolver.buffer = createReverbImpulse(ctx, decaySeconds);
-  return convolver;
+/** A small, warm room: dense early energy, ~1.5s tail, darker as it decays. */
+function makeImpulse(ctx: AudioContext, seconds: number): AudioBuffer {
+  const length = Math.floor(ctx.sampleRate * seconds);
+  const buffer = ctx.createBuffer(2, length, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = buffer.getChannelData(ch);
+    let lp = 0;
+    for (let i = 0; i < length; i++) {
+      const t = i / length;
+      const w = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.6);
+      // one-pole low-pass that closes over time
+      const k = 0.55 - 0.45 * t;
+      lp += k * (w - lp);
+      data[i] = lp;
+    }
+  }
+  return buffer;
 }
 
-/** Get a master gain node at current volume. */
-function getMasterGain(): GainNode {
-  const ctx = getCtx();
-  const gain = ctx.createGain();
-  gain.gain.value = masterVolume;
-  gain.connect(ctx.destination);
-  return gain;
+/**
+ * The bus, or null when sound is off or the browser hasn't allowed audio yet.
+ * Returning null (rather than scheduling on a suspended context) matters: a
+ * suspended context's clock is frozen, so queued sounds would all fire at once
+ * on the first click.
+ */
+function getBus(): Bus | null {
+  if (!soundEnabled || typeof window === 'undefined') return null;
+  let ctx: AudioContext;
+  try {
+    ctx = getCtx();
+  } catch {
+    return null;
+  }
+  if (ctx.state !== 'running') return null;
+  if (!bus || bus.ctx !== ctx) {
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -16;
+    comp.knee.value = 18;
+    comp.ratio.value = 3;
+    comp.attack.value = 0.004;
+    comp.release.value = 0.22;
+    comp.connect(ctx.destination);
+    const out = ctx.createGain();
+    out.connect(comp);
+    const conv = ctx.createConvolver();
+    conv.buffer = makeImpulse(ctx, 1.7);
+    const wet = ctx.createGain();
+    wet.gain.value = 0.55;
+    const verb = ctx.createGain();
+    verb.connect(conv);
+    conv.connect(wet);
+    wet.connect(out);
+    bus = { ctx, out, verb, white: makeNoise(ctx, 2, false), brown: makeNoise(ctx, 4, true) };
+  }
+  bus.out.gain.value = masterVolume;
+  return bus;
 }
 
 export function ensureAudioContext(): void {
@@ -109,6 +170,7 @@ export function cycleVolume(): VolumeLevel {
   const next = VOLUME_ORDER[(idx + 1) % VOLUME_ORDER.length];
   masterVolume = VOLUME_VALUES[next];
   soundEnabled = next !== 'muted';
+  if (bus) bus.out.gain.setTargetAtTime(masterVolume, bus.ctx.currentTime, 0.05);
   if (typeof window !== 'undefined') {
     localStorage.setItem(VOLUME_KEY, next);
     localStorage.setItem(STORAGE_KEY, soundEnabled ? 'on' : 'off');
@@ -116,414 +178,351 @@ export function cycleVolume(): VolumeLevel {
   return next;
 }
 
-// ── Low-level synthesis helpers ──
+// ── Voices ──
 
-interface ADSROptions {
-  attack?: number;
-  decay?: number;
-  sustain?: number;
-  release?: number;
+interface ToneOpts {
+  f: number;
+  /** Glide to this frequency over the note */
+  f2?: number;
+  /** Start offset in seconds */
+  t?: number;
+  dur: number;
+  type?: OscillatorType;
+  vol?: number;
+  /** Attack time */
+  a?: number;
+  /** Hold at full level before the decay starts */
+  hold?: number;
+  /** Reverb send 0–1 */
+  verb?: number;
+  /** Low-pass cutoff */
+  lp?: number;
+  pan?: number;
 }
 
-/** Play a tone with proper ADSR envelope. */
-function playToneADSR(
-  freq: number,
-  duration: number,
-  startTime: number,
-  type: OscillatorType = 'sine',
-  volume = 0.12,
-  adsr: ADSROptions = {},
-  freqEnd?: number,
-  destination?: AudioNode,
-): void {
-  const ctx = getCtx();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  const { attack = 0.02, decay = 0.1, sustain = 0.7, release = 0.15 } = adsr;
-
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, startTime);
-  if (freqEnd !== undefined) {
-    osc.frequency.linearRampToValueAtTime(freqEnd, startTime + duration);
+function route(b: Bus, node: AudioNode, verb = 0, pan = 0): void {
+  let last: AudioNode = node;
+  if (pan !== 0 && typeof b.ctx.createStereoPanner === 'function') {
+    const p = b.ctx.createStereoPanner();
+    p.pan.value = pan;
+    last.connect(p);
+    last = p;
   }
-
-  const vol = volume * masterVolume;
-  const attackEnd = startTime + attack;
-  const decayEnd = attackEnd + decay;
-  const releaseStart = startTime + duration - release;
-
-  gain.gain.setValueAtTime(0.001, startTime);
-  gain.gain.linearRampToValueAtTime(vol, attackEnd);
-  gain.gain.linearRampToValueAtTime(vol * sustain, decayEnd);
-  if (releaseStart > decayEnd) {
-    gain.gain.setValueAtTime(vol * sustain, releaseStart);
+  last.connect(b.out);
+  if (verb > 0) {
+    const send = b.ctx.createGain();
+    send.gain.value = verb;
+    last.connect(send);
+    send.connect(b.verb);
   }
-  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-  osc.connect(gain);
-  gain.connect(destination ?? ctx.destination);
-  osc.start(startTime);
-  osc.stop(startTime + duration + 0.05);
 }
 
-/** Play a tone through a low-pass filter. */
-function playFilteredADSR(
-  freq: number,
-  duration: number,
-  startTime: number,
-  type: OscillatorType,
-  volume: number,
-  filterFreq: number,
-  adsr?: ADSROptions,
-  freqEnd?: number,
-  destination?: AudioNode,
-): void {
-  const ctx = getCtx();
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = filterFreq;
-  filter.Q.value = 1;
-  filter.connect(destination ?? ctx.destination);
-  playToneADSR(freq, duration, startTime, type, volume, adsr, freqEnd, filter);
+function envelope(b: Bus, t0: number, dur: number, vol: number, a: number, hold: number): GainNode {
+  const g = b.ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(vol, t0 + a);
+  if (hold > 0) g.gain.setValueAtTime(vol, t0 + a + hold);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  return g;
 }
 
-/** Play a tone through convolver reverb with dry/wet split. */
-function playWithReverb(
-  freq: number,
-  duration: number,
-  startTime: number,
-  type: OscillatorType,
-  volume: number,
-  filterFreq: number,
-  reverbDecay = 2,
-  adsr?: ADSROptions,
-  freqEnd?: number,
-): void {
-  const ctx = getCtx();
-  const master = getMasterGain();
-
-  // Dry path
-  const dryFilter = ctx.createBiquadFilter();
-  dryFilter.type = 'lowpass';
-  dryFilter.frequency.value = filterFreq;
-  dryFilter.Q.value = 1;
-  const dryGain = ctx.createGain();
-  dryGain.gain.value = 0.7;
-  dryFilter.connect(dryGain);
-  dryGain.connect(master);
-
-  // Wet path
-  const wetFilter = ctx.createBiquadFilter();
-  wetFilter.type = 'lowpass';
-  wetFilter.frequency.value = filterFreq * 0.8;
-  wetFilter.Q.value = 1;
-  const reverb = getReverb(reverbDecay);
-  const wetGain = ctx.createGain();
-  wetGain.gain.value = 0.3;
-  wetFilter.connect(reverb);
-  reverb.connect(wetGain);
-  wetGain.connect(master);
-
-  const splitter = ctx.createGain();
-  splitter.gain.value = 1;
-  splitter.connect(dryFilter);
-  splitter.connect(wetFilter);
-
-  playToneADSR(freq, duration, startTime, type, volume, adsr, freqEnd, splitter);
+function tone(b: Bus, o: ToneOpts): void {
+  const t0 = b.ctx.currentTime + (o.t ?? 0);
+  const osc = b.ctx.createOscillator();
+  osc.type = o.type ?? 'sine';
+  osc.frequency.setValueAtTime(o.f, t0);
+  if (o.f2 !== undefined) osc.frequency.exponentialRampToValueAtTime(Math.max(o.f2, 1), t0 + o.dur);
+  const g = envelope(b, t0, o.dur, o.vol ?? 0.1, o.a ?? 0.005, o.hold ?? 0);
+  let last: AudioNode = osc;
+  if (o.lp) {
+    const f = b.ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = o.lp;
+    last.connect(f);
+    last = f;
+  }
+  last.connect(g);
+  route(b, g, o.verb, o.pan);
+  osc.start(t0);
+  osc.stop(t0 + o.dur + 0.05);
 }
 
-/** Play white noise burst (for card deal, applause). */
-function playNoiseBurst(
-  duration: number,
-  startTime: number,
-  volume: number,
-  bandpassLow: number,
-  bandpassHigh: number,
-  adsr: ADSROptions = {},
-  destination?: AudioNode,
-  ampModRate?: number,
-): void {
-  const ctx = getCtx();
-  const bufferSize = ctx.sampleRate * Math.ceil(duration + 1);
-  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = Math.random() * 2 - 1;
+interface NoiseOpts {
+  t?: number;
+  dur: number;
+  vol?: number;
+  kind?: BiquadFilterType;
+  f: number;
+  f2?: number;
+  q?: number;
+  a?: number;
+  hold?: number;
+  verb?: number;
+  pan?: number;
+  brown?: boolean;
+}
+
+function noise(b: Bus, o: NoiseOpts): void {
+  const t0 = b.ctx.currentTime + (o.t ?? 0);
+  const src = b.ctx.createBufferSource();
+  src.buffer = o.brown ? b.brown : b.white;
+  src.loop = true;
+  const filt = b.ctx.createBiquadFilter();
+  filt.type = o.kind ?? 'bandpass';
+  filt.frequency.setValueAtTime(o.f, t0);
+  if (o.f2 !== undefined) filt.frequency.exponentialRampToValueAtTime(o.f2, t0 + o.dur);
+  filt.Q.value = o.q ?? 0.8;
+  const g = envelope(b, t0, o.dur, o.vol ?? 0.05, o.a ?? 0.005, o.hold ?? 0);
+  src.connect(filt);
+  filt.connect(g);
+  route(b, g, o.verb, o.pan);
+  src.start(t0, Math.random() * 1.5);
+  src.stop(t0 + o.dur + 0.05);
+}
+
+/** Struck brass / glass: a fundamental with a few quieter, shorter overtones. */
+function chime(b: Bus, f: number, vol: number, t = 0, dur = 1.5, verb = 0.6): void {
+  const parts: [number, number, number][] = [[1, 1, 1], [2, 0.36, 0.7], [3.01, 0.15, 0.45], [4.2, 0.07, 0.3]];
+  for (const [ratio, level, len] of parts) {
+    tone(b, { f: f * ratio, t, dur: dur * len, vol: vol * level, a: 0.003, verb });
   }
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
+}
 
-  // Bandpass via two filters
-  const hipass = ctx.createBiquadFilter();
-  hipass.type = 'highpass';
-  hipass.frequency.value = bandpassLow;
-  hipass.Q.value = 0.5;
-
-  const lopass = ctx.createBiquadFilter();
-  lopass.type = 'lowpass';
-  lopass.frequency.value = bandpassHigh;
-  lopass.Q.value = 0.5;
-
-  const gain = ctx.createGain();
-  const { attack = 0.01, decay = 0.05, sustain = 0.7, release = 0.1 } = adsr;
-  const vol = volume * masterVolume;
-
-  const attackEnd = startTime + attack;
-  const decayEnd = attackEnd + decay;
-  const releaseStart = startTime + duration - release;
-
-  gain.gain.setValueAtTime(0.001, startTime);
-  gain.gain.linearRampToValueAtTime(vol, attackEnd);
-  gain.gain.linearRampToValueAtTime(vol * sustain, decayEnd);
-  if (releaseStart > decayEnd) {
-    gain.gain.setValueAtTime(vol * sustain, releaseStart);
+/** A hand bell: inharmonic partials with a long tail. */
+function bell(b: Bus, f: number, vol: number, t = 0): void {
+  const parts: [number, number, number][] = [[0.5, 0.5, 3.6], [1, 1, 3.2], [1.19, 0.55, 2.4], [1.5, 0.4, 2.0], [2, 0.5, 1.7], [2.51, 0.28, 1.2], [3.01, 0.18, 0.9]];
+  for (const [ratio, level, len] of parts) {
+    tone(b, { f: f * ratio, t, dur: len, vol: vol * level, a: 0.004, verb: 0.7 });
   }
-  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+}
 
-  source.connect(hipass);
-  hipass.connect(lopass);
+function thud(b: Bus, t: number, vol: number, f = 120, f2 = 48, dur = 0.22): void {
+  tone(b, { f, f2, t, dur, vol, a: 0.002, verb: 0.2 });
+  noise(b, { t, dur: 0.07, vol: vol * 0.55, kind: 'lowpass', f: 700, a: 0.001, verb: 0.2 });
+}
 
-  if (ampModRate) {
-    // Amplitude modulation via LFO
-    const lfo = ctx.createOscillator();
-    const lfoGain = ctx.createGain();
-    lfo.frequency.value = ampModRate;
-    lfoGain.gain.value = 0.5; // modulation depth
-    lfo.connect(lfoGain);
-    const modGain = ctx.createGain();
-    modGain.gain.value = 0.5; // bias so it doesn't go silent
-    lfoGain.connect(modGain.gain);
-    lopass.connect(modGain);
-    modGain.connect(gain);
-    lfo.start(startTime);
-    lfo.stop(startTime + duration + 0.1);
-  } else {
-    lopass.connect(gain);
-  }
+function slide(b: Bus, t: number, vol: number): void {
+  noise(b, { t, dur: 0.24, vol: 0.125 * vol, f: 2400, f2: 5200, q: 0.7, a: 0.035 });
+  noise(b, { t: t + 0.02, dur: 0.09, vol: 0.036 * vol, kind: 'highpass', f: 6000, a: 0.01 });
+}
 
-  gain.connect(destination ?? ctx.destination);
-  source.start(startTime);
-  source.stop(startTime + duration + 0.1);
+function knock(b: Bus, t: number, vol: number): void {
+  tone(b, { f: 210, f2: 120, t, dur: 0.1, vol: 0.34 * vol, type: 'triangle', a: 0.001, verb: 0.4 });
+  noise(b, { t, dur: 0.03, vol: 0.16 * vol, f: 1300, q: 1.2, a: 0.001, verb: 0.4 });
 }
 
 // ── Public sound functions ──
 
-/** BOARD_SEAT_DROP - short satisfying click: 600hz sine, 0.08s */
+/** A director takes a seat: the chair settles, then a brass chime. */
 export function playBoardSeatDrop(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  playToneADSR(600, 0.08, now, 'sine', 0.15, {
-    attack: 0.003, decay: 0.03, sustain: 0.3, release: 0.03,
-  });
+  const b = getBus();
+  if (!b) return;
+  thud(b, 0, 0.3, 150, 85, 0.16);
+  chime(b, 1174.7, 0.085, 0.03, 1.4);
+  chime(b, 1760, 0.035, 0.1, 1.1);
 }
 
-/** BOARD_SEAT_REMOVE - descending whoosh: 500hz→200hz, 0.15s */
+/** A director leaves the table: a soft falling breath. */
 export function playBoardSeatRemove(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  playToneADSR(500, 0.15, now, 'sine', 0.12, {
-    attack: 0.005, decay: 0.05, sustain: 0.4, release: 0.05,
-  }, 200);
+  const b = getBus();
+  if (!b) return;
+  noise(b, { dur: 0.24, vol: 0.06, f: 1800, f2: 500, q: 0.9, a: 0.02 });
+  tone(b, { f: 220, f2: 140, dur: 0.2, vol: 0.07, a: 0.01 });
 }
 
-/** BOARD_CONFIRM - warm three-note chord: 392+494+587hz, 0.6s */
+/** The board is locked: a heavy latch, then a warm chord that hangs in the room. */
 export function playBoardConfirm(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  const adsr = { attack: 0.03, decay: 0.15, sustain: 0.5, release: 0.2 };
-  playToneADSR(392, 0.6, now, 'sine', 0.08, adsr);
-  playToneADSR(494, 0.6, now, 'sine', 0.08, adsr);
-  playToneADSR(587, 0.6, now, 'sine', 0.08, adsr);
+  const b = getBus();
+  if (!b) return;
+  thud(b, 0, 0.42, 95, 46, 0.28);
+  tone(b, { f: 73.4, t: 0.05, dur: 1.5, vol: 0.14, a: 0.02 });
+  [146.8, 220, 293.7, 370, 440].forEach((f, i) => {
+    tone(b, { f, t: 0.08 + i * 0.045, dur: 2.3, vol: 0.075, type: 'triangle', lp: 1800, a: 0.006, verb: 0.65 });
+  });
+  chime(b, 880, 0.04, 0.34, 1.8);
 }
 
-/** DIRECTOR_SELECT - soft click: 523hz triangle, 0.1s */
+/** Small wooden tick for hovering and picking. */
 export function playDirectorSelect(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  playToneADSR(523, 0.1, now, 'triangle', 0.08, {
-    attack: 0.005, decay: 0.03, sustain: 0.4, release: 0.04,
-  });
+  const b = getBus();
+  if (!b) return;
+  tone(b, { f: 1500, f2: 900, dur: 0.045, vol: 0.12, type: 'triangle', a: 0.001 });
+  noise(b, { dur: 0.016, vol: 0.055, kind: 'highpass', f: 5000, a: 0.001 });
 }
 
-/** CARD_DEAL - white noise burst filtered 2000-4000hz, 0.06s */
+/** A sheet of paper sliding across the desk. */
 export function playCardDeal(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  playNoiseBurst(0.06, now, 0.08, 2000, 4000, {
-    attack: 0.003, decay: 0.02, sustain: 0.3, release: 0.02,
-  });
+  const b = getBus();
+  if (!b) return;
+  slide(b, 0, 1);
+}
+export const playPaperSlide = playCardDeal;
+
+/** Turning a page. */
+export function playPageTurn(): void {
+  const b = getBus();
+  if (!b) return;
+  noise(b, { dur: 0.17, vol: 0.11, f: 3200, f2: 1800, q: 0.8, a: 0.012 });
+  noise(b, { t: 0.09, dur: 0.11, vol: 0.062, f: 4600, q: 1, a: 0.01 });
 }
 
-/** PARTIAL_SUCCESS - neutral 369hz sine, 0.4s gentle fade */
+/** Opening a folder: the cover lifts, the page underneath shifts. */
+export function playFolderOpen(): void {
+  const b = getBus();
+  if (!b) return;
+  slide(b, 0, 0.9);
+  noise(b, { t: 0.8, dur: 0.3, vol: 0.05, f: 900, f2: 2600, q: 0.7, a: 0.1 });
+  tone(b, { f: 130, f2: 90, t: 1.3, dur: 0.12, vol: 0.1, a: 0.004 });
+}
+
+/** A rubber stamp coming down on paper. */
+export function playStamp(): void {
+  const b = getBus();
+  if (!b) return;
+  thud(b, 0, 0.5);
+  noise(b, { dur: 0.035, vol: 0.07, f: 2500, q: 1, a: 0.001 });
+}
+
+/** Two raps of the gavel. */
+export function playGavel(): void {
+  const b = getBus();
+  if (!b) return;
+  knock(b, 0, 1);
+  knock(b, 0.26, 0.8);
+}
+
+/** The board deliberates: a low murmur under a ticking clock (~1.3s). */
+export function playDeliberation(): void {
+  const b = getBus();
+  if (!b) return;
+  noise(b, { t: 0.3, dur: 1.15, vol: 0.05, f: 340, q: 0.8, a: 0.3, verb: 0.3 });
+  noise(b, { t: 0.35, dur: 1.05, vol: 0.02, f: 900, q: 1.4, a: 0.3, verb: 0.3 });
+  [0.5, 0.82, 1.14].forEach((t) => tone(b, { f: 900, f2: 700, t, dur: 0.035, vol: 0.045, type: 'triangle', a: 0.001 }));
+}
+
+/** PARTIAL_SUCCESS — an open, unresolved interval. */
 export function playPartialSuccess(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  playToneADSR(369, 0.4, now, 'sine', 0.1, {
-    attack: 0.04, decay: 0.1, sustain: 0.5, release: 0.15,
-  });
+  const b = getBus();
+  if (!b) return;
+  chime(b, 587.3, 0.1, 0, 1.3);
+  chime(b, 440, 0.06, 0.13, 1.3);
 }
 
-/** SUCCESS - ascending two-note: 440→554hz, each 0.25s, with delayed copy for reverb feel */
+/** SUCCESS — a rising fourth over a warm bed. */
 export function playSuccess(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  const adsr = { attack: 0.01, decay: 0.06, sustain: 0.6, release: 0.1 };
-  // Main notes
-  playToneADSR(440, 0.25, now, 'sine', 0.1, adsr);
-  playToneADSR(554, 0.25, now + 0.25, 'sine', 0.1, adsr);
-  // Delayed copy at 30% volume for reverb effect
-  playToneADSR(440, 0.25, now + 0.05, 'sine', 0.03, adsr);
-  playToneADSR(554, 0.25, now + 0.3, 'sine', 0.03, adsr);
+  const b = getBus();
+  if (!b) return;
+  [220, 277.2, 329.6].forEach((f) => tone(b, { f, dur: 1.3, vol: 0.032, a: 0.15, verb: 0.5 }));
+  chime(b, 659.3, 0.11, 0, 1.3);
+  chime(b, 880, 0.12, 0.16, 1.6);
 }
 
-/** CRITICAL_SUCCESS - ascending three-note fanfare: 440→554→659hz, sawtooth + lowpass 800hz, with reverb */
+/** CRITICAL_SUCCESS — a full rising arpeggio with a shimmer on top. */
 export function playCriticalSuccess(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  const adsr = { attack: 0.01, decay: 0.05, sustain: 0.6, release: 0.08 };
-  playWithReverb(440, 0.2, now, 'sawtooth', 0.08, 800, 2, adsr);
-  playWithReverb(554, 0.2, now + 0.2, 'sawtooth', 0.08, 800, 2, adsr);
-  playWithReverb(659, 0.2, now + 0.4, 'sawtooth', 0.08, 800, 2, adsr);
+  const b = getBus();
+  if (!b) return;
+  tone(b, { f: 110, dur: 1.6, vol: 0.09, a: 0.03 });
+  [220, 277.2, 329.6, 440].forEach((f) => tone(b, { f, dur: 2.0, vol: 0.036, a: 0.18, verb: 0.55 }));
+  [440, 554.4, 659.3, 880].forEach((f, i) => chime(b, f, 0.1, i * 0.11, 1.5));
+  chime(b, 1760, 0.05, 0.52, 2.0);
 }
 
-/** FAILURE - descending two-note: 294→220hz, slight detuning */
+/** FAILURE — a falling semitone, low and muted. */
 export function playFailure(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  const adsr = { attack: 0.02, decay: 0.08, sustain: 0.6, release: 0.12 };
-  playToneADSR(294, 0.3, now, 'sine', 0.1, adsr);
-  playToneADSR(291, 0.3, now, 'sine', 0.04, adsr); // detuned -3hz
-  playToneADSR(220, 0.3, now + 0.3, 'sine', 0.1, adsr);
-  playToneADSR(217, 0.3, now + 0.3, 'sine', 0.04, adsr); // detuned -3hz
+  const b = getBus();
+  if (!b) return;
+  thud(b, 0, 0.22, 80, 55, 0.2);
+  tone(b, { f: 174.6, dur: 0.75, vol: 0.13, type: 'triangle', lp: 900, a: 0.02, verb: 0.5 });
+  tone(b, { f: 164.8, t: 0.32, dur: 0.9, vol: 0.13, type: 'triangle', lp: 900, a: 0.02, verb: 0.5 });
 }
 
-/** CRITICAL_FAILURE - dissonant low chord: 185+220hz, square softened at 400hz, 0.8s */
+/** CRITICAL_FAILURE — a heavy drop and a dark cluster. */
 export function playCriticalFailure(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  const adsr = { attack: 0.03, decay: 0.15, sustain: 0.5, release: 0.25 };
-  playFilteredADSR(185, 0.8, now, 'square', 0.08, 400, adsr);
-  playFilteredADSR(220, 0.8, now, 'square', 0.08, 400, adsr);
+  const b = getBus();
+  if (!b) return;
+  thud(b, 0, 0.5, 70, 38, 0.6);
+  noise(b, { dur: 0.55, vol: 0.1, kind: 'lowpass', f: 300, a: 0.01, verb: 0.4, brown: true });
+  [110, 116.5, 155.6].forEach((f) => tone(b, { f, t: 0.05, dur: 1.7, vol: 0.06, type: 'sawtooth', lp: 500, a: 0.06, verb: 0.6 }));
 }
 
-/** AGM_BELL - bell: 523+659hz triangle, sharp attack, 2s exponential decay, reverb */
+/** AGM_BELL — the meeting is called to order. */
 export function playAGMBell(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  const adsr = { attack: 0.01, decay: 0.3, sustain: 0.2, release: 1.0 };
-  playWithReverb(523, 2.0, now, 'triangle', 0.1, 4000, 3, adsr);
-  playWithReverb(659, 2.0, now, 'triangle', 0.07, 4000, 3, adsr);
+  const b = getBus();
+  if (!b) return;
+  bell(b, 392, 0.16);
+  knock(b, 1.2, 0.7);
+  knock(b, 1.46, 0.55);
 }
 
-/** AGM_APPLAUSE - filtered noise: bandpass 800-3000hz, amp mod 7hz, 2.8s */
+/** AGM_APPLAUSE — a room of individual claps rather than a wash of noise. */
 export function playAGMApplause(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  playNoiseBurst(2.8, now, 0.06, 800, 3000, {
-    attack: 0.3, decay: 0.2, sustain: 0.7, release: 0.5,
-  }, ctx.destination, 7);
-}
-
-/** RESOLUTION_PASS - ascending major third: 392→523hz, each 0.15s */
-export function playResolutionPass(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  const adsr = { attack: 0.008, decay: 0.04, sustain: 0.6, release: 0.05 };
-  playToneADSR(392, 0.15, now, 'sine', 0.1, adsr);
-  playToneADSR(523, 0.15, now + 0.15, 'sine', 0.1, adsr);
-}
-
-/** RESOLUTION_FAIL - descending minor third: 311→220hz, with wave shaper distortion */
-export function playResolutionFail(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-
-  // Create a subtle wave shaper for distortion feel
-  const shaper = ctx.createWaveShaper();
-  const curve = new Float32Array(256);
-  for (let i = 0; i < 256; i++) {
-    const x = (i / 128) - 1;
-    curve[i] = (Math.PI + 3) * x / (Math.PI + 3 * Math.abs(x));
+  const b = getBus();
+  if (!b) return;
+  for (let i = 0; i < 90; i++) {
+    const t = Math.pow(Math.random(), 0.8) * 2.6;
+    // swell in, thin out
+    const density = Math.sin(Math.min(1, t / 2.6) * Math.PI);
+    noise(b, {
+      t, dur: 0.035, vol: (0.02 + Math.random() * 0.035) * (0.4 + density),
+      f: 1100 + Math.random() * 1700, q: 1.4, a: 0.001, verb: 0.5, pan: Math.random() * 1.6 - 0.8,
+    });
   }
-  shaper.curve = curve;
-  shaper.oversample = '2x';
-  shaper.connect(ctx.destination);
-
-  const adsr = { attack: 0.008, decay: 0.04, sustain: 0.6, release: 0.05 };
-  playToneADSR(311, 0.15, now, 'sine', 0.1, adsr, undefined, shaper);
-  playToneADSR(220, 0.15, now + 0.15, 'sine', 0.1, adsr, undefined, shaper);
 }
 
-/** YEAR_END_TRIUMPH - layered chord build: bass, then triad, then shimmer. 2s total */
+/** RESOLUTION_PASS — stamped, with a bright confirmation. */
+export function playResolutionPass(): void {
+  const b = getBus();
+  if (!b) return;
+  thud(b, 0, 0.42);
+  chime(b, 784, 0.07, 0.1, 1.1);
+  chime(b, 1046.5, 0.07, 0.22, 1.3);
+}
+
+/** RESOLUTION_FAIL — stamped, with a low falling tone. */
+export function playResolutionFail(): void {
+  const b = getBus();
+  if (!b) return;
+  thud(b, 0, 0.42);
+  tone(b, { f: 196, f2: 174.6, t: 0.1, dur: 0.75, vol: 0.12, type: 'triangle', lp: 700, a: 0.02, verb: 0.5 });
+}
+
+/** YEAR_END_TRIUMPH — bass, a major bed, a rising figure and a bell to finish. */
 export function playYearEndTriumph(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  // Bass 130hz, 0.5s
-  playWithReverb(130, 0.5, now, 'sine', 0.08, 600, 3, {
-    attack: 0.03, decay: 0.1, sustain: 0.6, release: 0.15,
-  });
-  // Triad 261+329+392hz together, 1s starting at 0.3s
-  const chordAdsr = { attack: 0.03, decay: 0.2, sustain: 0.5, release: 0.3 };
-  playWithReverb(261, 1.0, now + 0.3, 'sine', 0.06, 2500, 3, chordAdsr);
-  playWithReverb(329, 1.0, now + 0.3, 'sine', 0.06, 2500, 3, chordAdsr);
-  playWithReverb(392, 1.0, now + 0.3, 'sine', 0.06, 2500, 3, chordAdsr);
-  // Shimmer 523hz at 0.8s, 0.8s
-  playWithReverb(523, 0.8, now + 0.8, 'sine', 0.04, 4000, 3, {
-    attack: 0.05, decay: 0.15, sustain: 0.4, release: 0.2,
-  });
+  const b = getBus();
+  if (!b) return;
+  tone(b, { f: 65.4, dur: 2.6, vol: 0.12, a: 0.05 });
+  [130.8, 164.8, 196, 261.6].forEach((f) => tone(b, { f, t: 0.1, dur: 3.2, vol: 0.045, a: 0.35, verb: 0.6 }));
+  [523.25, 659.3, 784, 1046.5].forEach((f, i) => chime(b, f, 0.09, 0.35 + i * 0.16, 1.6));
+  bell(b, 523.25, 0.1, 1.05);
 }
 
-/** YEAR_END_DEFEAT - slow descending minor: 392→311→261, each 0.5s, slow attack, reverb */
+/** YEAR_END_DEFEAT — three slow falling notes. */
 export function playYearEndDefeat(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  const adsr = { attack: 0.15, decay: 0.1, sustain: 0.5, release: 0.15 };
-  playWithReverb(392, 0.5, now, 'sine', 0.06, 1200, 3, adsr);
-  playWithReverb(311, 0.5, now + 0.5, 'sine', 0.06, 1200, 3, adsr);
-  playWithReverb(261, 0.5, now + 1.0, 'sine', 0.06, 1200, 3, adsr);
+  const b = getBus();
+  if (!b) return;
+  thud(b, 0, 0.3, 75, 42, 0.5);
+  [196, 155.6, 130.8].forEach((f, i) => tone(b, { f, t: 0.15 + i * 0.55, dur: 1.3, vol: 0.12, type: 'triangle', lp: 800, a: 0.06, verb: 0.65 }));
 }
 
-/** YEAR_END_NEUTRAL - single sustained 329hz sine, 1s gentle fade */
+/** YEAR_END_NEUTRAL — an open fifth, left hanging. */
 export function playYearEndNeutral(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  playToneADSR(329, 1.0, now, 'sine', 0.08, {
-    attack: 0.05, decay: 0.2, sustain: 0.5, release: 0.3,
-  });
+  const b = getBus();
+  if (!b) return;
+  [164.8, 246.9].forEach((f) => tone(b, { f, dur: 1.8, vol: 0.04, a: 0.2, verb: 0.5 }));
+  chime(b, 329.6, 0.09, 0.1, 1.6);
+  chime(b, 493.9, 0.07, 0.3, 1.6);
 }
 
-/** Playful ascending-then-descending flourish for wildcard events. */
+/** Wildcard — a quick glassy run, up and back. */
 export function playWildcard(): void {
-  if (!soundEnabled) return;
-  const ctx = getCtx();
-  const now = ctx.currentTime;
-  const adsr = { attack: 0.005, decay: 0.03, sustain: 0.5, release: 0.04 };
-  const notes = [523, 659, 784, 659, 523];
-  notes.forEach((freq, i) => {
-    playWithReverb(freq, 0.1, now + i * 0.1, 'triangle', 0.08, 3000, 0.8, adsr);
-  });
+  const b = getBus();
+  if (!b) return;
+  noise(b, { dur: 0.5, vol: 0.03, f: 1500, f2: 6000, q: 1.5, a: 0.2 });
+  [523.25, 659.3, 784, 987.8, 784].forEach((f, i) => chime(b, f, 0.07, i * 0.085, 0.7));
 }
 
 /** Dispatches to triumph/defeat/neutral based on SV. */
 export function playYearEnd(sv: number): void {
-  if (!soundEnabled) return;
   if (sv > 105) {
     playYearEndTriumph();
   } else if (sv < 95) {
@@ -552,4 +551,134 @@ export function playOutcomeSound(tier: string): void {
       playCriticalFailure();
       break;
   }
+}
+
+// ── The office ──
+
+/** One footfall on a wooden floor. `side` alternates -1 / 1 for a slight stereo sway. */
+export function playFootstep(side = 0): void {
+  const b = getBus();
+  if (!b) return;
+  const v = 0.85 + Math.random() * 0.3;
+  noise(b, { dur: 0.09, vol: 0.13 * v, kind: 'lowpass', f: 240 + Math.random() * 60, a: 0.002, verb: 0.35, pan: side * 0.18 });
+  tone(b, { f: 88 + Math.random() * 10, f2: 60, dur: 0.085, vol: 0.1 * v, a: 0.002, verb: 0.35, pan: side * 0.18 });
+  noise(b, { t: 0.012, dur: 0.02, vol: 0.02 * v, f: 1800, q: 1, a: 0.001, verb: 0.3 });
+}
+
+/** The office door: latch, a slow hinge, air moving. */
+export function playDoorOpen(): void {
+  const b = getBus();
+  if (!b) return;
+  tone(b, { f: 320, f2: 190, dur: 0.045, vol: 0.12, type: 'triangle', a: 0.001, verb: 0.4 });
+  noise(b, { dur: 0.02, vol: 0.06, f: 2600, q: 1, a: 0.001, verb: 0.4 });
+  tone(b, { f: 96, f2: 72, t: 0.12, dur: 1.1, vol: 0.03, type: 'sawtooth', lp: 520, a: 0.25, verb: 0.5 });
+  noise(b, { t: 0.1, dur: 1.3, vol: 0.03, f: 480, f2: 900, q: 0.6, a: 0.5, verb: 0.4 });
+}
+
+/** The laptop: hinge, then a soft start-up chord. */
+export function playLaptopBoot(): void {
+  const b = getBus();
+  if (!b) return;
+  tone(b, { f: 900, f2: 600, dur: 0.03, vol: 0.04, type: 'triangle', a: 0.001 });
+  [349.2, 523.25, 659.3, 784, 1046.5].forEach((f, i) => {
+    tone(b, { f, t: 0.5 + i * 0.07, dur: 2.4, vol: 0.045, a: 0.3, hold: 0.3, verb: 0.7 });
+  });
+  noise(b, { t: 0.5, dur: 1.4, vol: 0.008, kind: 'highpass', f: 7000, a: 0.5 });
+}
+
+/** Pushing into the screen: a rising rush that lands on a soft low hit. */
+export function playZoomWhoosh(seconds = 1.6): void {
+  const b = getBus();
+  if (!b) return;
+  noise(b, { dur: seconds, vol: 0.085, f: 300, f2: 3400, q: 1.1, a: seconds * 0.72 });
+  tone(b, { f: 58, f2: 150, dur: seconds, vol: 0.1, a: seconds * 0.75 });
+  thud(b, seconds - 0.06, 0.26, 70, 40, 0.5);
+  chime(b, 880, 0.035, seconds - 0.02, 1.8);
+}
+
+// Room tone: a low hush, a faint band of city through the glass, a trace of
+// air-handling hum. Quiet enough to be noticed only when it stops.
+let ambience: { gain: GainNode; stop: () => void } | null = null;
+let ambienceWanted = false;
+
+function beginAmbience(): void {
+  if (ambience || !ambienceWanted) return;
+  const b = getBus();
+  if (!b) return;
+  const { ctx } = b;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(1, ctx.currentTime + 3);
+  gain.connect(b.out);
+  const nodes: AudioScheduledSourceNode[] = [];
+
+  const room = ctx.createBufferSource();
+  room.buffer = b.brown;
+  room.loop = true;
+  const roomLp = ctx.createBiquadFilter();
+  roomLp.type = 'lowpass';
+  roomLp.frequency.value = 210;
+  const roomGain = ctx.createGain();
+  roomGain.gain.value = 0.11;
+  room.connect(roomLp); roomLp.connect(roomGain); roomGain.connect(gain);
+  nodes.push(room);
+
+  const city = ctx.createBufferSource();
+  city.buffer = b.white;
+  city.loop = true;
+  const cityBp = ctx.createBiquadFilter();
+  cityBp.type = 'bandpass';
+  cityBp.frequency.value = 620;
+  cityBp.Q.value = 0.5;
+  const cityGain = ctx.createGain();
+  cityGain.gain.value = 0.007;
+  const lfo = ctx.createOscillator();
+  lfo.frequency.value = 0.07;
+  const lfoDepth = ctx.createGain();
+  lfoDepth.gain.value = 0.004;
+  lfo.connect(lfoDepth); lfoDepth.connect(cityGain.gain);
+  city.connect(cityBp); cityBp.connect(cityGain); cityGain.connect(gain);
+  nodes.push(city, lfo);
+
+  for (const [f, v] of [[58, 0.012], [116, 0.004]] as const) {
+    const hum = ctx.createOscillator();
+    hum.frequency.value = f;
+    const hg = ctx.createGain();
+    hg.gain.value = v;
+    hum.connect(hg); hg.connect(gain);
+    nodes.push(hum);
+  }
+  nodes.forEach((n) => n.start());
+  ambience = {
+    gain,
+    stop: () => {
+      const t = ctx.currentTime;
+      gain.gain.cancelScheduledValues(t);
+      gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+      nodes.forEach((n) => { try { n.stop(t + 1.3); } catch { /* already stopped */ } });
+    },
+  };
+}
+
+/** Start the office room tone. Safe to call before the browser allows audio: it begins on the first click or key. */
+export function startOfficeAmbience(): void {
+  ambienceWanted = true;
+  beginAmbience();
+  if (!ambience && typeof window !== 'undefined') {
+    const retry = () => {
+      window.removeEventListener('pointerdown', retry);
+      window.removeEventListener('keydown', retry);
+      // the context resumes asynchronously after the gesture
+      window.setTimeout(beginAmbience, 120);
+    };
+    window.addEventListener('pointerdown', retry);
+    window.addEventListener('keydown', retry);
+  }
+}
+
+export function stopOfficeAmbience(): void {
+  ambienceWanted = false;
+  ambience?.stop();
+  ambience = null;
 }

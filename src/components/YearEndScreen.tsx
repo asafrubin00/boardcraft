@@ -17,7 +17,7 @@ import {
   type CareerStats,
   type LeaderboardEntry,
 } from '@/engine/governanceCapital';
-import { playYearEnd } from '@/engine/soundEngine';
+import { playYearEnd, playPaperSlide, playStamp } from '@/engine/soundEngine';
 import SiteFooter from './SiteFooter';
 import CompanyLogo from './CompanyLogo';
 import './boardbuild/boardbuild.css';
@@ -678,7 +678,13 @@ function LeaderboardModal({ isOpen, onClose, currentEntryId }: { isOpen: boolean
 
 export default function YearEndScreen({ gameState, onRestart, onChangeCompany, agmResults }: YearEndScreenProps) {
   // Play year-end sound on mount
-  useEffect(() => { playYearEnd(gameState.svIndex); }, []);
+  useEffect(() => {
+    playPaperSlide();
+    const stamp = setTimeout(() => playStamp(), 900);
+    const theme = setTimeout(() => playYearEnd(gameState.svIndex), 1150);
+    return () => { clearTimeout(stamp); clearTimeout(theme); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const isMeridian = gameState.company.id === 'company_meridian';
   const metricLabel = isMeridian ? 'MIS' : 'SV Index';
@@ -751,14 +757,16 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany, a
               <h1 className="bc-serif text-3xl md:text-4xl font-bold leading-tight mt-1">{gameState.company.name}</h1>
             </div>
           </div>
+          <div className="hidden md:block shrink-0">
           <motion.span
-            className={`sc-outcome-stamp hidden md:inline-block shrink-0 text-[13px] max-w-[230px] text-center leading-snug ${getProxyColor(proxyRating)}`}
+            className={`sc-outcome-stamp text-[13px] max-w-[230px] text-center leading-snug ${getProxyColor(proxyRating)}`}
             initial={{ opacity: 0, scale: 2.4, rotate: -14 }}
             animate={{ opacity: 0.9, scale: 1, rotate: 4 }}
             transition={{ delay: 0.9, type: 'spring', stiffness: 420, damping: 17 }}
           >
             {proxyRating}
           </motion.span>
+          </div>
         </header>
 
         {/* Three metric cards */}
