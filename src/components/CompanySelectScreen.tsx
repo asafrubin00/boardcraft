@@ -533,7 +533,7 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
 
       <button
         onClick={() => setShowMap(true)}
-        className={`fixed top-5 ${canOffice ? 'right-[8.5rem]' : 'right-6'} z-20 text-xs font-semibold tracking-wide text-foreground/70 hover:text-gold border border-white/20 hover:border-gold rounded-full px-3.5 py-1.5 bg-black/30 backdrop-blur-sm cursor-pointer transition-colors`}
+        className={`hidden md:block fixed top-5 ${canOffice ? 'right-[8.5rem]' : 'right-6'} z-20 text-xs font-semibold tracking-wide text-foreground/70 hover:text-gold border border-white/20 hover:border-gold rounded-full px-3.5 py-1.5 bg-black/30 backdrop-blur-sm cursor-pointer transition-colors`}
       >
         World map
       </button>

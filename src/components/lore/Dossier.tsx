@@ -140,15 +140,15 @@ export default function Dossier({
       </div>
 
       <div className="flex items-center justify-between gap-3 mt-6 pt-4" style={{ borderTop: '1px solid var(--rule)' }}>
-        <button className="of-btn of-btn-back" onClick={onBack}>‹ Go back</button>
+        <button className="of-btn of-btn-back whitespace-nowrap" onClick={onBack}>‹ Back</button>
         {pages > 1 && (
           <div className="flex items-center gap-2">
             <button className="of-btn of-btn-back" style={{ padding: '6px 10px', opacity: page === 0 ? 0.35 : 1 }} onClick={() => go(page - 1)} aria-label="Previous page" disabled={page === 0}>‹</button>
-            <span className="text-[11px] tabular-nums" style={{ color: 'var(--ink-soft)' }}>{page + 1} / {pages}</span>
+            <span className="text-[11px] tabular-nums whitespace-nowrap" style={{ color: 'var(--ink-soft)' }}>{page + 1} / {pages}</span>
             <button className="of-btn of-btn-back" style={{ padding: '6px 10px', opacity: page === pages - 1 ? 0.35 : 1 }} onClick={() => go(page + 1)} aria-label="Next page" disabled={page === pages - 1}>›</button>
           </div>
         )}
-        <button className="of-btn of-btn-start" onClick={onStart}>Start →</button>
+        <button className="of-btn of-btn-start whitespace-nowrap" onClick={onStart}>Start →</button>
       </div>
     </article>
   );
