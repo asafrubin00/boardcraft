@@ -968,7 +968,7 @@ export default function AgmScreen({
                     <span className="bc-serif text-foreground font-bold text-[17px] leading-snug">{res.label}</span>
                     {(
                       <motion.span
-                        className={`sc-outcome-stamp shrink-0 ml-3 text-sm ${res.pass ? 'text-success' : 'text-error'}`}
+                        className={`sc-outcome-stamp shrink-0 ml-3 text-sm ${(results.votes?.[idx]?.good ?? res.pass) ? 'text-success' : 'text-error'}`}
                         style={{ padding: '3px 10px 2px', borderWidth: 3 }}
                         initial={{ opacity: 0, scale: 2.4, rotate: -14 }}
                         animate={{ opacity: 0.9, scale: 1, rotate: res.pass ? -4 : 4 }}
@@ -984,7 +984,7 @@ export default function AgmScreen({
                     animate={{ opacity: 1 }}
                     transition={{ delay: (countDuration(results.votes?.[idx]?.blocks.length ?? 4) - 500) / 1000, duration: 0.5 }}
                   >
-                    <p className={`text-[13px] mt-3 font-narrative italic ${res.pass ? 'text-success' : 'text-error'}`}>
+                    <p className={`text-[13px] mt-3 font-narrative italic ${(results.votes?.[idx]?.good ?? res.pass) ? 'text-success' : 'text-error'}`}>
                       {results.votes?.[idx] ? voteLine(results.votes[idx]) : res.explanation}
                     </p>
                   </motion.div>

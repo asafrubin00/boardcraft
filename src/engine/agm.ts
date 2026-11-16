@@ -301,7 +301,15 @@ function build(state: GameState, strategyId: string | null, tier: OutcomeTier | 
     const push = tier ? CAMPAIGN[tier] * (stance === 'against' ? -1 : stance === 'neutral' ? 0 : 1) : 0;
     // A little independent movement per resolution, so the three are not locked together.
     const noise = tier ? Math.round((seeded(state.randomSeed * 31 + i * 977) - 0.5) * 6) : 0;
-    const target = clamp(base + spec.adjust + extra[i] + push + noise, 5, 95);
+    // A board item, or a shareholder item the board backs, rides on the board's
+    // standing. One the board resists does better the WEAKER the board is.
+    const standing =
+      spec.proposedBy === 'board' || stance === 'for'
+        ? base
+        : stance === 'against'
+          ? 100 - base
+          : 50 + (50 - base) * 0.4;
+    const target = clamp(standing + spec.adjust + extra[i] + push + noise, 5, 95);
 
         const mode = spec.proposedBy === 'board' ? 'board' : stance === 'for' ? 'agreed' : 'contested';
     const blocks = countBlocks(defs, target, mode);
