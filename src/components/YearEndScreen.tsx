@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import type { AgmResolutionVote } from '@/engine/agm';
+import DebriefReport from '@/components/debrief/DebriefReport';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { GameState, ResolvedEvent, GovernanceHealthBreakdown, CompetencyDomain } from '@/types/game';
 import { getSvHistory, getProxyAdviserRating, getAllEvents } from '@/engine/gameStateManager';
@@ -27,6 +29,7 @@ interface AgmResults {
   resolution1Pass: boolean;
   resolution2Pass: boolean;
   resolution3Pass: boolean;
+  votes?: AgmResolutionVote[];
 }
 
 interface YearEndScreenProps {
@@ -686,6 +689,7 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany, a
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const [showDebrief, setShowDebrief] = useState(false);
   const isMeridian = gameState.company.id === 'company_meridian';
   const metricLabel = isMeridian ? 'MIS' : 'SV Index';
   const metricFullLabel = isMeridian ? 'Mission Integrity Score' : 'SV Index';
@@ -952,6 +956,8 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany, a
 
         </motion.article>
 
+        {showDebrief && <DebriefReport gameState={gameState} agmVotes={agmResults?.votes} onClose={() => setShowDebrief(false)} />}
+
         {/* Action Buttons */}
         <motion.div
           className="flex flex-col items-center gap-4 pb-8"
@@ -959,10 +965,17 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany, a
           animate={{ opacity: 1 }}
           transition={{ delay: 1, duration: 0.5 }}
         >
+          <button
+            onClick={() => setShowDebrief(true)}
+            className="px-8 py-4 rounded-lg bg-gold text-navy-dark font-bold text-lg hover:bg-gold-light transition-colors cursor-pointer"
+          >
+            Open the Governance Debrief
+          </button>
+          <p className="text-xs text-foreground/45 -mt-2">Every decision, what it led to, and the code provision behind it. Saves as a PDF.</p>
           <div className="flex gap-4">
             <button
               onClick={onRestart}
-              className="px-8 py-4 rounded-lg bg-gold text-navy-dark font-bold text-lg hover:bg-gold-light transition-colors cursor-pointer"
+              className="px-8 py-4 rounded-lg border border-gold/50 text-gold font-bold text-lg hover:bg-gold/10 transition-colors cursor-pointer"
             >
               Same Company
             </button>

@@ -202,6 +202,40 @@ function PlayPageInner() {
     const breakdown = recalcGovernanceBreakdown(started);
     started.governanceHealthBreakdown = rescaleBreakdown(breakdown, 79);
     started.governanceHealth = 79;
+
+    // Dev year-end: play the whole year automatically so the review, the
+    // debrief and the dashboards have a real record to show.
+    if (phaseKey === 'yearend') {
+      let st: GameState = { ...started, currentQuarter: 'Q1', currentTurn: 1, phase: 'gameplay', randomSeed: 4242 };
+      let guard = 0;
+      while (st.phase !== 'year_end' && guard++ < 40) {
+        const ev = getCurrentEvent(st);
+        if (ev && ev.strategies.length > 0) {
+          const seated = st.board.seats
+            .map((x) => st.directors.find((d) => d.id === x.directorId))
+            .filter((d): d is NonNullable<typeof d> => !!d && d.currentEnergy > 0);
+          const ranked = [...seated].sort((a, b) => b.domainRatings[ev.primaryDomain] - a.domainRatings[ev.primaryDomain]);
+          // Deliberately uneven play: strong team most turns, a weak one every third.
+          const team = (guard % 3 === 0 ? ranked.slice(-2) : ranked.slice(0, 3)).map((d) => d.id);
+          const strat = ev.strategies[guard % 4 === 3 ? ev.strategies.length - 1 : guard % ev.strategies.length === 0 ? 1 % ev.strategies.length : 0];
+          const turn = resolveEventTurn(st, ev, strat.id, team);
+          st = { ...turn.newState, forcedChange: null, pendingBoardNotification: null };
+          if (st.currentQuarter === 'AGM') {
+            const votes = resolveAgmVotes(st, strat.id, turn.output.outcomeTier);
+            setAgmResults({
+              resolution1Pass: votes[0].pass, resolution2Pass: votes[1].pass, resolution3Pass: votes[2].pass,
+              votes, narrative: turn.output.narrativeText, outcomeTier: turn.output.outcomeTier,
+            });
+          }
+        }
+        st = advanceToNextTurn(st);
+      }
+      st.governanceHealthBreakdown = rescaleBreakdown(recalcGovernanceBreakdown(st), st.governanceHealth);
+      setGameState({ ...st, phase: 'year_end' });
+      setPhase('year_end');
+      return;
+    }
+
     setGameState(started);
     setPhase(target.phase);
   }, [searchParams, devBooted]);
