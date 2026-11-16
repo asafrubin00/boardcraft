@@ -11,8 +11,6 @@ import EventPaper, { MAX_DEPLOYED } from './scenario/EventPaper';
 import './scenario/scenario.css';
 import SvTracker from './SvTracker';
 import ControlRoom from './controlroom/ControlRoom';
-import EventCard from './EventCard';
-import DeploymentModal from './DeploymentModal';
 import OutcomeDisplay from './OutcomeDisplay';
 import ForcedChangeModal from './ForcedChangeModal';
 import NewsTicker from './NewsTicker';
@@ -241,8 +239,15 @@ export default function GameBoardScreen({
 
   const handleToggleDeploy = useCallback((dirId: string) => {
     if (deliberating) return;
-    setDeployIds((prev) => (prev.includes(dirId) ? prev.filter((x) => x !== dirId) : prev));
-  }, [deliberating]);
+    playDirectorSelect();
+    // Desktop only ever removes here (adding happens at the table); the touch
+    // list on the board paper both adds and removes.
+    setDeployIds((prev) =>
+      prev.includes(dirId) ? prev.filter((x) => x !== dirId)
+      : !isDesktop && prev.length < MAX_DEPLOYED ? [...prev, dirId]
+      : prev
+    );
+  }, [deliberating, isDesktop]);
 
   // Find the selected director's full data
   const selectedDir = useMemo(() => {
@@ -266,13 +271,11 @@ export default function GameBoardScreen({
     }
     setSelectedStrategy(strategyId);
     setDeployIds([]);
-    if (isDesktop) {
-      playPageTurn();
-      setSelectedDirectorId(null);
-    } else {
-      setShowDeployment(true);
-    }
-  }, [currentEvent, onResolveEvent, isDesktop]);
+    // Both layouts turn the board paper to "who takes this on"; on touch the
+    // directors are picked from a list on the paper rather than at the table.
+    playPageTurn();
+    setSelectedDirectorId(null);
+  }, [currentEvent, onResolveEvent]);
 
   // Handle do-nothing / skip
   const handleDoNothing = useCallback(() => {
@@ -707,7 +710,7 @@ export default function GameBoardScreen({
               phones (narrower) or the desktop layout (md:max-w-none) */}
           <div className="w-full max-w-2xl mx-auto md:max-w-none">
             <AnimatePresence mode="wait">
-              {currentEvent && isDesktop ? (
+              {currentEvent ? (
                 <EventPaper
                   key={`paper-${currentEvent.id}`}
                   event={currentEvent}
@@ -722,15 +725,8 @@ export default function GameBoardScreen({
                   onBack={handleBackToResolutions}
                   onToggleDirector={handleToggleDeploy}
                   onConfirm={handlePutToBoard}
-                />
-              ) : currentEvent ? (
-                <EventCard
-                  key={currentEvent.id}
-                  event={currentEvent}
-                  directors={gameState.directors}
-                  boardSeats={gameState.board.seats}
-                  onSelectStrategy={handleSelectStrategy}
-                  onDoNothing={handleDoNothing}
+                  touch={!isDesktop}
+                  busy={deliberating}
                 />
               ) : null}
             </AnimatePresence>
@@ -814,22 +810,6 @@ export default function GameBoardScreen({
           )}
         </AnimatePresence>
       </div>
-
-      {/* Deployment Modal */}
-      {currentEvent && (
-        <DeploymentModal
-          isOpen={showDeployment}
-          onClose={() => {
-            setShowDeployment(false);
-            setSelectedStrategy(null);
-          }}
-          event={currentEvent}
-          strategyId={selectedStrategy ?? ''}
-          directors={gameState.directors}
-          boardSeats={gameState.board.seats}
-          onConfirmDeployment={handleConfirmDeployment}
-        />
-      )}
 
       {/* Outcome Display */}
       <OutcomeDisplay

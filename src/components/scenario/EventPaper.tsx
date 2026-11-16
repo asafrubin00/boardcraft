@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { GameEvent, Director, BoardSeat, StrategyOption } from '@/types/game';
 import { DOMAIN_LABELS, DOMAIN_SHORT } from '@/engine/boardConstants';
@@ -45,6 +45,10 @@ interface EventPaperProps {
   onBack: () => void;
   onToggleDirector: (directorId: string) => void;
   onConfirm: () => void;
+  /** Touch layout: tighter paper, and directors are chosen from a list on the paper itself */
+  touch?: boolean;
+  /** The board is in session — hold the buttons */
+  busy?: boolean;
 }
 
 /**
@@ -66,7 +70,15 @@ export default function EventPaper({
   onBack,
   onToggleDirector,
   onConfirm,
+  touch = false,
+  busy = false,
 }: EventPaperProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  // Touch: turning the page starts the new page at its top, not mid-scroll.
+  useEffect(() => {
+    if (touch && selectedStrategyId) rootRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [touch, selectedStrategyId]);
+
   const boardDirectors = useMemo(() => {
     const ids = new Set(boardSeats.map((s) => s.directorId));
     return directors.filter((d) => ids.has(d.id));
@@ -97,14 +109,15 @@ export default function EventPaper({
 
   return (
     <motion.div
+      ref={rootRef}
       initial={{ opacity: 0, y: -50, x: 40, rotate: 3 }}
       animate={{ opacity: 1, y: 0, x: 0, rotate: 0 }}
       exit={{ opacity: 0, x: 120, rotate: 4 }}
       transition={{ type: 'spring', stiffness: 210, damping: 24 }}
-      className="relative mx-auto w-full max-w-[780px]"
+      className="relative mx-auto w-full max-w-[780px] scroll-mt-3"
     >
       <div className="bc-paper-under absolute inset-0 rounded-[3px]" style={{ transform: 'rotate(0.9deg) translate(6px, 7px)' }} />
-      <article className="bc-paper sc-paper relative rounded-[3px] pl-10 pr-9 pt-7 pb-7 overflow-hidden">
+      <article className={`bc-doc bc-paper sc-paper relative rounded-[3px] overflow-hidden ${touch ? 'pl-6 pr-4 pt-5 pb-5' : 'pl-10 pr-9 pt-7 pb-7'}`}>
         {/* Index tab — colour carries the event tier, as the card border did */}
         <div className="absolute left-0 top-0 bottom-0 w-[7px]" style={{ background: TIER_TAB[event.tier] }} />
 
@@ -115,7 +128,7 @@ export default function EventPaper({
           </p>
         </header>
 
-        <h2 className="bc-serif text-[30px] leading-[1.12] font-bold mt-5">{event.name}</h2>
+        <h2 className={`bc-serif leading-[1.12] font-bold ${touch ? 'text-[24px] mt-4' : 'text-[30px] mt-5'}`}>{event.name}</h2>
 
         {/* What the matter calls on */}
         <div className="mt-4">
@@ -160,7 +173,7 @@ export default function EventPaper({
                           key={s.id}
                           onClick={() => !locked && onSelectStrategy(s.id)}
                           disabled={locked}
-                          className={`sc-resolution group w-full text-left flex gap-4 py-3.5 pl-2 pr-2 ${locked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                          className={`sc-resolution group w-full text-left flex ${touch ? 'gap-3 py-3 pl-1 pr-1' : 'gap-4 py-3.5 pl-2 pr-2'} ${locked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                         >
                           <span className="sc-letter bc-serif shrink-0">{String.fromCharCode(65 + i)}</span>
                           <span className="min-w-0 flex-1">
@@ -176,7 +189,7 @@ export default function EventPaper({
                               <span className="block text-[12px] mt-1 italic" style={{ color: '#9a5b00' }}>Will fall back to: {labelOf(s.fallback)}</span>
                             )}
                           </span>
-                          {!locked && <span className="sc-move shrink-0 self-center text-[11px] font-bold uppercase tracking-[0.14em]">{s.isDoNothing ? 'Note' : 'Move'} →</span>}
+                          {!locked && !touch && <span className="sc-move shrink-0 self-center text-[11px] font-bold uppercase tracking-[0.14em]">{s.isDoNothing ? 'Note' : 'Move'} →</span>}
                         </button>
                       );
                     })}
@@ -196,6 +209,50 @@ export default function EventPaper({
               </div>
 
               <h3 className="bc-serif text-[20px] font-bold mt-5">Who takes this on?</h3>
+              {touch ? (
+                <>
+                  <p className="text-[13px] mt-1" style={{ color: 'var(--ink-soft)' }}>
+                    Tap up to {MAX_DEPLOYED} directors. The number is their{' '}
+                    <b style={{ color: DOMAIN_INK[event.primaryDomain] }}>{DOMAIN_LABELS[event.primaryDomain]}</b> rating; the bar is stamina.
+                  </p>
+                  <ul className="mt-3">
+                    {[...boardDirectors]
+                      .sort((x, y) => y.domainRatings[event.primaryDomain] - x.domainRatings[event.primaryDomain])
+                      .map((d) => {
+                        const order = deployIds.indexOf(d.id);
+                        const picked = order >= 0;
+                        const spent = d.currentEnergy === 0;
+                        const blocked = !picked && (spent || deployIds.length >= MAX_DEPLOYED);
+                        const rating = d.domainRatings[event.primaryDomain];
+                        const role = boardSeats.find((x) => x.directorId === d.id)?.role;
+                        return (
+                          <li key={d.id}>
+                            <button
+                              onClick={() => !blocked && !busy && onToggleDirector(d.id)}
+                              disabled={blocked || busy}
+                              aria-pressed={picked}
+                              className={`sc-pick w-full text-left ${picked ? 'sc-pick-on' : ''} ${blocked ? 'opacity-40' : 'cursor-pointer'}`}
+                            >
+                              <span className="sc-pick-mark bc-serif">{picked ? order + 1 : ''}</span>
+                              <span className="shrink-0 rounded-full overflow-hidden" style={{ boxShadow: picked ? '0 0 0 2px #c8960c' : '0 0 0 1px var(--rule)' }}>
+                                <DirectorPortrait directorId={d.id} size={38} />
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block bc-serif text-[14.5px] font-bold leading-tight truncate">{d.name}</span>
+                                <span className="flex items-center gap-2 mt-1">
+                                  <span className="sc-stamina"><span style={{ width: `${d.currentEnergy}%`, background: d.currentEnergy >= 60 ? '#1f6b3a' : d.currentEnergy >= 30 ? '#9a5b00' : '#a32222' }} /></span>
+                                  <span className="text-[10.5px] tabular-nums" style={{ color: 'var(--ink-soft)' }}>{spent ? 'Spent' : `${d.currentEnergy}%`}{role && role !== 'ned' ? ` · ${role === 'chair' ? 'Chair' : role === 'sid' ? 'SID' : 'Cttee chair'}` : ''}</span>
+                                </span>
+                              </span>
+                              <span className="sc-rating bc-serif" style={{ color: rating >= 70 ? '#1f6b3a' : rating >= 50 ? '#9a5b00' : '#a32222' }}>{rating}</span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                  </ul>
+                </>
+              ) : (
+                <>
               <p className="text-[13px] mt-1" style={{ color: 'var(--ink-soft)' }}>
                 Pick up to {MAX_DEPLOYED} directors <b style={{ color: 'var(--ink)' }}>at the table</b>. The chip on each seat is their{' '}
                 <b style={{ color: DOMAIN_INK[event.primaryDomain] }}>{DOMAIN_LABELS[event.primaryDomain]}</b> rating; the arc is stamina.
@@ -233,6 +290,9 @@ export default function EventPaper({
                 })}
               </div>
 
+                </>
+              )}
+
               {/* The engine tests an option's competency gates against the directors sent, not the whole board */}
               {strategy.competencyGates.length > 0 && (
                 <div className="mt-4 space-y-1">
@@ -249,14 +309,14 @@ export default function EventPaper({
                 </div>
               )}
 
-              <div className="flex items-center justify-between gap-4 mt-6 pt-4" style={{ borderTop: '1px solid var(--rule)' }}>
-                <button onClick={onBack} className="text-[13px] font-semibold hover:underline cursor-pointer">‹ Back to the resolutions</button>
+              <div className={`flex ${touch ? 'flex-col-reverse items-stretch gap-3' : 'items-center justify-between gap-4'} mt-6 pt-4`} style={{ borderTop: '1px solid var(--rule)' }}>
+                <button onClick={onBack} disabled={busy} className={`text-[13px] font-semibold hover:underline cursor-pointer ${touch ? 'py-1 text-center' : ''}`}>‹ Back to the resolutions</button>
                 <button
                   onClick={onConfirm}
-                  disabled={deployed.length === 0}
-                  className={`sc-confirm px-7 py-3 rounded-[3px] font-bold text-sm ${deployed.length === 0 ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                  disabled={deployed.length === 0 || busy}
+                  className={`sc-confirm px-7 py-3 rounded-[3px] font-bold text-sm ${deployed.length === 0 || busy ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
-                  Put it to the board
+                  {busy ? 'The board is in session…' : touch && deployed.length > 0 ? `Put it to the board · ${deployed.length} of ${MAX_DEPLOYED}` : 'Put it to the board'}
                 </button>
               </div>
             </motion.div>

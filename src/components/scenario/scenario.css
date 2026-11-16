@@ -99,3 +99,12 @@
 @media (prefers-reduced-motion: reduce) {
   .sc-session-dot { animation: none; opacity: 0.8; }
 }
+
+/* Touch layout: directors are picked from a list on the paper */
+.sc-pick { display: flex; align-items: center; gap: 10px; padding: 9px 6px 9px 2px; border-bottom: 1px solid var(--rule); transition: background .15s; }
+.sc-pick-on { background: rgba(200, 150, 12, 0.13); }
+.sc-pick-mark { width: 20px; height: 20px; flex-shrink: 0; border-radius: 50%; border: 1.5px solid var(--ink-soft); display: grid; place-items: center; font-size: 12px; font-weight: 700; line-height: 1; }
+.sc-pick-on .sc-pick-mark { background: var(--ink); border-color: var(--ink); color: #f4ecd8; }
+.sc-stamina { display: block; width: 64px; height: 4px; border-radius: 2px; background: rgba(27, 36, 48, 0.14); overflow: hidden; }
+.sc-stamina > span { display: block; height: 100%; }
+.sc-rating { font-size: 21px; font-weight: 700; width: 34px; text-align: right; font-variant-numeric: tabular-nums; flex-shrink: 0; }

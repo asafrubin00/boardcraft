@@ -641,6 +641,7 @@ import { directors as allDirectors } from '@/data/directors';
 import { computeFeeWithPremium, checkCompliance } from '@/engine/compliance';
 import CompliancePanel from '@/components/CompliancePanel';
 import CvSheet from '@/components/boardbuild/CvSheet';
+import '@/components/scenario/scenario.css';
 import ReadinessPanel, { type ReadinessMeter } from '@/components/boardbuild/ReadinessPanel';
 import '@/components/boardbuild/boardbuild.css';
 import BoardGuideModal from '@/components/BoardGuideModal';
@@ -1570,10 +1571,10 @@ function BoardConstructionWrapper({
                 </div>
                 {/* Content: profile-seated, pool director profile, or pool grid */}
                 {mode === 'profile-seated' && seatOccDir ? (
-                  <div className="flex-1 overflow-y-auto p-4">
-                    <div className="space-y-4">
+                  <div className="flex-1 overflow-y-auto p-3 bc-desk">
+                    <div className="bc-doc bc-paper rounded-[3px] px-5 py-5 space-y-4 max-w-[560px] mx-auto">
                       <div className="flex flex-col items-center text-center">
-                        <div className="rounded-full border-2 border-gold overflow-hidden"><DirectorPortrait directorId={seatOccDir.id} size={72} /></div>
+                        <div className="bg-white p-[3px] shadow-md"><DirectorPortrait directorId={seatOccDir.id} size={72} /></div>
                         <h2 className="text-base font-bold font-narrative text-foreground mt-2">{seatOccDir.name}</h2>
                         <div className="flex flex-wrap justify-center gap-1.5 mt-1.5">
                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${INDEP_BADGE[seatOccDir.independence].cls}`}>{INDEP_BADGE[seatOccDir.independence].label}</span>
@@ -1600,17 +1601,17 @@ function BoardConstructionWrapper({
                           {availableBoardRoles.map((r) => <option key={r} value={r}>{getRoleLabel(r, company.jurisdiction, company.id)}</option>)}
                         </select>
                       </div>
-                      <button onClick={() => { handleRemoveDirector(seatOccDir.id); setMobileOverlay(null); }} className="w-full py-2 text-sm bg-error/15 text-error border border-error/30 rounded-lg">
+                      <button onClick={() => { handleRemoveDirector(seatOccDir.id); setMobileOverlay(null); }} className="w-full py-2.5 text-sm font-semibold text-error border border-error/50 rounded-[3px] cursor-pointer">
                         {company.id === 'company_meridian' ? 'Remove Trustee' : 'Remove from Board'}
                       </button>
                     </div>
                   </div>
                 ) : selDir && (mode === 'profile-pool' || mode === 'comparison') ? (
                   /* Pool director profile — shown when user taps a candidate card */
-                  <div className="flex-1 overflow-y-auto p-4">
-                    <div className="space-y-4">
+                  <div className="flex-1 overflow-y-auto p-3 bc-desk">
+                    <div className="bc-doc bc-paper rounded-[3px] px-5 py-5 space-y-4 max-w-[560px] mx-auto">
                       <div className="flex flex-col items-center text-center">
-                        <div className="rounded-full border-2 border-gold overflow-hidden"><DirectorPortrait directorId={selDir.id} size={72} /></div>
+                        <div className="bg-white p-[3px] shadow-md"><DirectorPortrait directorId={selDir.id} size={72} /></div>
                         <h2 className="text-base font-bold font-narrative text-foreground mt-2">{selDir.name}</h2>
                         <div className="flex flex-wrap justify-center gap-1.5 mt-1.5">
                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${INDEP_BADGE[selDir.independence].cls}`}>{INDEP_BADGE[selDir.independence].label}</span>
@@ -1639,7 +1640,7 @@ function BoardConstructionWrapper({
                       {mode === 'comparison' && seatOccDir && (
                         <button
                           onClick={() => { handleAssignCandidate(); setMobileOverlay(null); }}
-                          className="w-full py-2.5 rounded-lg bg-gold text-navy-dark text-sm font-bold cursor-pointer"
+                          className="sc-confirm w-full py-3 rounded-[3px] text-sm font-bold cursor-pointer"
                         >
                           Replace {directorShortLabel(seatOccDir)} with {directorShortLabel(selDir)}
                         </button>
@@ -1685,7 +1686,7 @@ function BoardConstructionWrapper({
                         </div>
                       );
                     })()}
-                    <div className="flex-1 overflow-y-auto p-3">
+                    <div className="flex-1 overflow-y-auto p-3 bc-desk">
                       {overflowIds.length > 0 && <p className="text-[10px] text-warning font-medium mb-2">⚠ Unseated {company.id === 'company_meridian' ? 'trustees' : 'directors'} — tap a seat to place them</p>}
                       {sortedPool.length === 0 && filterDomain !== null ? (
                         <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -1693,9 +1694,9 @@ function BoardConstructionWrapper({
                           <button onClick={() => setFilterDomain(null)} className="mt-2 text-[10px] text-gold/60 hover:text-gold transition-colors">Clear filter</button>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-4 gap-1.5">
+                        <div className="grid grid-cols-3 min-[560px]:grid-cols-4 min-[760px]:grid-cols-5 gap-x-2.5 gap-y-3 px-1 pt-1">
                           {sortedPool.map((d) => (
-                            <PoolCard key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} displayFee={budget === 0 ? 0 : undefined} />
+                            <PoolCard paper key={d.id} director={d} selected={selectedDirId === d.id} onBoard={boardIdSet.has(d.id) && !overflowSet.has(d.id)} overflow={overflowSet.has(d.id)} onClick={() => handlePoolClick(d.id)} jurisdiction={company.jurisdiction} displayFee={budget === 0 ? 0 : undefined} />
                           ))}
                         </div>
                       )}
@@ -1734,6 +1735,7 @@ function BoardConstructionWrapper({
                     <button onClick={handleUndo} disabled={history.length === 0} className={`text-[11px] px-2.5 py-1 rounded border transition-colors ${history.length > 0 ? 'border-foreground/30 text-foreground/70 hover:border-gold hover:text-gold' : 'border-card-border text-foreground/20 cursor-not-allowed'}`}>↩ Undo</button>
                     <button onClick={handleRedo} disabled={future.length === 0} className={`text-[11px] px-2.5 py-1 rounded border transition-colors ${future.length > 0 ? 'border-foreground/30 text-foreground/70 hover:border-gold hover:text-gold' : 'border-card-border text-foreground/20 cursor-not-allowed'}`}>↪ Redo</button>
                   </div>
+                  <ReadinessPanel readiness={readiness} blocking={blockingCount} advisory={advisoryCount} meters={readinessMeters} />
                   <CompliancePanel errors={complianceErrors} title={complianceTitle} />
                   <button onClick={() => setShowBoardGuide(true)} className="w-full py-2 rounded-lg border border-gold/30 text-gold/70 text-xs font-medium hover:border-gold/60 hover:text-gold transition-colors text-center cursor-pointer">
                     &#x2197; {company.id === 'company_meridian' ? 'Trustee Guide — Charity Governance Code' : `Board Guide — ${company.jurisdiction} Governance Rules`}
