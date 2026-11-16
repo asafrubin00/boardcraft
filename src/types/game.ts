@@ -464,4 +464,6 @@ export interface GameState {
   /** Transient notification from an event consequence (e.g. involuntary board removals).
    *  Shown as a dismissible banner; cleared when player acknowledges. */
   pendingBoardNotification?: string | null;
+  /** The three AGM polls, once the meeting has been held (engine/agm.ts). */
+  agmVotes?: import('@/engine/agm').AgmResolutionVote[];
 }

@@ -10,7 +10,7 @@ import BoardroomTable, { deriveTablePositions, type SeatOverlay } from './Boardr
 import EventPaper, { MAX_DEPLOYED } from './scenario/EventPaper';
 import './scenario/scenario.css';
 import SvTracker from './SvTracker';
-import SvDashboardModal from './SvDashboardModal';
+import ControlRoom from './controlroom/ControlRoom';
 import EventCard from './EventCard';
 import DeploymentModal from './DeploymentModal';
 import OutcomeDisplay from './OutcomeDisplay';
@@ -842,20 +842,8 @@ export default function GameBoardScreen({
         directorDynamics={gameState.directorDynamics}
       />
 
-      {/* SV Dashboard Modal */}
-      <SvDashboardModal
-        isOpen={showDashboard}
-        onClose={() => setShowDashboard(false)}
-        svIndex={gameState.svIndex}
-        svHistory={svHistory}
-        governanceHealth={gameState.governanceHealth}
-        governanceBreakdown={gameState.governanceHealthBreakdown}
-        boardTension={gameState.boardTension}
-        proxyAdviserRating={proxyAdviserRating}
-        directorEnergySummary={directorEnergySummary}
-        resolvedEvents={gameState.resolvedEvents}
-        company={gameState.company}
-      />
+      {/* Control room: the governance terminal on the player's laptop */}
+      <ControlRoom gameState={gameState} isOpen={showDashboard} onClose={() => setShowDashboard(false)} />
 
       {/* Forced Change Modal */}
       {showForcedModal && gameState.forcedChange && onForcedDismissAndReplace && (

@@ -1,0 +1,49 @@
+/* The control room: at the desk, laptop open. */
+.cr-root { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; overflow: hidden; }
+.cr-backdrop { position: absolute; inset: -4%; background: #05090f url('/office/desk.jpg') 62% 60% / cover no-repeat; filter: blur(2.5px) brightness(0.9); transform-origin: 50% 62%; }
+.cr-shade { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 55%, rgba(3, 7, 12, 0.34), rgba(3, 7, 12, 0.62) 80%); }
+.cr-laptop { position: relative; width: min(1240px, 90vw); max-height: 88vh; display: flex; flex-direction: column; transform-origin: 50% 70%; }
+.cr-screen {
+  display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+  background: linear-gradient(180deg, #0B1420 0%, #08101A 100%);
+  border: 9px solid #0c0f13; border-radius: 14px 14px 4px 4px;
+  box-shadow: 0 0 0 1px #2a2f36, 0 0 0 2px #050608, 0 40px 90px rgba(0, 0, 0, 0.7), 0 0 120px rgba(96, 165, 250, 0.10);
+  color: #B8C7D6; font-size: 12.5px;
+}
+.cr-hinge { height: 12px; margin: 0 -18px; border-radius: 0 0 14px 14px; background: linear-gradient(180deg, #8d949c 0%, #5b6168 45%, #2c3035 100%); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6); }
+.cr-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 14px; border-bottom: 1px solid rgba(159, 179, 200, 0.14); background: rgba(255, 255, 255, 0.025); }
+.cr-title { font-family: var(--font-narrative), Georgia, serif; font-weight: 700; font-size: 15px; color: #EAF1F8; }
+.cr-tag { font-size: 9px; letter-spacing: 0.22em; color: #C9A227; border: 1px solid rgba(201, 162, 39, 0.45); padding: 2px 7px; border-radius: 2px; }
+.cr-q { font-size: 9px; letter-spacing: 0.14em; font-weight: 700; }
+.cr-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.cr-close { font-size: 10px; letter-spacing: 0.14em; color: #9FB3C8; border: 1px solid rgba(159, 179, 200, 0.3); padding: 4px 9px; border-radius: 3px; cursor: pointer; flex-shrink: 0; }
+.cr-close:hover { color: #fff; border-color: #C9A227; }
+.cr-mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+.cr-grid {
+  display: grid; gap: 1px; background: rgba(159, 179, 200, 0.14); overflow-y: auto; min-height: 0;
+  grid-template-columns: 1.55fr 1fr 1fr;
+  grid-template-areas: 'a b c' 'd e f';
+}
+.cr-panel { background: #0A121C; padding: 14px 16px 16px; min-width: 0; }
+.cr-a { grid-area: a; } .cr-b { grid-area: b; } .cr-c { grid-area: c; }
+.cr-d { grid-area: d; } .cr-e { grid-area: e; } .cr-f { grid-area: f; }
+.cr-label { font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: #7F93A8; font-weight: 700; line-height: 1.5; }
+.cr-big { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 40px; font-weight: 700; color: #EAF1F8; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.cr-delta { font-size: 14px; margin-left: 10px; }
+.cr-meter { display: block; height: 5px; border-radius: 3px; background: rgba(159, 179, 200, 0.16); overflow: hidden; }
+.cr-meter > span { display: block; height: 100%; border-radius: 3px; transition: width 0.6s ease-out; }
+.cr-row { display: grid; grid-template-columns: 92px 1fr 22px; gap: 9px; align-items: center; font-size: 11.5px; }
+.cr-dir { display: grid; grid-template-columns: 26px minmax(0, 1.5fr) minmax(40px, 1fr) 38px 26px; gap: 9px; align-items: center; font-size: 11.5px; }
+.cr-log { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto 40px; gap: 8px; align-items: center; font-size: 11.5px; padding: 3px 0; border-bottom: 1px solid rgba(159, 179, 200, 0.08); }
+.cr-chip { font-size: 8.5px; letter-spacing: 0.12em; font-weight: 800; border: 1px solid currentColor; padding: 1px 5px; border-radius: 2px; }
+.cr-vote { position: relative; height: 7px; border-radius: 4px; background: rgba(159, 179, 200, 0.16); overflow: hidden; }
+.cr-vote > span { display: block; height: 100%; }
+.cr-vote > i { position: absolute; top: -2px; bottom: -2px; left: 50%; width: 2px; margin-left: -1px; background: #EAF1F8; }
+@media not ((min-width: 64rem) and (orientation: landscape)) {
+  .cr-laptop { width: 100vw; max-height: 100dvh; height: 100dvh; }
+  .cr-screen { border-width: 0; border-radius: 0; height: 100%; }
+  .cr-hinge { display: none; }
+  .cr-grid { grid-template-columns: 1fr; grid-template-areas: 'a' 'b' 'c' 'f' 'd' 'e'; }
+  .cr-big { font-size: 32px; }
+}
+@media (prefers-reduced-motion: reduce) { .cr-backdrop { transform: none !important; } }

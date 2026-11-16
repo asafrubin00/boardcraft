@@ -27,7 +27,7 @@ export default function DebriefReport({
   agmVotes?: AgmResolutionVote[];
   onClose: () => void;
 }) {
-  const d = useMemo(() => buildDebrief(gameState, agmVotes ?? []), [gameState, agmVotes]);
+  const d = useMemo(() => buildDebrief(gameState, agmVotes ?? gameState.agmVotes ?? []), [gameState, agmVotes]);
   const [host, setHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {

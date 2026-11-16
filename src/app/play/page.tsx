@@ -205,10 +205,12 @@ function PlayPageInner() {
 
     // Dev year-end: play the whole year automatically so the review, the
     // debrief and the dashboards have a real record to show.
-    if (phaseKey === 'yearend') {
+    const autoPlay = phaseKey === 'yearend' || searchParams.get('played') === '1';
+    if (autoPlay) {
       let st: GameState = { ...started, currentQuarter: 'Q1', currentTurn: 1, phase: 'gameplay', randomSeed: 4242 };
       let guard = 0;
       while (st.phase !== 'year_end' && guard++ < 40) {
+        if (phaseKey !== 'yearend' && st.currentQuarter === target.quarter && st.currentTurn === target.turn) break;
         const ev = getCurrentEvent(st);
         if (ev && ev.strategies.length > 0) {
           const seated = st.board.seats
@@ -222,6 +224,7 @@ function PlayPageInner() {
           st = { ...turn.newState, forcedChange: null, pendingBoardNotification: null };
           if (st.currentQuarter === 'AGM') {
             const votes = resolveAgmVotes(st, strat.id, turn.output.outcomeTier);
+            st = { ...st, agmVotes: votes };
             setAgmResults({
               resolution1Pass: votes[0].pass, resolution2Pass: votes[1].pass, resolution3Pass: votes[2].pass,
               votes, narrative: turn.output.narrativeText, outcomeTier: turn.output.outcomeTier,
@@ -231,8 +234,13 @@ function PlayPageInner() {
         st = advanceToNextTurn(st);
       }
       st.governanceHealthBreakdown = rescaleBreakdown(recalcGovernanceBreakdown(st), st.governanceHealth);
-      setGameState({ ...st, phase: 'year_end' });
-      setPhase('year_end');
+      if (phaseKey === 'yearend') {
+        setGameState({ ...st, phase: 'year_end' });
+        setPhase('year_end');
+      } else {
+        setGameState(st);
+        setPhase(target.phase);
+      }
       return;
     }
 
@@ -462,6 +470,7 @@ function PlayPageInner() {
 
       // Three resolutions, three separate counts — see engine/agm.ts.
       const votes = resolveAgmVotes(newState, strategyChoice, output.outcomeTier);
+      newState.agmVotes = votes;
 
       // SFG: directors past the nine-year cap leave the board if the two-tier vote is lost.
       if (newState.company.id === 'company_sfg' && !votes[0].pass) {

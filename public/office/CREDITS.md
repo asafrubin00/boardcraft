@@ -9,3 +9,4 @@ All third-party assets in this folder are from [Poly Haven](https://polyhaven.co
 - `models/modern_arm_chair_01`, `desk_lamp_arm_01`, `mid_century_lounge_chair`, `modern_coffee_table_01`, `potted_plant_02`, `book_encyclopedia_set_01`
 
 Textures were re-compressed for the web.
+- `desk.jpg` — a still rendered from BoardCraft's own office scene (same assets as above), used behind the in-game control room.
