@@ -11,6 +11,8 @@ import EventPaper, { MAX_DEPLOYED } from './scenario/EventPaper';
 import './scenario/scenario.css';
 import SvTracker from './SvTracker';
 import ControlRoom from './controlroom/ControlRoom';
+import CompanyBriefingWindow from './briefing/CompanyBriefingWindow';
+import BoardStrengthWindow from './briefing/BoardStrengthWindow';
 import OutcomeDisplay from './OutcomeDisplay';
 import ForcedChangeModal from './ForcedChangeModal';
 import NewsTicker from './NewsTicker';
@@ -79,6 +81,8 @@ export default function GameBoardScreen({
 }: GameBoardScreenProps) {
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showBriefing, setShowBriefing] = useState(false);
+  const [showStrength, setShowStrength] = useState(false);
   const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
   const [showDeployment, setShowDeployment] = useState(false);
   const [lastOutcome, setLastOutcome] = useState<ResolutionOutput | null>(null);
@@ -438,9 +442,12 @@ export default function GameBoardScreen({
           <h1 className="text-base md:text-lg font-bold text-gold tracking-wide md:tracking-[0.28em] font-narrative shrink-0">BOARDCRAFT</h1>
           {/* Company name + volume — mobile only */}
           <div className="flex items-center gap-2 md:hidden">
-            <span className="text-sm text-foreground/50 truncate max-w-[160px]">
+            <button onClick={() => setShowBriefing(true)} className="text-sm text-foreground/60 truncate max-w-[130px] underline decoration-gold/40 underline-offset-2 cursor-pointer" title="Company briefing">
               {gameState.company.shortName ?? gameState.company.name}
-            </span>
+            </button>
+            <button onClick={() => setShowStrength(true)} className="text-[10px] font-semibold text-gold border border-gold/40 rounded px-1.5 py-0.5 cursor-pointer whitespace-nowrap" title="Board strength">
+              Board
+            </button>
             <button
               onClick={handleCycleVolume}
               className="flex items-center text-foreground/40 hover:text-foreground/70 transition-colors text-base cursor-pointer"
@@ -527,7 +534,12 @@ export default function GameBoardScreen({
 
         {/* ── Desktop Right: Company name + volume + quit ── */}
         <div className="hidden md:flex items-center gap-3 shrink-0">
-          <span className="text-sm text-foreground/50">{gameState.company.name}</span>
+          <button onClick={() => setShowBriefing(true)} className="text-sm text-foreground/60 hover:text-gold transition-colors cursor-pointer" title="Open the company briefing">
+            {gameState.company.name} <span className="text-gold text-xs">&#8599;</span>
+          </button>
+          <button onClick={() => setShowStrength(true)} className="text-[11px] font-semibold text-gold border border-gold/40 rounded-full px-2.5 py-1 hover:bg-gold/10 transition-colors cursor-pointer whitespace-nowrap" title="Open the board strength dashboard">
+            Board Strength
+          </button>
           <button
             onClick={handleCycleVolume}
             className="flex items-center text-foreground/40 hover:text-foreground/70 transition-colors text-base cursor-pointer"
@@ -824,6 +836,8 @@ export default function GameBoardScreen({
 
       {/* Control room: the governance terminal on the player's laptop */}
       <ControlRoom gameState={gameState} isOpen={showDashboard} onClose={() => setShowDashboard(false)} />
+      <CompanyBriefingWindow company={gameState.company} isOpen={showBriefing} onClose={() => setShowBriefing(false)} />
+      <BoardStrengthWindow company={gameState.company} seats={gameState.board.seats} directors={gameState.directors} isOpen={showStrength} onClose={() => setShowStrength(false)} />
 
       {/* Forced Change Modal */}
       {/* Held back until the player has read the minute of what just happened */}

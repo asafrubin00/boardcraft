@@ -1,0 +1,92 @@
+/* Windows that rise from the foot of the screen: the company briefing and the
+   board-strength dashboard. Dark glass and brass; articles open as paper. */
+.bw-root { position: fixed; inset: 0; z-index: 90; display: flex; align-items: flex-end; justify-content: center; }
+.bw-backdrop { position: absolute; inset: 0; background: rgba(3, 7, 12, 0.72); backdrop-filter: blur(5px); }
+.bw-window {
+  position: relative; width: min(1180px, 100%); max-height: 92dvh; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #12233a 0%, #0a1626 38%, #08111d 100%);
+  border: 1px solid rgba(201, 162, 39, 0.5); border-bottom: 0; border-radius: 18px 18px 0 0;
+  box-shadow: 0 -30px 90px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(232, 199, 102, 0.35);
+  color: #B8C7D6; overflow: hidden;
+}
+.bw-grip { width: 46px; height: 4px; border-radius: 2px; background: rgba(232, 199, 102, 0.45); margin: 9px auto 0; flex-shrink: 0; }
+.bw-head { display: flex; align-items: center; gap: 14px; padding: 12px 26px 14px; border-bottom: 1px solid rgba(159, 179, 200, 0.14); flex-shrink: 0; }
+.bw-over { font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: #C9A227; font-weight: 700; }
+.bw-title { font-family: Georgia, 'Times New Roman', serif; font-size: 25px; font-weight: 700; color: #EAF1F8; line-height: 1.15; }
+.bw-close { margin-left: auto; font-size: 11px; letter-spacing: 0.12em; color: #9FB3C8; border: 1px solid rgba(159, 179, 200, 0.3); padding: 7px 12px; border-radius: 4px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.bw-close:hover { color: #fff; border-color: #C9A227; }
+.bw-body { overflow-y: auto; min-height: 0; padding: 20px 26px 30px; }
+.bw-label { font-size: 9.5px; letter-spacing: 0.2em; text-transform: uppercase; color: #7F93A8; font-weight: 700; }
+.bw-panel { background: rgba(255, 255, 255, 0.028); border: 1px solid rgba(159, 179, 200, 0.13); border-radius: 12px; padding: 16px 18px; }
+.bw-mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+.bw-serif { font-family: Georgia, 'Times New Roman', serif; }
+.bw-chip { font-size: 9px; letter-spacing: 0.16em; font-weight: 800; text-transform: uppercase; border: 1px solid currentColor; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
+
+/* Company briefing */
+.cb-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 18px; }
+.cb-hook { font-family: Georgia, serif; font-style: italic; font-size: 19px; line-height: 1.45; color: #E8D9AE; }
+.cb-story { font-family: Georgia, serif; font-size: 15px; line-height: 1.75; color: #C7D3DF; }
+.cb-price { font-size: 34px; font-weight: 700; color: #EAF1F8; line-height: 1; }
+.cb-news { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.cb-card { text-align: left; background: #f1e9d6; color: #1b2430; border-radius: 3px; padding: 13px 14px 12px; cursor: pointer; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4); transition: transform .18s, box-shadow .18s; display: flex; flex-direction: column; }
+.cb-card:hover, .cb-card:focus-visible { transform: translateY(-4px) rotate(-0.4deg); box-shadow: 0 16px 34px rgba(0, 0, 0, 0.5); }
+.cb-mast { font-family: Georgia, serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1.5px solid #1b2430; padding-bottom: 5px; display: flex; justify-content: space-between; gap: 8px; }
+.cb-mast span:last-child { font-family: inherit; font-weight: 400; letter-spacing: 0.02em; text-transform: none; color: #5b6470; white-space: nowrap; }
+.cb-headline { font-family: Georgia, serif; font-size: 17px; font-weight: 700; line-height: 1.22; margin-top: 9px; }
+.cb-stand { font-size: 12px; line-height: 1.45; color: #4a5461; margin-top: 6px; flex: 1; }
+.cb-read { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 800; color: #7a5a06; margin-top: 10px; }
+.cb-owner { display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 4px 10px; align-items: center; font-size: 12.5px; }
+.cb-bar { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: rgba(159, 179, 200, 0.14); overflow: hidden; margin-bottom: 7px; }
+.cb-bar > span { display: block; height: 100%; border-radius: 3px; }
+.cb-fact { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 10px; font-size: 12.5px; padding: 6px 0; border-bottom: 1px solid rgba(159, 179, 200, 0.09); }
+.cb-fact:last-child { border-bottom: 0; }
+
+ul.cb-notes-list { display: none; margin-top: 8px; font-size: 12px; color: #E8D9AE; }
+.cb-notes-list li { padding: 3px 0; }
+.cb-notes-list b { display: inline-block; width: 34px; color: #C9A227; font-family: ui-monospace, Menlo, monospace; font-weight: 700; }
+.bs-tap { display: none; }
+
+/* The article: a cutting on the desk */
+.ar-root { position: fixed; inset: 0; z-index: 95; display: grid; place-items: center; padding: 20px 14px; overflow-y: auto; background: rgba(3, 7, 12, 0.78); }
+.ar-paper { width: min(680px, 100%); padding: 30px 38px 30px; border-radius: 2px; }
+.ar-mast { font-family: Georgia, serif; font-size: 30px; font-weight: 700; text-align: center; letter-spacing: 0.01em; line-height: 1.1; }
+.ar-rule { border-top: 3px double var(--ink); border-bottom: 1px solid var(--ink); height: 5px; margin: 10px 0 0; }
+.ar-meta { display: flex; justify-content: space-between; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); padding: 6px 0 0; }
+.ar-headline { font-family: Georgia, serif; font-size: 34px; font-weight: 700; line-height: 1.1; margin-top: 20px; }
+.ar-stand { font-family: Georgia, serif; font-style: italic; font-size: 17px; line-height: 1.45; margin-top: 10px; color: var(--ink-soft); }
+.ar-body { column-count: 2; column-gap: 26px; column-rule: 1px solid var(--rule); margin-top: 18px; font-family: Georgia, serif; font-size: 15px; line-height: 1.7; }
+.ar-body p { margin: 0 0 12px; break-inside: avoid-column; }
+.ar-body p:first-child::first-letter { float: left; font-size: 50px; line-height: 0.82; font-weight: 700; padding: 5px 7px 0 0; }
+
+/* Board strength */
+.bs-grid { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 18px; align-items: start; }
+.bs-row { display: grid; grid-template-columns: 26px minmax(0, 1.15fr) minmax(70px, 1fr) 38px minmax(0, 1.2fr) 74px; gap: 12px; align-items: center; padding: 10px 10px; border-radius: 8px; cursor: help; border: 1px solid transparent; transition: background .15s, border-color .15s; }
+.bs-row:hover, .bs-row-on { background: rgba(232, 199, 102, 0.07); border-color: rgba(201, 162, 39, 0.35); }
+.bs-track { height: 7px; border-radius: 4px; background: rgba(159, 179, 200, 0.14); overflow: hidden; position: relative; }
+.bs-track > span { display: block; height: 100%; border-radius: 4px; transition: width .6s cubic-bezier(.2, .7, .2, 1); }
+.bs-pop { position: fixed; z-index: 99; width: 300px; padding: 13px 15px 14px; border-radius: 10px; pointer-events: none; background: linear-gradient(180deg, rgba(26, 46, 70, 0.98), rgba(11, 23, 39, 0.98)); border: 1px solid rgba(201, 162, 39, 0.6); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(232, 199, 102, 0.25); }
+.bs-pop h4 { font-family: Georgia, serif; font-size: 16px; font-weight: 700; color: #EAF1F8; }
+.bs-pop p { font-size: 12.5px; line-height: 1.5; margin-top: 6px; color: #C7D3DF; }
+.bs-pop .bs-why { color: #E8D9AE; border-top: 1px solid rgba(159, 179, 200, 0.16); padding-top: 8px; margin-top: 9px; }
+.bs-inline { grid-column: 1 / -1; font-size: 12.5px; line-height: 1.5; padding: 2px 4px 4px; color: #C7D3DF; }
+.bs-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.bs-kpi { font-size: 26px; font-weight: 700; color: #EAF1F8; line-height: 1.1; }
+
+@media not ((min-width: 64rem) and (orientation: landscape)) {
+  .bw-window { max-height: 94dvh; border-radius: 14px 14px 0 0; }
+  .bw-head { padding: 10px 16px 12px; }
+  .bw-title { font-size: 20px; }
+  .bw-body { padding: 14px 14px 26px; }
+  .cb-grid, .bs-grid { grid-template-columns: minmax(0, 1fr); }
+  .cb-news { grid-template-columns: minmax(0, 1fr); }
+  .bs-row { grid-template-columns: 22px minmax(0, 1fr) 64px 34px 66px; gap: 9px; cursor: pointer; }
+  .bs-lead { display: none; }
+  .cb-note-text { display: none; }
+  ul.cb-notes-list { display: block; }
+  .bs-hover { display: none; }
+  .bs-tap { display: inline; }
+  .ar-paper { padding: 22px 20px; }
+  .ar-mast { font-size: 22px; }
+  .ar-headline { font-size: 25px; }
+  .ar-body { column-count: 1; }
+}

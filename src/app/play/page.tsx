@@ -658,6 +658,8 @@ import { ALL_DOMAINS, DOMAIN_SHORT, ROLE_LABELS, getRoleLabel, getShortRoleLabel
 import { motion, AnimatePresence } from 'framer-motion';
 import CompanyLogo from '@/components/CompanyLogo';
 import SiteFooter from '@/components/SiteFooter';
+import CompanyBriefingWindow from '@/components/briefing/CompanyBriefingWindow';
+import BoardStrengthWindow from '@/components/briefing/BoardStrengthWindow';
 
 function fmtFee(value: number, jurisdiction: string = 'UK'): string {
   const sym = jurisdiction === 'US' ? '$' : jurisdiction === 'EU' ? '€' : jurisdiction === 'SG' ? 'S$' : '£';
@@ -1288,18 +1290,6 @@ function BoardConstructionWrapper({
   else if (activeSeatIdx !== null && seatOccupant) mode = 'profile-seated';
   else if (selectedDirId) mode = 'profile-pool';
 
-  // Board average domain scores for Harvey balls
-  const boardAvgDomains = useMemo(() => {
-    if (seats.length === 0) return ALL_DOMAINS.map(() => 0);
-    return ALL_DOMAINS.map((domain) => {
-      const total = seats.reduce((sum, s) => {
-        const d = directorMap.get(s.directorId);
-        return sum + (d ? d.domainRatings[domain] : 0);
-      }, 0);
-      return Math.round(total / seats.length);
-    });
-  }, [seats, directorMap]);
-
   // Determine which optional committees are available for this company
   // Only show ET toggle if the committee is actually playable for this company (has a formation cost)
   const hasETCommittee = useMemo(() => {
@@ -1381,73 +1371,35 @@ function BoardConstructionWrapper({
   // ── Render helpers (shared between mobile overlays and desktop panels) ──
 
   const companyCardJsx = (
-    <div
-      className="rounded-lg border border-gold/40 bg-navy md:bg-black/30 md:backdrop-blur-sm cursor-pointer"
-      onClick={() => setShowCompanyInfo((p) => !p)}
+    <button
+      type="button"
+      className="w-full rounded-lg border border-gold/40 bg-navy md:bg-black/30 md:backdrop-blur-sm cursor-pointer hover:border-gold transition-colors"
+      onClick={() => setShowCompanyInfo(true)}
+      title="Open the company briefing"
     >
-      <div className="flex items-center justify-between px-3 py-2">
-        <div className="flex items-center gap-2">
+      <span className="flex items-center justify-between gap-2 px-3 py-2">
+        <span className="flex items-center gap-2 min-w-0">
           <CompanyLogo companyId={company.id} size={24} />
-          <span className="text-xs font-semibold text-foreground">{company.name}</span>
-        </div>
-        <span className="text-xs text-gold">{showCompanyInfo ? '−' : 'ℹ'}</span>
-      </div>
-      {showCompanyInfo && (
-        <div className="px-3 pb-3 border-t border-gold/20 mt-0">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-[10px]">
-            <div><span className="text-foreground/40">Market Cap:</span> <span className="text-foreground/70">{company.marketCap}</span></div>
-            <div><span className="text-foreground/40">Revenue:</span> <span className="text-foreground/70">{company.annualRevenue}</span></div>
-            <div><span className="text-foreground/40">Employees:</span> <span className="text-foreground/70">{company.employees.toLocaleString()}</span></div>
-            <div><span className="text-foreground/40">Industry:</span> <span className="text-foreground/70">{company.industry}</span></div>
-            <div className="col-span-2"><span className="text-foreground/40">HQ:</span> <span className="text-foreground/70">{company.headquarters}</span></div>
-          </div>
-          <p className="text-[10px] text-foreground/60 font-narrative italic leading-relaxed mt-2">
-            {company.narrative.split('.').slice(0, 2).join('.') + '.'}
-          </p>
-        </div>
-      )}
-    </div>
+          <span className="text-xs font-semibold text-foreground truncate">{company.name}</span>
+        </span>
+        <span className="text-[10px] font-semibold text-gold uppercase tracking-[0.14em] whitespace-nowrap">Briefing &#8599;</span>
+      </span>
+    </button>
   );
 
   const boardStrengthJsx = seats.length > 0 ? (
-    <div className="relative">
-      <button
-        onClick={() => { setShowStrength(p => !p); if (hintsShown === 5) dismissHint(); }}
-        className="w-full py-1.5 px-3 rounded-full border border-gold/40 text-gold text-[11px] font-semibold hover:bg-gold/10 transition-colors cursor-pointer text-center"
-      >
-        Board Strength &#8599;
-      </button>
-      {showStrength && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setShowStrength(false)} />
-          <div className="absolute bottom-full right-0 mb-2 z-50 rounded-lg border border-gold/30 bg-navy-light shadow-xl p-4" style={{ minWidth: 300 }}>
-            <h4 className="text-[10px] text-gold uppercase tracking-wider font-semibold mb-3 text-center">Board Strength Profile</h4>
-            <div className="grid grid-cols-4 gap-3">
-              {ALL_DOMAINS.map((domain, i) => {
-                const avg = boardAvgDomains[i];
-                const pct = avg / 100;
-                return (
-                  <div key={domain} className="flex flex-col items-center">
-                    <svg width="32" height="32" viewBox="0 0 28 28">
-                      <circle cx="14" cy="14" r="12" fill="none" stroke="#1A3A5C" strokeWidth="2" />
-                      {pct > 0 && (
-                        <circle cx="14" cy="14" r="12" fill="none" stroke="#C8960C" strokeWidth="2" strokeDasharray={`${pct * 75.4} ${75.4}`} strokeDashoffset="0" transform="rotate(-90 14 14)" strokeLinecap="round" />
-                      )}
-                      <text x="14" y="15.5" textAnchor="middle" fill="#C8960C" fontSize="8" fontWeight="bold">{avg}</text>
-                    </svg>
-                    <span className="text-[8px] text-foreground/50 mt-0.5 text-center leading-tight">{DOMAIN_SHORT[domain]}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+    <button
+      onClick={() => { setShowStrength(true); if (hintsShown === 5) dismissHint(); }}
+      className="w-full py-1.5 px-3 rounded-full border border-gold/40 text-gold text-[11px] font-semibold hover:bg-gold/10 transition-colors cursor-pointer text-center"
+    >
+      Board Strength &#8599;
+    </button>
   ) : null;
 
   return (
     <div className="bc-build-root h-dvh bg-navy text-foreground flex flex-col overflow-hidden">
+      <CompanyBriefingWindow company={company} isOpen={showCompanyInfo} onClose={() => setShowCompanyInfo(false)} />
+      <BoardStrengthWindow company={company} seats={seats} directors={allDirectors} isOpen={showStrength} onClose={() => setShowStrength(false)} />
       {/* Header */}
       <header className="border-b border-card-border px-6 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
@@ -1489,7 +1441,7 @@ function BoardConstructionWrapper({
             <button onClick={handleRedo} disabled={future.length === 0} className={`text-[11px] px-3 py-1.5 rounded border transition-colors ${future.length > 0 ? 'border-foreground/30 text-foreground/70' : 'border-card-border text-foreground/20 cursor-not-allowed'}`}>↪ Redo</button>
           </div>
           {/* Company card — elevated above gold tabs when expanded */}
-          <div className={`flex-shrink-0 mb-2 relative${showCompanyInfo ? ' z-20' : ''}`}>{companyCardJsx}</div>
+          <div className="flex-shrink-0 mb-2">{companyCardJsx}</div>
 
           {/* Boardroom table — the inner box is height-driven and square, so on a
               wide portrait tablet the seat ring stays circular instead of
