@@ -659,7 +659,7 @@ import CompanyLogo from '@/components/CompanyLogo';
 import SiteFooter from '@/components/SiteFooter';
 
 function fmtFee(value: number, jurisdiction: string = 'UK'): string {
-  const sym = jurisdiction === 'US' ? '$' : jurisdiction === 'EU' ? '€' : '£';
+  const sym = jurisdiction === 'US' ? '$' : jurisdiction === 'EU' ? '€' : jurisdiction === 'SG' ? 'S$' : '£';
   if (value >= 1_000_000) { const m = value / 1_000_000; return `${sym}${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}m`; }
   if (value >= 1_000) return `${sym}${Math.round(value / 1_000)}k`;
   return `${sym}${value}`;

@@ -4,7 +4,7 @@
 
 🎮 [Play now →](https://boardcraft-eight.vercel.app)
 
-BoardCraft puts you in the chair of a company secretary navigating the full cycle of corporate governance - from assembling a compliant board to surviving shareholder season. Beyond a simple training tool BoardCraft is a a game that just so happens happens to be deeply accurate.
+BoardCraft makes you the Board Adviser: an outsider retained for a year to rebuild a board and steer it through the full cycle of corporate governance - from assembling a compliant board to surviving shareholder season. Beyond a simple training tool BoardCraft is a a game that just so happens happens to be deeply accurate.
 
 ---
 

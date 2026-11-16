@@ -406,6 +406,8 @@ export interface ForcedDirectorChange {
   narrative: string;
   /** For misconduct: player can choose to retain instead of dismiss */
   canRetain?: boolean;
+  /** The seat the departing director held, offered first when choosing a replacement */
+  vacatedRole?: BoardRole;
 }
 
 // ── Game State ──

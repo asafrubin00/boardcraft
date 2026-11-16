@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { ForcedDirectorChange, Director, BoardRole, BoardSeat } from '@/types/game';
 import { ALL_DOMAINS, DOMAIN_SHORT } from '@/engine/boardConstants';
 import DirectorPortrait from './DirectorPortrait';
+import { roleLabel } from '@/engine/boardEffects';
 import { computeFeeWithPremium } from '@/engine/compliance';
 import SiteFooter from './SiteFooter';
 
@@ -100,7 +101,10 @@ export default function ForcedChangeModal({
   onRetain,
 }: ForcedChangeModalProps) {
   const [selectedDirId, setSelectedDirId] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<BoardRole>('ned');
+  const [selectedRole, setSelectedRole] = useState<BoardRole>(forcedChange.vacatedRole ?? 'ned');
+  const roleOptions = ROLE_OPTIONS.some((r) => r.role === (forcedChange.vacatedRole ?? 'ned'))
+    ? ROLE_OPTIONS
+    : [{ role: forcedChange.vacatedRole as BoardRole, label: roleLabel(forcedChange.vacatedRole as BoardRole) }, ...ROLE_OPTIONS];
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [hoverCandidateId, setHoverCandidateId] = useState<string | null>(null);
 
@@ -141,7 +145,7 @@ export default function ForcedChangeModal({
   const hoverDir = hoverCandidateId ? directors.find((d) => d.id === hoverCandidateId) : null;
   const displayedScores: Record<string, number> = hoverDir ? (hoverDir.domainRatings as Record<string, number>) : boardAvg;
 
-  const currencySymbol = jurisdiction === 'US' ? '$' : jurisdiction === 'EU' ? '€' : '£';
+  const currencySymbol = jurisdiction === 'US' ? '$' : jurisdiction === 'EU' ? '€' : jurisdiction === 'SG' ? 'S$' : '£';
 
   const handleConfirm = () => {
     if (!selectedDirId || !canAfford) return;
@@ -376,7 +380,7 @@ export default function ForcedChangeModal({
                     padding: '3px 6px', outline: 'none', cursor: 'pointer',
                   }}
                 >
-                  {ROLE_OPTIONS.map((r) => (
+                  {roleOptions.map((r) => (
                     <option key={r.role} value={r.role}>{r.label}</option>
                   ))}
                 </select>

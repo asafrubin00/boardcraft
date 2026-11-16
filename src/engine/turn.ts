@@ -63,9 +63,10 @@ export function resolveEventTurn(
               type: 'event_resolution',
               directorId: fx.vacancy.directorId,
               directorName: fx.vacancy.directorName,
-              turnsRemaining: 2,
+              turnsRemaining: 3, // one is used up by the turn advancing before the picker opens
               narrative: `${fx.vacancy.directorName} has left the board as a result of this decision. Appoint a replacement from the candidate pool.`,
               canRetain: false,
+        vacatedRole: fx.vacancy.role,
             };
           }
         }
