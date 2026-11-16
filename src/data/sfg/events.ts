@@ -96,16 +96,16 @@ export const sfgEvents: GameEvent[] = [
     precondition: null,
   },
 
-  // SFG-02 — Director Independence: Two-Tier Shareholder Vote
+  // SFG-02 — The nine-year rule (SGX Listing Rule 210(5)(d)(iv): a hard cap since 2023; the old two-tier vote no longer exists)
   {
     id: 'sfgevent_02',
-    name: 'Director Independence Review: Two-Tier Shareholder Vote',
+    name: "The Nine-Year Rule: Helena Soong's Independence",
     tier: 1,
     quarter: 'Q1',
     turn: 2,
     imageFile: 'sfgevent-02.png',
     narrativeCard:
-      "The Nominating Committee must recommend whether to seek shareholder approval to retain Helena Soong as an independent director beyond the 9-year SGX cap. A two-tier resolution is required: the first tier requires all shareholders (including Temasek's 34%) to approve; the second tier requires approval from minority shareholders only — excluding Temasek and any holder above 5%. Glass Lewis Asia has pre-signalled it will recommend against the resolution unless a concrete board renewal plan is disclosed simultaneously. Temasek's vote can carry Tier 1 but cannot touch Tier 2 — the same two-tier structure the AGM will apply to any long-tenured director standing for re-election.",
+      "Helena Soong has sat on this board for ten years. Under SGX Listing Rule 210(5)(d)(iv), a director who has served more than nine years can no longer be called independent, and since 2023 there is no shareholder vote that can change that. Yet the annual report still lists her as Senior Independent Director, a role that only an independent director can hold. The Nominating Committee has to decide what to do before SGX RegCo or a proxy adviser decides for it. Glass Lewis Asia has already signalled that it will recommend against her re-election unless the board publishes a concrete renewal plan. Temasek's 34% can carry an ordinary resolution almost on its own, which is exactly what the minority institutions are afraid of.",
     primaryDomain: 'regulatoryLegal',
     primaryWeight: 0.40,
     secondaryDomains: [
@@ -115,9 +115,9 @@ export const sfgEvents: GameEvent[] = [
     strategies: [
       {
         id: 'sfgevent_02_a',
-        label: 'Two-tier vote + public board renewal roadmap',
+        label: "Redesignate Helena as non-independent and publish a renewal roadmap",
         description:
-          'Seek the two-tier resolution but simultaneously disclose a board renewal roadmap with named succession timeline. Requires NC Chair with Regulatory ≥ 65 AND Stakeholder ≥ 65. Glass Lewis Asia withdraws its against recommendation. Both vote tiers pass.',
+          "Helena stays on the board as a non-independent director and gives up the Senior Independent Director role. The board publishes a renewal roadmap with a named succession timeline. Requires Regulatory ≥ 65 AND Stakeholder ≥ 65.",
         multiplier: 1.00,
         competencyGates: [
           { domain: 'regulatoryLegal', minimumRating: 65 },
@@ -126,9 +126,9 @@ export const sfgEvents: GameEvent[] = [
       },
       {
         id: 'sfgevent_02_b',
-        label: 'Two-tier vote without a renewal roadmap',
+        label: "Redesignate Helena as non-independent; say nothing more",
         description:
-          'Seek the vote but without the accompanying disclosure. Glass Lewis votes against in Tier 2. The minority block may defeat the resolution even if Temasek carries Tier 1. High failure risk.',
+          "Do what the rule requires and no more. Helena stays as a non-independent director, and nothing is said about who succeeds her or when. The proxy advisers will notice the silence.",
         multiplier: 0.60,
         competencyGates: [{ domain: 'regulatoryLegal', minimumRating: 55 }],
       },
@@ -136,15 +136,15 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_02_c',
         label: 'Retire Helena Soong immediately',
         description:
-          "Clean solution — no shareholder vote required. Orderly exit with an agreed transition period. Requires NC Chair with People & Culture ≥ 60 to manage the transition sensitively. No AGM complexity but loses Helena's institutional knowledge.",
+          "A clean break. Helena steps down with an agreed handover. Requires People & Culture ≥ 60 to manage the transition sensitively. The board loses her institutional knowledge.",
         multiplier: 0.90,
         competencyGates: [{ domain: 'peopleCulture', minimumRating: 60 }],
       },
       {
         id: 'sfgevent_02_d',
-        label: 'Reclassify Helena as non-independent; do nothing',
+        label: "Do nothing; keep describing Helena as independent",
         description:
-          'Reclassify her as non-independent and avoid the vote entirely. Reduces the independent director count, triggers NC composition breach, and gives proxy advisors fresh ammunition for the AGM.',
+          "Leave the annual report as it is and hope nobody raises it. This is a breach of the listing rules, and it hands the proxy advisers their headline for the AGM.",
         multiplier: 0.40,
         isDoNothing: true,
         competencyGates: [],
@@ -791,7 +791,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_09_d',
         label: 'Call the EGM; rely on Temasek 34% to defeat resolution',
         description:
-          "Temasek votes against the minority resolution in the first tier. But this is not a two-tier vote — Temasek's bloc can determine the outcome. However, the optics are catastrophic: state shareholder vs. independent shareholders at a public EGM.",
+          "Temasek votes against the minority resolution, and its bloc can decide the outcome on its own. However, the optics are catastrophic: state shareholder vs. independent shareholders at a public EGM.",
         multiplier: 0.25,
         isDoNothing: true,
         competencyGates: [],
@@ -1115,16 +1115,16 @@ export const sfgEvents: GameEvent[] = [
     precondition: 'sfg_enforcement_precondition',
   },
 
-  // SFG-13 — AGM: Proxy War on Board Independence
+  // SFG-13 — AGM: the board renewal vote
   {
     id: 'sfgevent_13',
-    name: 'AGM: Contested Resolutions on Board Independence',
+    name: "AGM: Board Renewal on the Ballot",
     tier: 3,
     quarter: 'AGM',
     turn: 1,
     imageFile: 'sfgevent-13.png',
     narrativeCard:
-      "SFG's AGM has three potentially contested resolutions. Resolution 1: Re-election of Helena Soong as independent director (two-tier vote required under SGX rules). Resolution 2: Advisory vote on the remuneration report. Resolution 3 (conditional): The minority-requisitioned resolution on tenure limits, if not withdrawn. Glass Lewis Asia recommends AGAINST Resolution 1. ISS recommends FOR if a board renewal roadmap was disclosed. Temasek's 34% carries weight in Tier 1 — but is entirely excluded from Tier 2. The player's choices through the year now face their ultimate test.",
+      "SFG's AGM has three resolutions that could go either way. Resolution 1: the re-election of directors, including anyone who has served more than nine years and can now only stand as a non-independent director. Resolution 2: MAS compliance and governance disclosures. Resolution 3: executive remuneration. Glass Lewis Asia recommends AGAINST Resolution 1 unless a board renewal roadmap has been published. Temasek's 34% counts for a great deal on an ordinary resolution, and the minority institutions know it. The choices made through the year now face their test.",
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.40,
     secondaryDomains: [
@@ -1134,25 +1134,25 @@ export const sfgEvents: GameEvent[] = [
     strategies: [
       {
         id: 'sfgevent_13_a',
-        label: 'Engage proxy advisors proactively; disclose board renewal',
+        label: "Publish a board renewal roadmap; engage the proxy advisers",
         description:
-          "Directly engage Glass Lewis Asia and ISS before the AGM with specific board renewal commitments and timelines. Requires Stakeholder ≥ 75. ISS flips to FOR on Resolution 1. Both vote tiers pass.",
+          "Go to Glass Lewis Asia and ISS before the meeting with specific renewal commitments and dates. Requires Stakeholder ≥ 75.",
         multiplier: 1.05,
         competencyGates: [{ domain: 'stakeholderComms', minimumRating: 75 }],
       },
       {
         id: 'sfgevent_13_b',
-        label: 'Rely on retail shareholder base; no proxy engagement',
+        label: "Rely on Temasek's 34%; no proxy engagement",
         description:
-          "Depend on SFG's retail shareholder base and Temasek's Tier 1 vote without active proxy advisor engagement. Risky: if institutional block votes against, both tiers may fail in the minority vote.",
+          "Count on Temasek and the retail holders to carry the resolutions without talking to the proxy advisers. Risky: the minority institutions will read it as the state shareholder overriding them.",
         multiplier: 0.60,
         competencyGates: [],
       },
       {
         id: 'sfgevent_13_c',
-        label: 'Withdraw Resolution 1; retire Helena Soong before AGM',
+        label: "Helena Soong stands down before the AGM",
         description:
-          "Avoid the proxy war entirely — Helena exits with dignity before the AGM. Board renewal narrative takes hold. No two-tier vote required. Clean AGM.",
+          "Take the fight off the ballot. Helena leaves with dignity before the meeting, and the renewal story takes hold.",
         requires: { directorSeated: 'sfgdir_02_soong' },
         multiplier: 0.90,
         competencyGates: [{ domain: 'peopleCulture', minimumRating: 65 }],
@@ -1161,7 +1161,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_13_d',
         label: 'Let the AGM votes fall as they may',
         description:
-          "If the board's governance work through Year 1 has been strong, the resolutions may pass regardless. If not — a public AGM defeat on the independence vote is a significant governance marker that will define Year 2.",
+          "If the board's governance work through Year 1 has been strong, the resolutions may pass regardless. If not — a public AGM defeat on director re-elections is a significant governance marker that will define Year 2.",
         multiplier: 0.75,
         isDoNothing: true,
         competencyGates: [],
@@ -1189,12 +1189,12 @@ export const sfgEvents: GameEvent[] = [
       FAILURE: {
         svRange: [-4.0, -2.5],
         narrative:
-          "The independence vote goes against the board among minority shareholders, and the remuneration vote passes only barely. Governance media call the AGM a 'partial defeat'.",
+          "The minority institutions vote against the director slate in numbers, and the remuneration vote passes only barely. Governance media call the AGM a 'partial defeat'.",
       },
       CRITICAL_FAILURE: {
         svRange: [-7.0, -5.0],
         narrative:
-          "The board loses on independence and on the minority resolution. The AGM becomes one of the most-cited governance failures in Singapore institutional history.",
+          "The board loses the director re-elections and the minority resolution. The AGM becomes one of the most-cited governance failures in Singapore institutional history.",
       },
     },
     isConditional: false,

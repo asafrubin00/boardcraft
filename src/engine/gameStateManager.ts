@@ -435,7 +435,7 @@ export function checkEventPrecondition(
       return ev02.outcomeTier === 'FAILURE' || ev02.outcomeTier === 'CRITICAL_FAILURE';
     }
 
-    // SFG-02: Director Independence Review — the two-tier vote is only meaningful
+    // SFG-02: the nine-year rule — only meaningful
     // while Helena Soong (the director whose tenure triggers it) is still seated.
     // Relocated from checkEventCondition's event.id-keyed switch, where
     // 'sfg_helena_on_board' could never match an event id and was dead code.

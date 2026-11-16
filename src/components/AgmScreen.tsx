@@ -187,27 +187,27 @@ const STRATEGIES_RHEINFELD = [
 const STRATEGIES_SFG = [
   {
     id: 'sfgevent_13_a',
-    label: 'Disclose board renewal roadmap; seek Glass Lewis Asia support',
+    label: 'Publish a board renewal roadmap; engage the proxy advisers',
     description:
-      'Publish a formal multi-year board renewal schedule addressing SGX tenure independence rules. Glass Lewis Asia upgrades to "for" recommendation — critical for Tier 2 minority vote.',
+      'Publish a multi-year renewal schedule that deals with the nine-year rule head on, and take it to Glass Lewis Asia and ISS before the meeting.',
   },
   {
     id: 'sfgevent_13_b',
-    label: 'Engage Temasek directly; rely on Tier 1 majority',
+    label: "Rely on Temasek's 34%",
     description:
-      'Hold private dialogue with Temasek to secure their 34% for Tier 1. Without Glass Lewis Asia support, Tier 2 minority vote is exposed.',
+      'Secure Temasek privately and skip the proxy advisers. It may carry the vote, and the minority institutions will not forgive it.',
   },
   {
     id: 'sfgevent_13_c',
-    label: 'Let contested directors stand down before AGM',
+    label: 'Long-serving directors stand down before the meeting',
     description:
-      'Voluntarily remove directors with >9yr tenure from the re-election slate. Avoids the two-tier vote risk entirely but accelerates board composition change.',
+      'Take anyone past nine years off the re-election slate. It removes the fight from the ballot and speeds up the change in the board.',
   },
   {
     id: 'sfgevent_13_d',
-    label: 'Do nothing — contest the independence interpretation',
+    label: 'Do nothing — defend the slate as it stands',
     description:
-      'Argue the independence assessment is a matter for the NC, not shareholder vote. High risk: Glass Lewis Asia "against" recommendation. Likely Tier 2 failure.',
+      'Put every director up for re-election and make no commitments on renewal. Expect Glass Lewis Asia to recommend against.',
   },
 ];
 
@@ -216,7 +216,6 @@ const STRATEGIES_SFG = [
 /** One plain sentence on what the poll decided and what moved it most. */
 function voteLine(v: AgmResolutionVote): string {
   const result = `${v.pass ? 'Carried' : 'Defeated'} with ${v.forPct.toFixed(1)}% in favour`;
-  const twoTier = v.minorityPass === false && v.forPct > 50 ? ' overall, but lost among minority shareholders' : '';
   const wanted =
     v.stance === 'neutral'
       ? ''
@@ -229,7 +228,7 @@ function voteLine(v: AgmResolutionVote): string {
       : v.pass === (v.lean > 0)
         ? `${v.pass ? 'Helped' : 'Hurt'} most by ${v.driver}.`
         : `That was in spite of ${v.driver}.`;
-  return `${result}${twoTier}. ${factor}${wanted}`;
+  return `${result}. ${factor}${wanted}`;
 }
 
 function VoteBar({ forPercent, againstPercent }: { forPercent: number; againstPercent: number }) {
@@ -257,45 +256,6 @@ function VoteBar({ forPercent, againstPercent }: { forPercent: number; againstPe
   );
 }
 
-function TwoTierVoteDisplay({
-  tier1For, tier1Against,
-  tier2For, tier2Against,
-  tier1Pass, tier2Pass,
-}: {
-  tier1For: number; tier1Against: number;
-  tier2For: number; tier2Against: number;
-  tier1Pass: boolean; tier2Pass: boolean;
-}) {
-  const bothPass = tier1Pass && tier2Pass;
-  return (
-    <div className="mt-3 space-y-3">
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[11px] text-foreground/60 uppercase tracking-wide">Tier 1 — All Shareholders</span>
-          <span className={`text-[11px] font-bold ${tier1Pass ? 'text-success' : 'text-error'}`}>
-            {tier1Pass ? 'PASSED' : 'FAILED'}
-          </span>
-        </div>
-        <VoteBar forPercent={tier1For} againstPercent={tier1Against} />
-      </div>
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[11px] text-foreground/60 uppercase tracking-wide">Tier 2 — Minority Shareholders</span>
-          <span className={`text-[11px] font-bold ${tier2Pass ? 'text-success' : 'text-error'}`}>
-            {tier2Pass ? 'PASSED' : 'FAILED'}
-          </span>
-        </div>
-        <p className="text-[10px] text-foreground/40 mb-1">Temasek (34%) excluded from denominator</p>
-        <VoteBar forPercent={tier2For} againstPercent={tier2Against} />
-      </div>
-      <div className={`rounded px-3 py-1.5 text-[11px] font-semibold text-center ${
-        bothPass ? 'bg-success/15 text-success border border-success/30' : 'bg-error/15 text-error border border-error/30'
-      }`}>
-        {bothPass ? 'Resolution passes — both tiers approved' : 'Resolution fails — both tiers must pass under SGX two-tier rules'}
-      </div>
-    </div>
-  );
-}
 
 function AgmDebriefModal({ narrative, label, onClose }: { narrative: string; label: string; onClose: () => void }) {
   return (
@@ -443,41 +403,16 @@ export default function AgmScreen({
     ? 15
     : gameState.meridianStatus === 'escalating' ? 10 : 4;
 
-  // ── SFG two-tier vote calculations ────────────────────────────────────────
-  // Directors with >9yr tenure on the SFG board must stand for re-election
-  // under the SGX two-tier vote rule (Tier 1 = all; Tier 2 = minority only)
+  // ── SFG: the nine-year rule ──────────────────────────────────────────────
+  // SGX Listing Rule 210(5)(d)(iv): past nine years a director can stand again
+  // only as a non-independent director. There is no two-tier vote any more.
   const sfgLongTenureDirectors = isSfg
     ? gameState.board.seats
         .map((s) => gameState.directors.find((d) => d.id === s.directorId))
         .filter((d): d is Director => d !== undefined && (d.tenure ?? 0) > 9)
     : [];
-  const sfgHasTwoTierVote = sfgLongTenureDirectors.length > 0;
-
-  // Glass Lewis Asia recommends "against" by default unless a renewal roadmap was disclosed
-  // sfgevent_13_a strategy = renewal roadmap disclosed → GL upgrades to "for"
-  const sfgRenewalRoadmapDisclosed = gameState.resolvedEvents.some(
-    (r) => r.eventId === 'sfgevent_13' && r.strategyChosen === 'sfgevent_13_a'
-  );
-  const sfgGlassLewisFor = sfgRenewalRoadmapDisclosed;
-
-  // Tenure penalty: each director >9yr on the re-election slate costs votes
-  const sfgTenurePenalty = sfgLongTenureDirectors.length * -6;
-
-  // Tier 1: all shareholders including Temasek's 34%
-  // Base votes, adjusted by tenure penalty and strategy
-  const sfgRes1Tier1For = Math.max(5, Math.min(95, baseVotes.forPercent + sfgTenurePenalty));
-  const sfgRes1Tier1Against = 100 - sfgRes1Tier1For;
-  const sfgTier1Pass = sfgRes1Tier1For > 50;
-
-  // Tier 2: minority shareholders only — Temasek (34%) excluded from denominator
-  // Temasek's 34% stake voted "for" (they support management slate) is removed,
-  // so the remaining vote split shifts. Minority votes are ~66% of total.
-  // If GL Asia recommends "against", minority institutional weight swings against.
-  const sfgGlPenalty = sfgGlassLewisFor ? 0 : -18;
-  const sfgRes1Tier2For = Math.max(5, Math.min(95, baseVotes.forPercent + sfgTenurePenalty + sfgGlPenalty - 10));
-  const sfgRes1Tier2Against = 100 - sfgRes1Tier2For;
-  const sfgTier2Pass = sfgRes1Tier2For > 50;
-  const sfgRes1Pass = sfgTier1Pass && sfgTier2Pass;
+  const sfgMislabelled = sfgLongTenureDirectors.filter((d) => d.independence !== 'non-independent');
+  const sfgNames = (list: Director[]) => list.map((d) => d.name).join(' and ');
 
   // SFG Res2: MAS/SGX compliance — AC vacancy resolved; penalised if acChairVacant still open
   const sfgRes2Adj = gameState.acChairVacant ? -15 : 8;
@@ -576,36 +511,23 @@ export default function AgmScreen({
       <>
         <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
           <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">
-            Resolution 1: Director Re-Elections{sfgHasTwoTierVote ? ' (Two-Tier Vote)' : ''}
+            Resolution 1: Director Re-Elections
           </h3>
-          {sfgHasTwoTierVote ? (
-            <>
-              <p className="text-foreground/70 text-sm leading-relaxed mb-2">
-                {sfgLongTenureDirectors.map((d) => d.name).join(', ')} {sfgLongTenureDirectors.length === 1 ? 'has' : 'have'} served more than 9 years — the SGX hard cap. Their re-election requires both tiers to pass.
-              </p>
-              <div className="text-xs text-foreground/50 mb-1">
-                Glass Lewis Asia: <span className={sfgGlassLewisFor ? 'text-success font-semibold' : 'text-error font-semibold'}>
-                  {sfgGlassLewisFor ? 'FOR (renewal roadmap disclosed)' : 'AGAINST (no renewal roadmap)'}
-                </span>
-              </div>
-              <p className="text-[11px] text-foreground/40 mb-3">Temasek (34%) included in Tier 1 · excluded from Tier 2 denominator</p>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[11px] text-foreground/60 uppercase tracking-wide mb-1">Tier 1 — All Shareholders</p>
-                  <VoteBar forPercent={res1For} againstPercent={res1Against} />
-                </div>
-                <div>
-                  <p className="text-[11px] text-foreground/60 uppercase tracking-wide mb-1">Tier 2 — Minority Shareholders Only</p>
-                  <VoteBar forPercent={Math.round(forecast[0].minorityForPct ?? res1For)} againstPercent={100 - Math.round(forecast[0].minorityForPct ?? res1For)} />
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="text-foreground/70 text-sm leading-relaxed mb-3">All directors are within the SGX 9-year independence limit. Standard shareholder vote applies.</p>
-              <VoteBar forPercent={res1For} againstPercent={res1Against} />
-            </>
+          <p className="text-foreground/70 text-sm leading-relaxed mb-2">
+            {sfgMislabelled.length > 0
+              ? `${sfgNames(sfgMislabelled)} ${sfgMislabelled.length === 1 ? 'has' : 'have'} served more than nine years and ${sfgMislabelled.length === 1 ? 'is' : 'are'} still presented as independent. SGX's nine-year rule does not allow that, and the proxy advisers will say so.`
+              : sfgLongTenureDirectors.length > 0
+                ? `${sfgNames(sfgLongTenureDirectors)} ${sfgLongTenureDirectors.length === 1 ? 'stands' : 'stand'} again after more than nine years, now as non-independent ${sfgLongTenureDirectors.length === 1 ? 'director' : 'directors'}. The question for shareholders is whether the board is renewing itself fast enough.`
+                : 'Every director is inside the SGX nine-year limit. An ordinary vote.'}
+          </p>
+          {sfgLongTenureDirectors.length > 0 && (
+            <div className="text-xs text-foreground/50 mb-3">
+              Glass Lewis Asia: <span className={selectedStrategy === 'sfgevent_13_a' ? 'text-success font-semibold' : 'text-error font-semibold'}>
+                {selectedStrategy === 'sfgevent_13_a' ? 'FOR (renewal roadmap published)' : 'AGAINST (no renewal roadmap)'}
+              </span>
+            </div>
           )}
+          <VoteBar forPercent={res1For} againstPercent={res1Against} />
         </motion.div>
         <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5 }}>
           <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 2: MAS Compliance &amp; Governance Disclosures</h3>
@@ -776,26 +698,13 @@ export default function AgmScreen({
       }
 
     } else if (isSfg) {
-      // ── SFG result labels (two-tier for Res1 if applicable) ───────────────
-      res1Label = sfgHasTwoTierVote
-        ? 'Resolution 1: Director Re-Elections (Two-Tier Vote)'
-        : 'Resolution 1: Director Re-Elections';
+      // ── SFG result labels ───────────────
+      res1Label = 'Resolution 1: Director Re-Elections';
       res2Label = 'Resolution 2: MAS Compliance & Governance Disclosures';
       res3Label = 'Resolution 3: Executive Remuneration (Say-on-Pay)';
-
-      if (results.resolution1Pass) {
-        res1Explanation = sfgHasTwoTierVote
-          ? sfgRenewalRoadmapDisclosed
-            ? `Passed — the renewal roadmap secured Glass Lewis Asia's support, carrying the minority Tier 2 vote.`
-            : `Passed — both tiers approved the re-election despite Glass Lewis Asia's concerns.`
-          : passGh(`Passed — the director slate was re-elected with {gh} governance health and no SGX tenure concerns.`, `Passed — the director slate was re-elected despite weak governance health; no SGX tenure concerns arose.`);
-      } else {
-        res1Explanation = sfgHasTwoTierVote
-          ? !sfgTier2Pass
-            ? `Failed — the Tier 2 minority vote fell below 50%; without Glass Lewis Asia's support, minority shareholders rejected the re-election. The director(s) must stand down.`
-            : `Failed — the Tier 1 all-shareholder vote failed to carry the re-election.`
-          : failGh(`Failed — {gh} governance health undermined institutional confidence in the director slate.`, `Failed — strong governance health was not enough to hold institutional confidence in the director slate.`);
-      }
+      res1Explanation = results.resolution1Pass
+        ? 'Passed — the director slate was re-elected.'
+        : 'Failed — shareholders rejected the slate. Directors past nine years were not re-elected.';
 
       if (results.resolution2Pass) {
         res2Explanation = gameState.acChairVacant
@@ -864,21 +773,16 @@ export default function AgmScreen({
       }
     }
 
-    const sfgTwoTierData = isSfg && sfgHasTwoTierVote ? {
-      tier1For: sfgRes1Tier1For, tier1Against: sfgRes1Tier1Against, tier1Pass: sfgTier1Pass,
-      tier2For: sfgRes1Tier2For, tier2Against: sfgRes1Tier2Against, tier2Pass: sfgTier2Pass,
-    } : null;
-
     const resolutions = [
-      { label: res1Label, pass: results.resolution1Pass, explanation: res1Explanation, twoTier: sfgTwoTierData },
-      { label: res2Label, pass: results.resolution2Pass, explanation: res2Explanation, twoTier: null },
-      { label: res3Label, pass: results.resolution3Pass, explanation: res3Explanation, twoTier: null },
+      { label: res1Label, pass: results.resolution1Pass, explanation: res1Explanation },
+      { label: res2Label, pass: results.resolution2Pass, explanation: res2Explanation },
+      { label: res3Label, pass: results.resolution3Pass, explanation: res3Explanation },
     ];
 
     // The closing line. Each AGM event carries one story line per outcome tier,
     // and several of them state how many resolutions carried ("Two pass, one
     // fails"). The three results above are derived separately (company levers,
-    // SFG's two-tier vote), so the story can disagree with them. Show it only
+    // the year's record), so the story can disagree with them. Show it only
     // where it is consistent with what the player has just been shown;
     // otherwise state the result plainly.
     const passFlags = resolutions.map((r) => r.pass);
@@ -1059,9 +963,9 @@ export default function AgmScreen({
               : isRheinfeld
                 ? `The Hauptversammlung has arrived in Düsseldorf. Three resolutions are contested. Institutional voting will be shaped by Meridian Capital's campaign, the proxy advisers' recommendations, and your governance health score. The worker representatives hold their five seats regardless — co-determination is not on the ballot.`
                 : isSfg
-                  ? sfgHasTwoTierVote
-                    ? `The SFG AGM has arrived. Three resolutions are on the agenda. ${sfgLongTenureDirectors.map((d) => d.name).join(' and ')} — with tenure exceeding the SGX 9-year independence limit — must face a two-tier shareholder vote under the SGX Code. Temasek's 34% stake counts in Tier 1 but is excluded from the Tier 2 minority vote. Both tiers must pass for re-election to proceed. Glass Lewis Asia has issued its recommendation.`
-                    : `The SFG AGM has arrived. Three resolutions are on the agenda. All directors are within SGX independence tenure limits — no two-tier vote required this year.`
+                  ? sfgLongTenureDirectors.length > 0
+                    ? `The SFG AGM has arrived. Three resolutions are on the agenda. ${sfgNames(sfgLongTenureDirectors)} ${sfgLongTenureDirectors.length === 1 ? 'has' : 'have'} served more than nine years, the point at which SGX no longer treats a director as independent. Temasek holds 34% and the minority institutions are watching how it is used.`
+                    : `The SFG AGM has arrived. Three resolutions are on the agenda. Every director is inside SGX's nine-year limit.`
                   : `The AGM has arrived. Three resolutions are contested. Institutional shareholder voting will be influenced by Meridian Governance's recommendations and your governance health score.`}
         </motion.p>
 

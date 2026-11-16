@@ -52,7 +52,7 @@ export const sfgDirectors: Director[] = [
     name: 'Helena Soong Hui Ling',
     displayName: 'Soong',
     background:
-      "Senior Independent Director, NC Chair, and Board Credit Committee Chair. Has served 10 years — exceeding the 9-year SGX independence cap. Must be re-classified as non-independent OR retained via a two-tier shareholder vote. Glass Lewis Asia has pre-signalled opposition.",
+      "Senior Independent Director, NC Chair, and Board Credit Committee Chair. Has served 10 years — past the SGX nine-year limit, so she can no longer be designated independent and must be redesignated or retire. Glass Lewis Asia has pre-signalled opposition.",
     domainRatings: {
       financialOversight: 66,
       regulatoryLegal: 70,
@@ -71,13 +71,13 @@ export const sfgDirectors: Director[] = [
     currentEnergy: 100,
     riskFlag: {
       description:
-        "Tenure: 10 years — exceeds the 9-year SGX independence cap. Independence status is contested. Retaining her as independent without a two-tier shareholder vote is a compliance breach. Glass Lewis Asia has signalled it will recommend AGAINST her re-election unless a board renewal plan is disclosed.",
+        "Tenure: 10 years — exceeds the 9-year SGX independence cap. She can no longer be treated as independent. Continuing to describe her as independent is a compliance breach. Glass Lewis Asia has signalled it will recommend AGAINST her re-election unless a board renewal plan is disclosed.",
       activationProbability: 1.0,
       triggerCategories: ['regulatoryLegal', 'stakeholderComms'],
       activated: true,
     },
     suitableRoles:
-      "SID (current), NC Chair (current), BCC Chair. Independence contested — her retention as independent requires a two-tier shareholder resolution. Most effective succession path is an orderly exit before AGM.",
+      "SID (current), NC Chair (current), BCC Chair. No longer independent under the nine-year rule — she can stay only as a non-independent director. Most effective succession path is an orderly exit before AGM.",
     inherited: true,
     tenureYears: 10,
   },
@@ -88,7 +88,7 @@ export const sfgDirectors: Director[] = [
     name: 'Winston Goh Teck Nam',
     displayName: 'Goh',
     background:
-      "RemCo Chair. Has served exactly 9 years — at the SGX independence cap. Any extension beyond this financial year triggers the two-tier shareholder vote requirement. Has approved CEO pay structures without clawback provisions now under institutional scrutiny.",
+      "RemCo Chair. Has served exactly 9 years — at the SGX independence cap. Once he passes nine years he can no longer be designated independent. Has approved CEO pay structures without clawback provisions now under institutional scrutiny.",
     domainRatings: {
       financialOversight: 58,
       regulatoryLegal: 55,
@@ -107,7 +107,7 @@ export const sfgDirectors: Director[] = [
     currentEnergy: 100,
     riskFlag: {
       description:
-        "Tenure: 9 years — at the SGX independence limit. Any re-election as independent director after this year requires a two-tier shareholder resolution. RemCo under scrutiny for approving CEO LTIP without clawback provisions.",
+        "Tenure: 9 years — at the SGX independence limit. After this year he cannot be re-elected as an independent director. RemCo under scrutiny for approving CEO LTIP without clawback provisions.",
       activationProbability: 0.75,
       triggerCategories: ['regulatoryLegal', 'peopleCulture'],
       activated: false,
@@ -172,7 +172,7 @@ export const sfgDirectors: Director[] = [
     currentEnergy: 100,
     riskFlag: null,
     suitableRoles:
-      "NED (Temasek nominee — cannot be removed by player). BRC Member, Sustainability Committee if formed. His vote counts in Tier 1 of two-tier AGM resolutions but he is excluded from the Tier 2 minority vote.",
+      "NED (Temasek nominee — cannot be removed by player). BRC Member, Sustainability Committee if formed. Temasek's 34% votes with him at the AGM.",
     inherited: true,
   },
 
@@ -868,7 +868,7 @@ export const sfgDirectors: Director[] = [
     currentEnergy: 100,
     riskFlag: null,
     suitableRoles:
-      "Board Risk Committee, Sustainability Committee, Remuneration Committee observer. Non-independent (Temasek nominee) — excluded from Tier 2 minority AGM votes. Triggered by SFG-08 event only.",
+      "Board Risk Committee, Sustainability Committee, Remuneration Committee observer. Non-independent (Temasek nominee) — counts with the Temasek bloc at the AGM. Triggered by SFG-08 event only.",
     inherited: false,
   },
 ];

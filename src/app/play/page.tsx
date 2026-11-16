@@ -87,10 +87,10 @@ const DEV_BOARD_RHEINFELD: { id: string; role: _DevBoardRole }[] = [
   { id: 'rdir_02_fleischer', role: 'ned' },
 ];
 
-// SFG dev board: Helena Soong (10yr) still seated — triggers two-tier AGM vote
+// SFG dev board: Helena Soong (10yr) still seated — past SGX's nine-year limit
 const DEV_BOARD_SFG: { id: string; role: _DevBoardRole }[] = [
   { id: 'sfgdir_01_lim', role: 'chair' },
-  { id: 'sfgdir_02_soong', role: 'sid' },       // 10yr tenure → triggers two-tier vote
+  { id: 'sfgdir_02_soong', role: 'sid' },       // 10yr tenure → can no longer be independent
   { id: 'sfgdir_08_tan_margaret', role: 'auditChair' },
   { id: 'sfgdir_07_anwar', role: 'riskChair' },
   { id: 'sfgdir_03_goh', role: 'remChair' },
@@ -472,7 +472,7 @@ function PlayPageInner() {
       const votes = resolveAgmVotes(newState, strategyChoice, output.outcomeTier);
       newState.agmVotes = votes;
 
-      // SFG: directors past the nine-year cap leave the board if the two-tier vote is lost.
+      // SFG: directors past nine years leave the board if the re-election vote is lost.
       if (newState.company.id === 'company_sfg' && !votes[0].pass) {
         const departed: string[] = [];
         for (const dir of longTenuredSfgDirectors(newState)) {

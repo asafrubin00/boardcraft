@@ -621,14 +621,25 @@ function checkComplianceSG(
     });
   }
 
-  // 9-year independence cap: SGX — hard cap, not comply-or-explain
+  // Nine-year rule: SGX Listing Rule 210(5)(d)(iv). A hard cap since 2023 —
+  // a director who has served MORE than nine years cannot be designated
+  // independent, and no shareholder vote can change that (the old two-tier
+  // vote was removed). They may stay on only as a non-independent director.
   for (const d of seatedDirectors) {
     const tenure = d.tenureYears ?? d.tenure;
-    if (tenure >= 9 && d.independence === 'independent') {
+    if (d.independence === 'non-independent') continue;
+    if (tenure > 9) {
       errors.push({
         code: 'SG-SGX-002',
-        message: `${d.name} has served ${tenure} years — at or exceeding the SGX 9-year independence cap. Re-election as independent requires a two-tier shareholder resolution.`,
-        severity: tenure > 9 ? 'error' : 'warning',
+        message: `${d.name} has served ${tenure} years. Under SGX Listing Rule 210(5)(d)(iv) a director past nine years can no longer be designated independent: redesignate as non-independent, or retire.`,
+        severity: 'warning',
+        source: 'code',
+      });
+    } else if (tenure === 9 && d.independence === 'independent') {
+      errors.push({
+        code: 'SG-SGX-002',
+        message: `${d.name} reaches nine years this year. After that they can no longer be designated independent (SGX Listing Rule 210(5)(d)(iv)). Plan the succession now.`,
+        severity: 'warning',
         source: 'code',
       });
     }

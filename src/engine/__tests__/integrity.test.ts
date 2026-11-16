@@ -146,6 +146,24 @@ describe('board effects', () => {
     expect(succession.notes.join(' ')).not.toMatch(/Chair seat is vacant/);
   });
 
+  it('SFG nine-year rule: redesignating Helena Soong makes her non-independent and frees the SID seat', () => {
+    const st = start(co('company_sfg'), 1);
+    const before = st.directors.find((d) => d.id === 'sfgdir_02_soong')!;
+    expect(before.independence).not.toBe('non-independent');
+    const plain = applyBoardEffects(st, ev('sfgevent_02'), 'sfgevent_02_b', 'FAILURE');
+    expect(plain.state.directors.find((d) => d.id === 'sfgdir_02_soong')!.independence).toBe('non-independent');
+    expect(plain.state.board.seats.find((s) => s.directorId === 'sfgdir_02_soong')!.role).toBe('ned');
+    expect(plain.state.board.seats.some((s) => s.role === 'sid')).toBe(false);
+
+    // With a credible roadmap, an INDEPENDENT director takes the SID role.
+    const roadmap = applyBoardEffects(st, ev('sfgevent_02'), 'sfgevent_02_a', 'SUCCESS');
+    const sid = roadmap.state.board.seats.find((s) => s.role === 'sid');
+    if (sid) {
+      expect(sid.directorId).not.toBe('sfgdir_02_soong');
+      expect(roadmap.state.directors.find((d) => d.id === sid.directorId)!.independence).toBe('independent');
+    }
+  });
+
   it('SFG: Dato\' Lim chairs the Board Risk Committee until someone else is given it', () => {
     const st = start(co('company_sfg'), 1);
     expect(st.committees.risk.chairDirectorId).toBe('sfgdir_01_lim');

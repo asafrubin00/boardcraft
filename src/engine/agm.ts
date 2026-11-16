@@ -29,16 +29,13 @@ export interface AgmResolutionVote {
   /** True when the result is the one the board was asking for. */
   good: boolean;
   blocks: AgmBlock[];
-  /** SGX two-tier vote: the minority-only count that must also pass. */
-  minorityForPct?: number;
-  minorityPass?: boolean;
   /** The single biggest thing that moved this vote, in plain words. */
   driver: string;
   /** Which way that factor pushed support: 1 up, -1 down, 0 neither. */
   lean: number;
 }
 
-interface BlockDef { name: string; weight: number; bias: number; minority?: boolean }
+interface BlockDef { name: string; weight: number; bias: number }
 
 const clamp = (n: number, lo = 3, hi = 97) => Math.max(lo, Math.min(hi, n));
 const failed = (t?: OutcomeTier) => t === 'FAILURE' || t === 'CRITICAL_FAILURE';
@@ -84,9 +81,9 @@ function blocksFor(state: GameState): BlockDef[] {
     case 'company_sfg':
       return [
         { name: 'Temasek', weight: 34, bias: 30 },
-        { name: 'Minority institutions', weight: 36, bias: -20, minority: true },
-        { name: 'Retail shareholders', weight: 22, bias: -4, minority: true },
-        { name: 'Other holders', weight: 8, bias: 0, minority: true },
+        { name: 'Minority institutions', weight: 36, bias: -20 },
+        { name: 'Retail shareholders', weight: 22, bias: -4 },
+        { name: 'Other holders', weight: 8, bias: 0 },
       ];
     default:
       return [
@@ -205,12 +202,21 @@ function specs(state: GameState): ResolutionSpec[] {
         },
       ];
     case 'company_sfg': {
+      // SGX's nine-year rule is a hard cap: past nine years a director can stand
+      // again only as a non-independent director. Standing while still described
+      // as independent is a rule breach, and the vote punishes it far harder.
       const long = longTenuredSfgDirectors(state);
+      const mislabelled = long.filter((d) => d.independence !== 'non-independent');
+      const names = (list: Director[]) => list.map((d) => d.name).join(' and ');
       return [
         {
-          title: long.length > 0 ? 'Director Re-Elections (Two-Tier Vote)' : 'Director Re-Elections', proposedBy: 'board', stance: 'for',
-          adjust: long.length * -6,
-          driver: long.length > 0 ? `${long.map((d) => d.name).join(' and ')} standing again after more than nine years` : 'a board inside the nine-year independence limit',
+          title: 'Director Re-Elections', proposedBy: 'board', stance: 'for',
+          adjust: mislabelled.length * -9 + (long.length - mislabelled.length) * -3,
+          driver: mislabelled.length > 0
+            ? `${names(mislabelled)} still being presented as independent after more than nine years`
+            : long.length > 0
+              ? `${names(long)} standing again after more than nine years, now as non-independent`
+              : 'a board inside the nine-year limit',
         },
         {
           title: 'MAS Compliance & Governance Disclosures', proposedBy: 'board', stance: 'for',
@@ -314,16 +320,7 @@ function build(state: GameState, strategyId: string | null, tier: OutcomeTier | 
         const mode = spec.proposedBy === 'board' ? 'board' : stance === 'for' ? 'agreed' : 'contested';
     const blocks = countBlocks(defs, target, mode);
     const forPct = tally(blocks);
-    let pass = forPct > 50;
-
-    let minorityForPct: number | undefined;
-    let minorityPass: boolean | undefined;
-    if (state.company.id === 'company_sfg' && i === 0 && longTenuredSfgDirectors(state).length > 0) {
-      const minority = blocks.filter((b) => defs.find((d) => d.name === b.name)?.minority);
-      minorityForPct = tally(minority);
-      minorityPass = minorityForPct > 50;
-      pass = pass && minorityPass;
-    }
+    const pass = forPct > 50;
 
     return {
       title: spec.title,
@@ -333,8 +330,6 @@ function build(state: GameState, strategyId: string | null, tier: OutcomeTier | 
       pass,
       good: stance === 'against' ? !pass : pass,
       blocks,
-      minorityForPct,
-      minorityPass,
       driver: spec.driver,
       lean: Math.sign(spec.adjust),
     };

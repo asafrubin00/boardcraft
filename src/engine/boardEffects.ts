@@ -37,7 +37,10 @@ export type BoardEffect =
    *  best-qualified person in the event's primary domain. */
   | { kind: 'fillRole'; role: BoardRole; from: 'board' | 'pool' | 'either'; when: When; minRating?: number }
   /** A committee is established. */
-  | { kind: 'committee'; committeeId: CommitteeId; when: When };
+  | { kind: 'committee'; committeeId: CommitteeId; when: When }
+  /** A director stays on the board but is redesignated non-independent (e.g. past
+   *  SGX's nine-year limit). Any role that needs independence is given up. */
+  | { kind: 'redesignate'; directorId: string; when: When };
 
 // ── The table ──────────────────────────────────────────────────────────────
 
@@ -71,6 +74,14 @@ export const STRATEGY_EFFECTS: Record<string, BoardEffect[]> = {
   revent_01_a: [{ kind: 'fillRole', role: 'auditChair', from: 'either', when: SUCCESS_UP, minRating: 75 }],
   revent_03_b: [{ kind: 'committee', committeeId: 'csrd', when: SUCCESS_UP }],
 
+  // SFG — the nine-year rule. Helena Soong can no longer be independent: she is
+  // redesignated and gives up the Senior Independent Director role. With a
+  // credible roadmap (a), an independent director steps up to take it.
+  sfgevent_02_a: [
+    { kind: 'redesignate', directorId: 'sfgdir_02_soong', when: 'always' },
+    { kind: 'fillRole', role: 'sid', from: 'board', when: SUCCESS_UP },
+  ],
+  sfgevent_02_b: [{ kind: 'redesignate', directorId: 'sfgdir_02_soong', when: 'always' }],
   // SFG — Helena Soong retires
   sfgevent_02_c: [{ kind: 'remove', directorId: 'sfgdir_02_soong', when: 'always', replace: true }],
   sfgevent_13_c: [{ kind: 'remove', directorId: 'sfgdir_02_soong', when: 'always' }],
@@ -247,15 +258,18 @@ function pickForRole(
   const best = (list: Director[]) => [...list].sort((a, b) => rating(b) - rating(a))[0] ?? null;
 
   const seatedIds = new Set(state.board.seats.map((s) => s.directorId));
+  // A Senior / Lead Independent Director has to be independent.
+  const eligible = (d: Director) => role !== 'sid' || d.independence === 'independent';
   const boardNeds = state.board.seats
     .filter((s) => s.role === 'ned' && !isProtected(s.directorId))
     .map((s) => state.directors.find((d) => d.id === s.directorId))
-    .filter((d): d is Director => !!d);
+    .filter((d): d is Director => !!d && eligible(d));
   const budget = state.company.boardBudget;
   const pool = state.directors.filter(
     (d) =>
       !seatedIds.has(d.id) &&
       !isProtected(d.id) &&
+      eligible(d) &&
       state.company.directorIds.includes(d.id) &&
       !state.company.excludeDirectorIds.includes(d.id) &&
       (budget === 0 || computeFeeWithPremium(d.annualFee, role) <= state.board.remainingBudget)
@@ -334,6 +348,23 @@ export function applyBoardEffects(
           ? `${nameOf(next, pick)} has been appointed ${roleLabel(effect.role, companyId)}.`
           : `${nameOf(next, pick)} has joined the board as ${roleLabel(effect.role, companyId)}.`
       );
+    } else if (effect.kind === 'redesignate') {
+      const seat = next.board.seats.find((s) => s.directorId === effect.directorId);
+      const director = next.directors.find((d) => d.id === effect.directorId);
+      if (!seat || !director || director.independence === 'non-independent') continue;
+      next = {
+        ...next,
+        directors: next.directors.map((d) => (d.id === effect.directorId ? { ...d, independence: 'non-independent' as const } : d)),
+      };
+      // Roles that require independence are given up.
+      const needsIndependence = seat.role === 'sid' || seat.role === 'auditChair';
+      if (needsIndependence) {
+        const vacated = roleLabel(seat.role, companyId);
+        next = seatDirector(next, effect.directorId, 'ned');
+        notes.push(`${director.name} is now a non-independent director. The ${vacated} seat is vacant.`);
+      } else {
+        notes.push(`${director.name} is now a non-independent director.`);
+      }
     } else if (effect.kind === 'committee') {
       const current = next.committees[effect.committeeId];
       if (current?.active) continue;

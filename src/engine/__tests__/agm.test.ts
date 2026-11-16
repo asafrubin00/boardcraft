@@ -26,7 +26,7 @@ describe('AGM votes', () => {
         expect(v.blocks.reduce((s, b) => s + b.weight, 0)).toBe(100);
         const sum = v.blocks.reduce((s, b) => s + (b.weight * b.forPct) / 100, 0);
         expect(Math.abs(sum - v.forPct)).toBeLessThan(0.11);
-        if (v.minorityForPct === undefined) expect(v.pass).toBe(v.forPct > 50);
+        expect(v.pass).toBe(v.forPct > 50);
       }
     });
 
@@ -52,6 +52,17 @@ describe('AGM votes', () => {
       expect(patterns.size).toBeGreaterThan(2);
     });
   }
+
+  it('SFG: a director past nine years costs more votes while still called independent', () => {
+    const sfg = companies.find((c) => c.id === 'company_sfg')!;
+    const st = start(sfg);
+    const mislabelled = agmForecast(st)[0].forPct;
+    const fixed = agmForecast({
+      ...st,
+      directors: st.directors.map((d) => ((d.tenure ?? 0) > 9 ? { ...d, independence: 'non-independent' as const } : d)),
+    })[0].forPct;
+    expect(fixed).toBeGreaterThan(mislabelled);
+  });
 
   it('the forecast is the poll without a campaign', () => {
     const st = start(companies[0]);

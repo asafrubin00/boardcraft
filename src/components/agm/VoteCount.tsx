@@ -71,13 +71,6 @@ export default function VoteCount({ vote }: { vote: AgmResolutionVote }) {
         })}
       </ul>
 
-      {done && vote.minorityForPct !== undefined && (
-        <p className="text-[12px] mt-2.5 pt-2" style={{ borderTop: '1px dashed var(--rule)' }}>
-          <span className="font-bold">Second count, minority shareholders only:</span>{' '}
-          <span className="tabular-nums font-bold" style={{ color: vote.minorityPass ? 'var(--success)' : 'var(--error)' }}>{vote.minorityForPct.toFixed(1)}% for</span>
-          {' '}— {vote.minorityPass ? 'carried' : 'defeated'}. Both counts must carry.
-        </p>
-      )}
     </div>
   );
 }
