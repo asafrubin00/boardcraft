@@ -819,8 +819,8 @@ describe('Meridian mevent_09 reachability via founderSyndromeScore', () => {
       board: { seats: [osei], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
       founderSyndromeScore: 65,
       resolvedEvents: [], // mevent_03 never resolved — the outcome-chain path alone would skip this
-      currentQuarter: 'AGM',
-      currentTurn: 1,
+      currentQuarter: 'Q3',
+      currentTurn: 4,
     });
     expect(checkEventPrecondition(mevent09, state)).toBe(true);
     expect(getCurrentEvent(state)?.id).toBe('mevent_09');
@@ -832,8 +832,8 @@ describe('Meridian mevent_09 reachability via founderSyndromeScore', () => {
       board: { seats: [osei], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
       founderSyndromeScore: 55,
       resolvedEvents: [],
-      currentQuarter: 'AGM',
-      currentTurn: 1,
+      currentQuarter: 'Q3',
+      currentTurn: 4,
     });
     expect(checkEventPrecondition(mevent09, state)).toBe(false);
     expect(getCurrentEvent(state)).toBeNull();
@@ -845,8 +845,8 @@ describe('Meridian mevent_09 reachability via founderSyndromeScore', () => {
       board: { seats: [osei], totalCommittedBudget: 0, remainingBudget: 0, complianceErrors: [] },
       founderSyndromeScore: 55,
       resolvedEvents: [stubResolvedEvent('mevent_03', 'FAILURE')],
-      currentQuarter: 'AGM',
-      currentTurn: 1,
+      currentQuarter: 'Q3',
+      currentTurn: 4,
     });
     expect(getCurrentEvent(state)?.id).toBe('mevent_09');
   });

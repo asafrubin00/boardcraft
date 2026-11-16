@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { agmForecast, type AgmResolutionVote } from '@/engine/agm';
+import VoteCount, { countDuration } from '@/components/agm/VoteCount';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { GameState, Director, CompetencyDomain, GovernanceHealthBreakdown } from '@/types/game';
 import { estimateAgmVotes, getProxyAdviserRating } from '@/engine/gameStateManager';
@@ -23,6 +25,8 @@ interface AgmResults {
   resolution2Pass: boolean;
   resolution3Pass: boolean;
   narrative: string;
+  /** The three polls, counted block by block (engine/agm.ts) */
+  votes?: AgmResolutionVote[];
   /** Tier of the single AGM roll — used to check the story line against the three results */
   outcomeTier?: string;
 }
@@ -209,6 +213,25 @@ const STRATEGIES_SFG = [
 
 // ── Shared components ──────────────────────────────────────────────────────────
 
+/** One plain sentence on what the poll decided and what moved it most. */
+function voteLine(v: AgmResolutionVote): string {
+  const result = `${v.pass ? 'Carried' : 'Defeated'} with ${v.forPct.toFixed(1)}% in favour`;
+  const twoTier = v.minorityPass === false && v.forPct > 50 ? ' overall, but lost among minority shareholders' : '';
+  const wanted =
+    v.stance === 'neutral'
+      ? ''
+      : v.good
+        ? v.proposedBy === 'shareholders' && v.stance === 'against' ? ' The board had opposed it and held the line.' : ' That is the result the board asked for.'
+        : v.proposedBy === 'shareholders' && v.stance === 'against' ? ' The board had opposed it.' : ' The board had asked for the opposite.';
+  const factor =
+    v.lean === 0
+      ? `Biggest factor: ${v.driver}.`
+      : v.pass === (v.lean > 0)
+        ? `${v.pass ? 'Helped' : 'Hurt'} most by ${v.driver}.`
+        : `That was in spite of ${v.driver}.`;
+  return `${result}${twoTier}. ${factor}${wanted}`;
+}
+
 function VoteBar({ forPercent, againstPercent }: { forPercent: number; againstPercent: number }) {
   return (
     <div className="mt-2">
@@ -332,19 +355,11 @@ export default function AgmScreen({
       return;
     }
     setRevealedCount(0);
-    const resOutcomes = [results.resolution1Pass, results.resolution2Pass, results.resolution3Pass];
     const timers: NodeJS.Timeout[] = [];
+    // Each resolution is counted live; the next one opens when the last has closed.
+    const per = countDuration(results.votes?.[0]?.blocks.length ?? 4);
     for (let i = 1; i <= 4; i++) {
-      timers.push(setTimeout(() => {
-        setRevealedCount(i);
-        if (i <= 3) {
-          if (resOutcomes[i - 1]) {
-            playResolutionPass();
-          } else {
-            playResolutionFail();
-          }
-        }
-      }, i * 1000));
+      timers.push(setTimeout(() => setRevealedCount(i), 500 + (i - 1) * per));
     }
     return () => timers.forEach(clearTimeout);
   }, [results]);
@@ -480,13 +495,14 @@ export default function AgmScreen({
   const res2Adj = isMeridian ? mRes2Adjustment : isVantage ? vRes2Adjustment : isRheinfeld ? rRes2Adjustment : res2Adjustment;
   const res3Adj = isMeridian ? mRes3Adjustment : isVantage ? vRes3Adjustment : isRheinfeld ? rRes3Adjustment : res3Adjustment;
 
-  const res1For = Math.max(5, Math.min(95, baseVotes.forPercent + res1Adj));
+  // The bars on the notice are the engine's own forecast, and they move with
+  // the strategy the player is considering.
+  const forecast = agmForecast(gameState, selectedStrategy);
+  const res1For = Math.round(forecast[0].forPct);
   const res1Against = 100 - res1For;
-
-  const res2For = Math.max(5, Math.min(95, baseVotes.forPercent + res2Adj));
+  const res2For = Math.round(forecast[1].forPct);
   const res2Against = 100 - res2For;
-
-  const res3For = Math.max(5, Math.min(95, baseVotes.forPercent + res3Adj));
+  const res3For = Math.round(forecast[2].forPct);
   const res3Against = 100 - res3For;
 
   // ── Resolution panels (pre-vote) — computed outside JSX to avoid Turbopack ternary depth issue
@@ -576,18 +592,18 @@ export default function AgmScreen({
               <div className="space-y-3">
                 <div>
                   <p className="text-[11px] text-foreground/60 uppercase tracking-wide mb-1">Tier 1 — All Shareholders</p>
-                  <VoteBar forPercent={sfgRes1Tier1For} againstPercent={sfgRes1Tier1Against} />
+                  <VoteBar forPercent={res1For} againstPercent={res1Against} />
                 </div>
                 <div>
                   <p className="text-[11px] text-foreground/60 uppercase tracking-wide mb-1">Tier 2 — Minority Shareholders Only</p>
-                  <VoteBar forPercent={sfgRes1Tier2For} againstPercent={sfgRes1Tier2Against} />
+                  <VoteBar forPercent={Math.round(forecast[0].minorityForPct ?? res1For)} againstPercent={100 - Math.round(forecast[0].minorityForPct ?? res1For)} />
                 </div>
               </div>
             </>
           ) : (
             <>
               <p className="text-foreground/70 text-sm leading-relaxed mb-3">All directors are within the SGX 9-year independence limit. Standard shareholder vote applies.</p>
-              <VoteBar forPercent={sfgRes1Tier1For} againstPercent={sfgRes1Tier1Against} />
+              <VoteBar forPercent={res1For} againstPercent={res1Against} />
             </>
           )}
         </motion.div>
@@ -597,7 +613,7 @@ export default function AgmScreen({
             Shareholders vote to receive MAS-mandated governance disclosures, including AC composition and BRC adequacy.
             {gameState.acChairVacant ? ' The outstanding AC Chair vacancy is a material item.' : ''}
           </p>
-          <VoteBar forPercent={sfgRes2For} againstPercent={sfgRes2Against} />
+          <VoteBar forPercent={res2For} againstPercent={res2Against} />
         </motion.div>
         <motion.div className="bg-card-bg border border-card-border rounded-lg p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }}>
           <h3 className="text-gold font-bold text-sm uppercase tracking-wide mb-2">Resolution 3: Executive Remuneration (Say-on-Pay)</h3>
@@ -605,7 +621,7 @@ export default function AgmScreen({
             Advisory vote on the CEO remuneration framework.
             {gameState.ceoWhistleblower === 'substantiated' ? ' The CEO conduct investigation has raised shareholder concern about the LTIP structure.' : ''}
           </p>
-          <VoteBar forPercent={sfgRes3For} againstPercent={sfgRes3Against} />
+          <VoteBar forPercent={res3For} againstPercent={res3Against} />
         </motion.div>
       </>
     );
@@ -892,7 +908,8 @@ export default function AgmScreen({
         : passCount === 0
           ? 'All three resolutions were defeated.'
           : `${passCount === 2 ? 'Two resolutions carried and one was defeated' : 'One resolution carried and two were defeated'}: ${defeated.join('; ')}.`;
-    const summaryLine = storyAgrees ? results.narrative : plainSummary;
+    void storyAgrees;
+    const summaryLine = plainSummary;
 
     const agmDebriefParams = {
       governanceHealth: gameState.governanceHealth,
@@ -909,7 +926,7 @@ export default function AgmScreen({
       deployedDirectorIds: deployedIds,
     };
 
-    const agmDebriefNarratives = resolutions.map((res) =>
+    void resolutions.map((res) =>
       generateAgmResolutionDebrief({ ...agmDebriefParams, resolutionLabel: res.label, passed: res.pass })
     );
 
@@ -949,30 +966,28 @@ export default function AgmScreen({
                 >
                   <div className="flex items-center justify-between">
                     <span className="bc-serif text-foreground font-bold text-[17px] leading-snug">{res.label}</span>
-                    {!res.twoTier && (
+                    {(
                       <motion.span
                         className={`sc-outcome-stamp shrink-0 ml-3 text-sm ${res.pass ? 'text-success' : 'text-error'}`}
                         style={{ padding: '3px 10px 2px', borderWidth: 3 }}
                         initial={{ opacity: 0, scale: 2.4, rotate: -14 }}
                         animate={{ opacity: 0.9, scale: 1, rotate: res.pass ? -4 : 4 }}
-                        transition={{ delay: 0.25, type: 'spring', stiffness: 420, damping: 17 }}
+                        transition={{ delay: (countDuration(results.votes?.[idx]?.blocks.length ?? 4) - 700) / 1000, type: 'spring', stiffness: 420, damping: 17 }}
                       >
-                        {res.pass ? 'Passed' : 'Failed'}
+                        {res.pass ? 'Carried' : 'Defeated'}
                       </motion.span>
                     )}
                   </div>
-                  {res.twoTier && (
-                    <TwoTierVoteDisplay {...res.twoTier} />
-                  )}
-                  <p className={`text-xs mt-2 font-narrative italic ${res.pass ? 'text-success/70' : 'text-error/70'}`}>
-                    {res.explanation}
-                  </p>
-                  <div className="mt-3 pt-3 border-t border-card-border">
-                    <p className="text-xs text-foreground/40 uppercase tracking-widest mb-1.5">The Debrief</p>
-                    <p className="font-narrative italic text-foreground/70 text-sm leading-relaxed">
-                      {agmDebriefNarratives[idx]}
+                  {results.votes?.[idx] && <VoteCount vote={results.votes[idx]} />}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: (countDuration(results.votes?.[idx]?.blocks.length ?? 4) - 500) / 1000, duration: 0.5 }}
+                  >
+                    <p className={`text-[13px] mt-3 font-narrative italic ${res.pass ? 'text-success' : 'text-error'}`}>
+                      {results.votes?.[idx] ? voteLine(results.votes[idx]) : res.explanation}
                     </p>
-                  </div>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>

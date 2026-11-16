@@ -132,7 +132,8 @@ export const meridianFoundation: Company = {
     { eventId: 'mevent_06', quarter: 'Q2', turn: 2 }, // conditional on mevent_02 partial/failure
     { eventId: 'mevent_07', quarter: 'Q2', turn: 3 },
     { eventId: 'mevent_08', quarter: 'Q2', turn: 4 }, // conditional on mevent_01 partial/failure
-    { eventId: 'mevent_09', quarter: 'AGM', turn: 1 }, // conditional; probability ↑ if mevent_03 partial/fail
+    { eventId: 'mevent_amm', quarter: 'AGM', turn: 1 },
+    { eventId: 'mevent_09', quarter: 'Q3', turn: 4 }, // conditional; probability ↑ if mevent_03 partial/fail
     { eventId: 'mevent_10', quarter: 'Q3', turn: 1 },
     { eventId: 'mevent_11', quarter: 'Q3', turn: 2 },
     { eventId: 'mevent_12', quarter: 'Q3', turn: 3 },

@@ -740,8 +740,8 @@ export const meridianEvents: GameEvent[] = [
     id: 'mevent_09',
     name: 'CEO Ultimatum',
     tier: 2,
-    quarter: 'AGM',
-    turn: 1,
+    quarter: 'Q3',
+    turn: 4,
     imageFile: 'mevent-ceo-ultimatum.jpg',
     illustrationType: 'mevent-ceo-ultimatum',
     narrativeCard:
@@ -1363,6 +1363,42 @@ export const meridianEvents: GameEvent[] = [
         narrative:
           "Donors controlling 55% of income publicly distance themselves from Meridian. The Charity Commission opens a preliminary review, and the Code Assessor recommends an independent governance inquiry.",
       },
+    },
+    isConditional: false,
+    precondition: null,
+  },
+  // The Annual Members Meeting itself. The CEO Ultimatum used to sit in this
+  // slot and was "resolved" with the meeting's options; it now has its own turn
+  // (Q3 T4) and the meeting has a proper event of its own.
+  {
+    id: 'mevent_amm',
+    name: 'Annual Members Meeting',
+    tier: 2,
+    quarter: 'AGM',
+    turn: 1,
+    narrativeCard:
+      "The Annual Members Meeting is this evening, in a hired hall with stackable chairs and a tea urn. Three motions are on the order paper: ratification of the trustees, a members' motion for a beneficiary accountability audit, and a members' motion for a mission alignment review. The donors who matter have sent representatives.",
+    primaryDomain: 'stakeholderComms',
+    primaryWeight: 0.50,
+    secondaryDomains: [
+      { domain: 'esgSustainability', weight: 0.30 },
+      { domain: 'regulatoryLegal', weight: 0.20 },
+    ],
+    strategies: [
+      { id: 'amm_strat_a', label: 'Support all resolutions', description: 'Accept all three motions; signal openness to accountability and member oversight.', multiplier: 1.0, competencyGates: [] },
+      { id: 'amm_strat_b', label: 'Defend current programme strategy', description: 'Resist both member motions; argue the board has matters in hand and a review would create unnecessary disruption.', multiplier: 0.8, competencyGates: [] },
+      { id: 'amm_strat_c', label: 'Accept audit; resist mission review', description: 'Split approach: concede on beneficiary accountability, hold the line on the mission alignment review.', multiplier: 0.9, competencyGates: [] },
+      { id: 'amm_strat_d', label: 'Engage donors directly before the vote', description: 'Speak to the main donors before the meeting and take no public position on the two member motions.', multiplier: 1.05, competencyGates: [{ domain: 'stakeholderComms', minimumRating: 65 }], fallback: 'amm_strat_c' },
+    ],
+    relevantCommittee: null,
+    committeeBonusValue: 0,
+    followOnTriggers: [],
+    outcomeTiers: {
+      CRITICAL_SUCCESS: { svRange: [3, 5], narrative: 'The trustees leave the hall with more goodwill than they walked in with. Members and donors heard a board that knew its own record and did not hide from it.' },
+      SUCCESS: { svRange: [1, 3], narrative: 'A steady meeting. The board made its case clearly and the room listened.' },
+      PARTIAL_SUCCESS: { svRange: [-1, 1], narrative: 'The board got through the meeting, but several answers from the platform left members unconvinced.' },
+      FAILURE: { svRange: [-4, -2], narrative: 'The platform lost the room. Questions from the floor went unanswered and the donor representatives took notes.' },
+      CRITICAL_FAILURE: { svRange: [-7, -4], narrative: 'A bruising evening. The meeting turned on the trustees, and what was said in the hall was being repeated across the sector by morning.' },
     },
     isConditional: false,
     precondition: null,

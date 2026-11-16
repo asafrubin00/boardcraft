@@ -46,6 +46,7 @@ import {
 } from '@/engine/forcedChanges';
 import { applyBoardEffects, syncCommitteeChairs } from '@/engine/boardEffects';
 import { resolveEventTurn } from '@/engine/turn';
+import { resolveAgmVotes, agmGovernanceDelta, longTenuredSfgDirectors, type AgmResolutionVote } from '@/engine/agm';
 import { playBoardSeatDrop, playBoardSeatRemove, playBoardConfirm, playDirectorSelect, playCardDeal, ensureAudioContext } from '@/engine/soundEngine';
 import HintModal from '@/components/HintModal';
 import { isDesktopViewport } from '@/lib/breakpoints';
@@ -145,6 +146,7 @@ function PlayPageInner() {
     resolution3Pass: boolean;
     narrative: string;
     outcomeTier?: string;
+    votes?: AgmResolutionVote[];
   } | null>(null);
   const [regenDirectorIds, setRegenDirectorIds] = useState<string[]>([]);
   const [isRestart, setIsRestart] = useState(false);
@@ -416,80 +418,42 @@ function PlayPageInner() {
       // Meridian: mevent_09 (CEO Ultimatum, fires at AGM) outcome feeds founderSyndromeScore.
       Object.assign(newState, applyMeridianFlagUpdates(newState, agmEventId, output.outcomeTier));
 
-      const breakdown = recalcGovernanceBreakdown(newState);
-
-      // Determine AGM results based on outcome
-      const isSuccess =
-        output.outcomeTier === 'SUCCESS' ||
-        output.outcomeTier === 'CRITICAL_SUCCESS';
-      const isPartial = output.outcomeTier === 'PARTIAL_SUCCESS';
-
-      // ── SFG two-tier vote for Res1 ──
-      let resolution1Pass: boolean;
-      if (newState.company.id === 'company_sfg') {
-        const sfgLongTenure = newState.board.seats
-          .map((s) => newState.directors.find((d) => d.id === s.directorId))
-          .filter((d) => d !== undefined && (d.tenure ?? 0) > 9);
-        if (sfgLongTenure.length === 0) {
-          // No contested re-elections — standard vote
-          resolution1Pass = isSuccess || isPartial;
-        } else {
-          // Renewal roadmap: strategy A = roadmap disclosed → Glass Lewis Asia "for"
-          const glAssLewisFor = strategyChoice === 'sfgevent_13_a';
-          const tenurePenalty = sfgLongTenure.length * -6;
-          const baseVoteFor = 50 + (newState.governanceHealth - 50) * 0.3;
-          const tier1For = Math.max(5, Math.min(95, baseVoteFor + tenurePenalty));
-          const tier1Pass = tier1For > 50;
-          const glPenalty = glAssLewisFor ? 0 : -18;
-          const tier2For = Math.max(5, Math.min(95, baseVoteFor + tenurePenalty + glPenalty - 10));
-          const tier2Pass = tier2For > 50;
-          resolution1Pass = tier1Pass && tier2Pass;
-          // Force the long-tenured directors off the board if the two-tier vote fails
-          if (!resolution1Pass) {
-            for (const dir of sfgLongTenure) {
-              if (dir && newState.board.seats.some((s) => s.directorId === dir.id)) {
-                Object.assign(newState, applyForcedRemoval(newState, dir.id));
-              }
-            }
-          }
-        }
-      } else {
-        resolution1Pass = isSuccess || isPartial;
-      }
-
-      const resolution2Pass = isSuccess;
-      // Resolution 3 on partial outcomes hinges on the company-specific lever:
-      // Harwick/default — ET committee demonstrates ESG credibility
-      // Vantage — board-endorsed Chair/CEO separation momentum carries the proposal
-      // Rheinfeld — Meridian Capital's pressure carries its strategic review
-      const res3PartialLever =
-        newState.company.id === 'company_vantage'
-          ? newState.chairCeoSeparationProgress >= 50
-          : newState.company.id === 'company_rheinfeld'
-            ? newState.meridianActive
-            : newState.committees.energyTransition.active;
-      const resolution3Pass = isSuccess || (isPartial && res3PartialLever);
-
-      // AGM GH bonus: all resolutions pass → +5, one or zero pass → -8
-      const passCount = [resolution1Pass, resolution2Pass, resolution3Pass].filter(Boolean).length;
-      const agmGhDelta = passCount === 3 ? 5 : passCount <= 1 ? -8 : 0;
-      newState.governanceHealth = Math.max(0, Math.min(100, newState.governanceHealth + agmGhDelta));
-      newState.governanceHealthBreakdown = rescaleBreakdown(breakdown, newState.governanceHealth);
-
-      // Board effects of the AGM decision (e.g. a director standing down).
+      // Board effects of the AGM decision come first (e.g. a director standing
+      // down before the poll), so the votes are counted on the board as it stands.
       if (agmEvent) {
         const fx = applyBoardEffects(newState, agmEvent, strategyChoice, output.outcomeTier);
         Object.assign(newState, fx.state);
         if (fx.notes.length > 0) newState.pendingBoardNotification = fx.notes.join(' ');
       }
+
+      // Three resolutions, three separate counts — see engine/agm.ts.
+      const votes = resolveAgmVotes(newState, strategyChoice, output.outcomeTier);
+
+      // SFG: directors past the nine-year cap leave the board if the two-tier vote is lost.
+      if (newState.company.id === 'company_sfg' && !votes[0].pass) {
+        const departed: string[] = [];
+        for (const dir of longTenuredSfgDirectors(newState)) {
+          departed.push(dir.name);
+          Object.assign(newState, applyForcedRemoval(newState, dir.id));
+        }
+        if (departed.length > 0) {
+          newState.pendingBoardNotification =
+            `${departed.join(' and ')} ${departed.length === 1 ? 'was' : 'were'} not re-elected and ${departed.length === 1 ? 'has' : 'have'} left the board.`;
+        }
+      }
       Object.assign(newState, syncCommitteeChairs(newState));
+
+      const breakdown = recalcGovernanceBreakdown(newState);
+      newState.governanceHealth = Math.max(0, Math.min(100, newState.governanceHealth + agmGovernanceDelta(votes)));
+      newState.governanceHealthBreakdown = rescaleBreakdown(breakdown, newState.governanceHealth);
 
       setGameState(newState);
 
       setAgmResults({
-        resolution1Pass,
-        resolution2Pass,
-        resolution3Pass,
+        resolution1Pass: votes[0].pass,
+        resolution2Pass: votes[1].pass,
+        resolution3Pass: votes[2].pass,
+        votes,
         narrative: output.narrativeText,
         outcomeTier: output.outcomeTier,
       });
