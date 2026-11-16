@@ -12,7 +12,7 @@
 }
 .cr-hinge { height: 12px; margin: 0 -18px; border-radius: 0 0 14px 14px; background: linear-gradient(180deg, #8d949c 0%, #5b6168 45%, #2c3035 100%); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6); }
 .cr-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 14px; border-bottom: 1px solid rgba(159, 179, 200, 0.14); background: rgba(255, 255, 255, 0.025); }
-.cr-title { font-family: var(--font-narrative), Georgia, serif; font-weight: 700; font-size: 15px; color: #EAF1F8; }
+.cr-title { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 15px; color: #EAF1F8; }
 .cr-tag { font-size: 9px; letter-spacing: 0.22em; color: #C9A227; border: 1px solid rgba(201, 162, 39, 0.45); padding: 2px 7px; border-radius: 2px; }
 .cr-q { font-size: 9px; letter-spacing: 0.14em; font-weight: 700; }
 .cr-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }

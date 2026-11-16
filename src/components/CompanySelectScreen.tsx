@@ -6,6 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { companies } from '@/data/company';
 import SiteFooter from './SiteFooter';
 import type { Company } from '@/types/game';
+import Dossier from '@/components/lore/Dossier';
+import WorldMap, { type MapPin } from '@/components/worldmap/WorldMap';
+import { LORE, SEALED_PINS } from '@/data/lore';
 import CompanyLogo from './CompanyLogo';
 import { isDesktopViewport } from '@/lib/breakpoints';
 import type { OfficeFolder } from './office/OfficeScene';
@@ -340,7 +343,12 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
     const fw = FRAMEWORK[company.id] ?? { place: company.jurisdiction, code: '' };
     const gh = company.startingGovernanceHealth;
     return (
-      <article className="bc-paper of-paper">
+      <Dossier
+        company={company}
+        onStart={actions.onStart}
+        onBack={actions.onBack}
+        file={(
+          <div>
         <div className="flex items-baseline justify-between gap-4 pb-3" style={{ borderBottom: '2px solid var(--ink)' }}>
           <p className="text-[10px] font-bold uppercase tracking-[0.24em]">Board file</p>
           <p className="text-[10px] uppercase tracking-[0.16em] text-right" style={{ color: 'var(--ink-soft)' }}>{company.stockExchange}</p>
@@ -375,13 +383,29 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
           {company.id === 'company_meridian' ? ` · Mission Integrity Score ${company.startingSvIndex}/100` : ''}
         </p>
 
-        <div className="flex items-center justify-between gap-4 mt-6 pt-4" style={{ borderTop: '1px solid var(--rule)' }}>
-          <button className="of-btn of-btn-back" onClick={actions.onBack}>‹ Go back</button>
-          <button className="of-btn of-btn-start" onClick={actions.onStart}>Start →</button>
-        </div>
-      </article>
+          </div>
+        )}
+      />
     );
   }, [recommendedIds]);
+
+  // ── World map: one lit pin per file ──
+  const [showMap, setShowMap] = useState(false);
+  const [openRequest, setOpenRequest] = useState<{ id: string; n: number } | null>(null);
+  const [dossierFor, setDossierFor] = useState<string | null>(null);
+  const mapPins = useMemo((): MapPin[] => [
+    ...companies.filter((c) => LORE[c.id]).map((c) => {
+      const l = LORE[c.id];
+      const fw = FRAMEWORK[c.id];
+      return {
+        id: c.id, name: c.name, place: l.city, lat: l.lat, lon: l.lon, hook: l.hook,
+        lines: [c.industry, fw ? `${fw.place} · ${fw.code}` : c.jurisdiction, `${difficultyLabel(c.difficultyTier)} · governance health ${c.startingGovernanceHealth}/100`],
+        recommended: recommendedIds.includes(c.id),
+        labelLeft: c.id === 'company_meridian',
+      };
+    }),
+    ...SEALED_PINS.map((p) => ({ id: p.id, name: p.name, place: 'Classified', lat: p.lat, lon: p.lon, hook: p.line, lines: [], sealed: true })),
+  ], [recommendedIds]);
 
   const handleLaunch = useCallback((folderId: string) => {
     const company = companies.find((c) => c.id === folderId);
@@ -452,7 +476,18 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
           onListView={() => chooseView('list')}
           onSeated={() => { if (!localStorage.getItem('boardcraft_skill_level')) setOnboardingOpen(true); }}
           onUnsupported={() => { setCanOffice(false); setView('list'); }}
+          onOpenMap={() => setShowMap(true)}
+          openRequest={openRequest}
         />
+        <AnimatePresence>
+          {showMap && (
+            <WorldMap
+              pins={mapPins}
+              onClose={() => setShowMap(false)}
+              onPick={(id) => { setShowMap(false); setOpenRequest((r) => ({ id, n: (r?.n ?? 0) + 1 })); }}
+            />
+          )}
+        </AnimatePresence>
         {onboardingModal}
       </>
     );
@@ -495,6 +530,13 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
       <p className="text-[11px] text-foreground/45 mb-8 text-center">
         {companies.length} boards · {new Set(companies.map((c) => FRAMEWORK[c.id]?.place ?? c.jurisdiction)).size} jurisdictions · each plays under its own governance code
       </p>
+
+      <button
+        onClick={() => setShowMap(true)}
+        className={`fixed top-5 ${canOffice ? 'right-[8.5rem]' : 'right-6'} z-20 text-xs font-semibold tracking-wide text-foreground/70 hover:text-gold border border-white/20 hover:border-gold rounded-full px-3.5 py-1.5 bg-black/30 backdrop-blur-sm cursor-pointer transition-colors`}
+      >
+        World map
+      </button>
 
       {canOffice && (
         <button
@@ -665,11 +707,11 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
                         whileTap={{ scale: 0.97 }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onSelectCompany(company);
+                          setDossierFor(company.id);
                         }}
                         className="mt-5 md:mt-0 w-full md:w-64 bg-gold hover:bg-gold-light text-navy-dark font-semibold py-3 px-6 rounded-lg transition-colors text-sm tracking-wide shadow-[0_10px_30px_-10px_rgba(224,176,68,0.8)]"
                       >
-                        Start Game
+                        Open the file
                       </motion.button>
                     </div>
                   </motion.div>
@@ -720,6 +762,36 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
             <FocusPlayModal onClose={() => { setFocusModalOpen(false); setPlayMode('general'); }} />
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* World map and the company dossier (list view) */}
+      <AnimatePresence>
+        {showMap && (
+          <WorldMap pins={mapPins} onClose={() => setShowMap(false)} onPick={(id) => { setShowMap(false); setDossierFor(id); }} />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {dossierFor && (() => {
+          const company = companies.find((c) => c.id === dossierFor);
+          if (!company) return null;
+          const close = () => setDossierFor(null);
+          return (
+            <motion.div
+              key="dossier"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-[70] overflow-y-auto bg-black/75 backdrop-blur-sm px-3 py-8"
+              onClick={close}
+            >
+              <motion.div
+                initial={{ y: -30, rotate: -1.5, opacity: 0 }} animate={{ y: 0, rotate: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 180, damping: 22 }}
+                className="bc-doc mx-auto w-full max-w-[640px]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {renderPaper(company.id, { onStart: () => { close(); onSelectCompany(company); }, onBack: close })}
+              </motion.div>
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
 
       {onboardingModal}

@@ -1,0 +1,35 @@
+.wm-root { position: fixed; inset: 0; z-index: 75; display: flex; flex-direction: column; background: radial-gradient(ellipse at 50% 40%, #0d1b2c 0%, #060d17 62%, #03070d 100%); color: #B8C7D6; overflow: hidden; }
+.wm-root::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 3px); pointer-events: none; }
+.wm-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 22px 30px 8px; position: relative; }
+.wm-over { font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: #C9A227; font-weight: 700; }
+.wm-title { font-family: Georgia, 'Times New Roman', serif; font-size: 28px; font-weight: 700; color: #EAF1F8; line-height: 1.15; margin-top: 3px; }
+.wm-close { font-size: 11px; letter-spacing: 0.1em; color: #9FB3C8; border: 1px solid rgba(159,179,200,0.3); padding: 7px 12px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+.wm-close:hover { color: #fff; border-color: #C9A227; }
+.wm-stage { flex: 1; min-height: 0; display: grid; place-items: center; padding: 6px 30px 4px; position: relative; }
+.wm-map { position: relative; width: min(100%, calc((100vh - 170px) * 2.68)); aspect-ratio: 150 / 56; }
+.wm-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.wm-dot { fill: #3d5878; }
+.wm-grat { stroke: rgba(159,179,200,0.07); stroke-width: 1; }
+.wm-link { stroke: #C9A227; stroke-width: 1; stroke-dasharray: 3 6; opacity: 0.4; }
+.wm-pin { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; cursor: pointer; border-radius: 50%; }
+.wm-core { position: absolute; left: 9px; top: 9px; width: 12px; height: 12px; border-radius: 50%; background: #F4DC8A; box-shadow: 0 0 0 2px rgba(6,13,23,0.9), 0 0 14px 4px rgba(232,199,102,0.75); transition: transform .2s; }
+.wm-ring { position: absolute; left: 9px; top: 9px; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #E8C766; animation: wm-pulse 2.4s ease-out infinite; }
+.wm-pin-on .wm-core { transform: scale(1.45); }
+.wm-pin-sealed .wm-core { background: #6b7c8f; box-shadow: 0 0 0 2px rgba(6,13,23,0.9); }
+.wm-pin-sealed .wm-ring { border-color: #6b7c8f; }
+.wm-name { position: absolute; left: 29px; top: 8px; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; color: #E8C766; white-space: nowrap; text-shadow: 0 1px 6px #03070d, 0 0 2px #03070d; }
+.wm-pin-sealed .wm-name { color: #7F93A8; }
+@keyframes wm-pulse { 0% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(4.2); opacity: 0; } }
+.wm-bubble { position: absolute; z-index: 3; width: 290px; padding: 14px 15px 13px; border-radius: 10px; background: linear-gradient(180deg, rgba(22,41,63,0.97), rgba(11,23,39,0.97)); border: 1px solid rgba(201,162,39,0.55); box-shadow: 0 18px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(232,199,102,0.25); }
+.wm-b-name { font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: 700; color: #EAF1F8; line-height: 1.15; }
+.wm-b-place { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #C9A227; margin-top: 2px; }
+.wm-b-hook { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 13.5px; color: #D5E0EA; line-height: 1.45; margin-top: 10px; }
+.wm-b-lines { margin-top: 9px; padding-top: 8px; border-top: 1px solid rgba(159,179,200,0.16); font-size: 12px; display: grid; gap: 3px; color: #9FB3C8; }
+.wm-b-rec { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #4ADE80; font-weight: 700; margin-top: 8px; }
+.wm-b-sealed { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #7F93A8; font-weight: 700; margin-top: 10px; }
+.wm-b-open { margin-top: 11px; width: 100%; padding: 8px 10px; border-radius: 6px; background: linear-gradient(180deg, #E8C766, #C9A227); color: #0B1727; font-weight: 800; font-size: 13px; cursor: pointer; }
+.wm-b-open:hover { filter: brightness(1.08); }
+.wm-foot { text-align: center; font-size: 11px; color: #5f7389; padding: 4px 0 16px; position: relative; }
+@media (prefers-reduced-motion: reduce) { .wm-ring { animation: none; } }
+
+.wm-name-left { left: auto; right: 29px; }

@@ -39,6 +39,10 @@ interface OfficeSceneProps {
   onSeated?: () => void;
   /** WebGL could not start — the caller should fall back to the list */
   onUnsupported: () => void;
+  /** Shows a "World map" button while seated */
+  onOpenMap?: () => void;
+  /** Ask the office to open a folder (e.g. picked on the world map). `n` changes on every request. */
+  openRequest?: { id: string; n: number } | null;
 }
 
 type Phase = 'loading' | 'door' | 'walk' | 'seated' | 'roam' | 'busy' | 'reading' | 'launch';
@@ -78,7 +82,7 @@ function svgToImage(svg: SVGElement): Promise<HTMLImageElement | null> {
   });
 }
 
-export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch, onListView, onSeated, onUnsupported }: OfficeSceneProps) {
+export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch, onListView, onSeated, onUnsupported, onOpenMap, openRequest }: OfficeSceneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const logosRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>('loading');
@@ -94,6 +98,7 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
     back: () => void;
     start: () => void;
     toDesk: () => void;
+    open: (i: number) => void;
   } | null>(null);
 
   // Latest callbacks/props without re-running the scene effect
@@ -392,7 +397,7 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
       setP('seated');
     };
 
-    api.current = { skip, back, start, toDesk };
+    api.current = { skip, back, start, toDesk, open: (i: number) => { void openFolder(i); } };
 
     // ── Input ──
     const onPointerMove = (e: PointerEvent) => {
@@ -667,6 +672,14 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
   const hovered = hoverId ? folders.find((f) => f.id === hoverId) : null;
   const loading = phase === 'loading';
 
+  // A folder picked elsewhere (the world map) is opened here.
+  const folderIds = folders.map((f) => f.id).join('|');
+  useEffect(() => {
+    if (!openRequest) return;
+    const i = folderIds.split('|').indexOf(openRequest.id);
+    if (i >= 0) api.current?.open(i);
+  }, [openRequest, folderIds]);
+
   return (
     <div className="of-root">
       <canvas ref={canvasRef} className="of-canvas" />
@@ -681,7 +694,10 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
 
       <header className="of-top">
         <span className="of-wordmark font-narrative">BOARDCRAFT</span>
-        <button className="of-link" onClick={onListView}>List view</button>
+        <span className="flex items-center gap-5">
+          {onOpenMap && phase === 'seated' && <button className="of-link" onClick={onOpenMap}>World map</button>}
+          <button className="of-link" onClick={onListView}>List view</button>
+        </span>
       </header>
 
       {(phase === 'door' || phase === 'walk') && (
