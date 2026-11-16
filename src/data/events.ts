@@ -489,7 +489,7 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [1.5, 2.5], // interpolated
         narrative:
-          'The Rem Chair\'s explanation is so thorough that the Guardian pivots to praising Harwick\'s transparency - a sentence nobody expected to write, least of all the journalist.',
+          "The board's handling is so thorough that the Guardian pivots to praising Harwick's transparency - a sentence nobody expected to write, least of all the journalist.",
       },
       SUCCESS: {
         svRange: [1.0, 1.5],
@@ -802,7 +802,7 @@ export const events: GameEvent[] = [
       SUCCESS: {
         svRange: [2, 3],
         narrative:
-          'Greenvale accepts an observer seat - the diplomatic equivalent of putting the gun on the table but agreeing not to pick it up.',
+          "Greenvale steps back from its loudest demands - the diplomatic equivalent of putting the gun on the table but agreeing not to pick it up.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-1, 0],
@@ -884,7 +884,7 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [1, 2], // interpolated
         narrative:
-          'The external investigators find nothing - and more importantly, the process was so thorough that even the journalist admits there\'s no story left to tell.',
+          "The matter is closed so cleanly that even the journalist admits there's no story left to tell - and the institutions note, approvingly, how the board carried itself.",
       },
       SUCCESS: {
         svRange: [0.5, 1.0],
@@ -1143,7 +1143,7 @@ export const events: GameEvent[] = [
       SUCCESS: {
         svRange: [0.5, 1.0],
         narrative:
-          'Systems restored, ransom unpaid, and the NCSC sends a commendation that the comms team wisely doesn\'t publicise - no need to advertise you were a target.',
+          "Systems are restored and the NCSC sends a note of approval that the comms team wisely doesn't publicise - no need to advertise you were a target.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-1, 0],
@@ -1223,12 +1223,12 @@ export const events: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [5, 8], // interpolated
         narrative:
-          'Greenvale concedes before the vote is even counted - the institutional roadshow was so convincing that their own proxy solicitor advised them to stand down.',
+          "Greenvale concedes before the vote is even counted - the board's case was so convincing that Greenvale's own proxy solicitor advised them to stand down.",
       },
       SUCCESS: {
         svRange: [3, 5],
         narrative:
-          'A settlement is reached at 11pm the night before the EGM - minor concessions, board control preserved, and a bar tab that nobody will ever expense.',
+          "The fight ends the night before the EGM - minor concessions, board control preserved, and a bar tab that nobody will ever expense.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-3, -1],

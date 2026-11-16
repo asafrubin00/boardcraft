@@ -29,12 +29,6 @@ export const vantageEvents: GameEvent[] = [
           'Remove Patricia Nguyen from the Audit Committee Chair and appoint a qualified replacement. Requires a director with Financial Oversight ≥ 75 in the deployed team. Clean and decisive.',
         multiplier: 1.00,
         competencyGates: [{ domain: 'financialOversight', minimumRating: 75 }],
-        boardEffect: {
-          removeDirectorId: 'vdir_02_nguyen',
-          minOutcomeTier: 'SUCCESS',
-          requiresReplacement: true,
-          vacatedRole: 'auditChair',
-        },
       },
       {
         id: 'vevent_01_b',
@@ -56,7 +50,7 @@ export const vantageEvents: GameEvent[] = [
         id: 'vevent_01_d',
         label: 'Do nothing',
         description:
-          'Meridian publishes their recommendation. AGM rebellion risk increases by +40%.',
+          'Meridian publishes their recommendation.',
         multiplier: 0.40,
         isDoNothing: true,
         competencyGates: [],
@@ -69,22 +63,22 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.0, 3.0],
         narrative:
-          'Nguyen\'s replacement was announced before the close - Meridian issued a public statement calling it "a model of governance accountability," and two index funds quietly increased their positions overnight.',
+          "Meridian issued a public statement calling the board's handling of the Nguyen conflict \"a model of governance accountability,\" and two index funds quietly increased their positions overnight.",
       },
       SUCCESS: {
         svRange: [1.0, 2.0],
         narrative:
-          'A credible replacement is named and Meridian stands down - not thrilled, but satisfied enough to pocket the letter.',
+          "Meridian stands down - not thrilled, but satisfied enough to pocket the letter.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'Meridian accepts the timeline but makes it clear they\'ll be watching like a parole officer through the AGM.',
+          "Meridian holds its fire for now but makes it clear they'll be watching like a parole officer through the AGM.",
       },
       FAILURE: {
         svRange: [-3.0, -2.0],
         narrative:
-          'Meridian publishes a "recommend against" on the Audit Committee and the governance health score drops by 8 - the kind of wound that festers.',
+          'Meridian publishes a "recommend against" on the Audit Committee - the kind of wound that festers.',
       },
       CRITICAL_FAILURE: {
         svRange: [-5.0, -4.0],
@@ -143,7 +137,7 @@ export const vantageEvents: GameEvent[] = [
         id: 'vevent_02_d',
         label: 'Do nothing',
         description:
-          'Apex will escalate. The \'Apex Escalation\' event fires in Q3 as Tier 2 guaranteed.',
+          'Apex will escalate.',
         multiplier: 0.35,
         isDoNothing: true,
         competencyGates: [],
@@ -247,12 +241,12 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [1.5, 2.5],
         narrative:
-          'The Comp Chair\'s investor roadshow lands perfectly - BlackRock\'s governance team calls the pay structure "aligned and defensible," and ISS quietly removes the flag.',
+          "The board's case on pay lands perfectly - BlackRock's governance team calls the structure \"aligned and defensible,\" and ISS quietly removes the flag.",
       },
       SUCCESS: {
         svRange: [1.0, 1.5],
         narrative:
-          'The benchmarking data takes the edge off - say-on-pay isn\'t a layup anymore, but it\'s no longer a crisis either.',
+          "The board's response takes the edge off - say-on-pay isn't a layup anymore, but it's no longer a crisis either.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
@@ -420,22 +414,22 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.0, 5.0],
         narrative:
-          'The separation announcement lands like a thunderclap of good governance - proxy advisers upgrade, the coalition sends a thank-you note, and the stock catches a bid it hasn\'t seen in two quarters.',
+          "The board's answer on Chair/CEO lands like a thunderclap of good governance - proxy advisers upgrade, the coalition sends a thank-you note, and the stock catches a bid it hasn't seen in two quarters.",
       },
       SUCCESS: {
         svRange: [2.0, 3.5],
         narrative:
-          'A credible timeline with real milestones - the institutions aren\'t celebrating, but they\'re putting the pitchforks down.',
+          "A credible answer with real substance - the institutions aren't celebrating, but they're putting the pitchforks down.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0.5, 0.5],
         narrative:
-          'The review process is launched but the coalition isn\'t buying what they consider a stall tactic dressed up in committee language.',
+          "The coalition isn't buying it - they see a stall tactic dressed up in committee language.",
       },
       FAILURE: {
         svRange: [-3.0, -3.0],
         narrative:
-          'The rejection letter leaks to the Financial Times by Thursday, and now 22% of your shareholder base is publicly questioning whether this board can govern itself.',
+          "The board's response leaks to the Financial Times by Thursday, and now 22% of your shareholder base is publicly questioning whether this board can govern itself.",
       },
       CRITICAL_FAILURE: {
         svRange: [-5.0, -5.0],
@@ -507,17 +501,17 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.5, 2.5],
         narrative:
-          'FairHarvest Alliance calls Vantage\'s response "unprecedented in the industry" - the supplier is terminated, a new sourcing program is announced, and the boycott hashtag dies within 72 hours, replaced by grudging respect.',
+          "FairHarvest Alliance calls Vantage's response \"unprecedented in the industry\" - the boycott hashtag dies within 72 hours, replaced by grudging respect.",
       },
       SUCCESS: {
         svRange: [1.0, 1.0],
         narrative:
-          'The supplier is suspended, the audit is underway, and CNN runs a follow-up that makes you look responsive rather than guilty.',
+          "CNN runs a follow-up that makes you look responsive rather than guilty.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-0.5, -0.5],
         narrative:
-          'The statement buys time but ethically-conscious consumers have long memories, and Whole Foods just moved your products to a less prominent shelf.',
+          "The board's response buys time but ethically-conscious consumers have long memories, and Whole Foods just moved your products to a less prominent shelf.",
       },
       FAILURE: {
         svRange: [-5.0, -5.0],
@@ -591,7 +585,7 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.0, 6.0],
         narrative:
-          'The Street loves a pivot story, and you just delivered one - analysts upgrade the stock on the health portfolio thesis, and a Goldman note calls Vantage "the only FMCG name positioned for the regulatory shift."',
+          "The Street loves a clear story, and you just delivered one - analysts upgrade the stock, and a Goldman note calls Vantage \"the only FMCG name positioned for the regulatory shift.\"",
       },
       SUCCESS: {
         svRange: [1.5, 3.0],
@@ -611,7 +605,7 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-5.0, -5.0],
         narrative:
-          'Your Sacramento lobbying gets leaked to the LA Times under the headline "Big Food Fights Back Against Health" - the brand takes collateral damage that makes the tax look like the smaller problem.',
+          "The board's handling of the tax fight gets leaked to the LA Times under the headline \"Big Food Fights Back Against Health\" - the brand takes collateral damage that makes the tax look like the smaller problem.",
       },
     },
     isConditional: false,
@@ -805,7 +799,7 @@ export const vantageEvents: GameEvent[] = [
         id: 'vevent_10_d',
         label: 'Do nothing',
         description:
-          'Apex requisitions an EGM. Tier 3 Proxy Battle fires next turn. SV -8%.',
+          'Apex requisitions an EGM.',
         multiplier: 0.25,
         isDoNothing: true,
         competencyGates: [],
@@ -824,12 +818,12 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.0, 4.0],
         narrative:
-          'Apex agrees to a standstill - one seat, governance commitments, and a joint statement that makes the market exhale so hard the stock rallies 4% in the last hour of trading.',
+          "Apex stands down - a joint statement makes the market exhale so hard the stock rallies 4% in the last hour of trading.",
       },
       SUCCESS: {
         svRange: [2.0, 2.0],
         narrative:
-          'A pragmatic deal is struck behind closed doors - Apex scales back publicly, though everyone knows they\'re keeping the receipts.',
+          "Apex scales back publicly, though everyone knows they're keeping the receipts.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
@@ -839,7 +833,7 @@ export const vantageEvents: GameEvent[] = [
       FAILURE: {
         svRange: [-5.0, -5.0],
         narrative:
-          'Negotiations collapse at 2 AM - by market open, Apex announces a full proxy contest and the stock sells off 5% in the first thirty minutes.',
+          "It falls apart at 2 AM - by market open, Apex announces a full proxy contest and the stock sells off 5% in the first thirty minutes.",
       },
       CRITICAL_FAILURE: {
         svRange: [-8.0, -8.0],
@@ -917,7 +911,7 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.0, 2.0],
         narrative:
-          'Your food scientist\'s calm, data-driven response video goes viral in its own right - 22 million views, #VantageTransparency trends, and the original TikToker posts an apology.',
+          "Vantage's calm, data-driven response goes viral in its own right - 22 million views, #VantageTransparency trends, and the original TikToker posts an apology.",
       },
       SUCCESS: {
         svRange: [1.0, 1.0],
@@ -981,7 +975,7 @@ export const vantageEvents: GameEvent[] = [
         id: 'vevent_12_c',
         label: 'Abandon the acquisition; preserve capital',
         description:
-          'Pragmatic. Short-term SV hit; long-term credibility maintained. Requires Strategy ≥ 65.',
+          'Pragmatic. Requires Strategy ≥ 65.',
         multiplier: 0.75,
         competencyGates: [{ domain: 'strategyMarkets', minimumRating: 65 }],
       },
@@ -1002,27 +996,27 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.0, 4.0],
         narrative:
-          'The FTC clears the deal with minor conditions - NatureFirst is yours, the health portfolio thesis is alive, and a Morgan Stanley note calls it "the most accretive deal in consumer staples this year."',
+          "The board's call on NatureFirst is vindicated - the health portfolio thesis is alive, and a Morgan Stanley note calls it \"the smartest capital decision in consumer staples this year.\"",
       },
       SUCCESS: {
         svRange: [2.0, 2.0],
         narrative:
-          'The deal closes with targeted divestitures in the natural snacks overlap - not the clean win you wanted, but the arb desks are closing their positions and moving on.',
+          "Not the clean win you wanted, but the antitrust question is settled and the arb desks are closing their positions and moving on.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-0.5, -0.5],
         narrative:
-          'Second request issued - the deal is in FTC purgatory, the advisory clock is still running at $2M a month, and your CFO is losing patience.',
+          "The antitrust question drags on - the advisory clock is still running at $2M a month, and your CFO is losing patience.",
       },
       FAILURE: {
         svRange: [-4.0, -4.0],
         narrative:
-          'The FTC blocks the acquisition - $45 million in advisory fees evaporated, the health portfolio strategy is in shambles, and your competitors are already circling NatureFirst.',
+          "The NatureFirst strategy is in shambles - $45 million in advisory fees evaporated, and your competitors are already circling.",
       },
       CRITICAL_FAILURE: {
         svRange: [-6.0, -6.0],
         narrative:
-          'The FTC doesn\'t just block the deal - they open a broader investigation into Vantage\'s acquisition practices across consumer brands, and suddenly every deal you\'ve done in five years is under a microscope.',
+          "The FTC opens a broader investigation into Vantage's acquisition practices across consumer brands, and suddenly every deal you've done in five years is under a microscope.",
       },
     },
     isConditional: false,
@@ -1054,7 +1048,7 @@ export const vantageEvents: GameEvent[] = [
         id: 'vevent_13_a',
         label: 'Reject and mount independent valuation defence',
         description:
-          'Poison pill defence. Strategy ≥ 80 AND Financial ≥ 75 required. High risk - if defence fails, SV collapses.',
+          'Poison pill defence. Strategy ≥ 80 AND Financial ≥ 75 required.',
         multiplier: 1.20,
         competencyGates: [
           { domain: 'strategyMarkets', minimumRating: 80 },
@@ -1084,7 +1078,7 @@ export const vantageEvents: GameEvent[] = [
         id: 'vevent_13_d',
         label: 'Accept the offer',
         description:
-          'Automatic resolution. SV crystallises at current index + 14%.',
+          'Automatic resolution.',
         multiplier: 0.70,
         competencyGates: [],
       },
@@ -1096,27 +1090,27 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [12.0, 20.0],
         narrative:
-          'The independent valuation proves the company is worth 30% more than Constellation\'s offer - they withdraw, the stock rerates to a two-year high, and Sandra Okafor sends the Wachtell letter back with a one-word note: "No."',
+          "The board comes out of the Constellation approach with a result nobody on the Street thought was available - the stock rerates to a two-year high.",
       },
       SUCCESS: {
         svRange: [10.0, 15.0],
         narrative:
-          'Negotiation extracts a significantly improved premium - the kind of number that makes shareholders feel like the board actually earned their fees this year.',
+          "Shareholders end up materially better off than Constellation's opening offer - the kind of number that makes them feel the board actually earned its fees this year.",
       },
       PARTIAL_SUCCESS: {
         svRange: [5.0, 8.0],
         narrative:
-          'A modest bump in terms - the deal closes at a reasonable premium, and the board can argue it got the best available price, even if nobody\'s popping champagne.',
+          "A modest improvement on where things started - the board can argue it got the best available outcome, even if nobody's popping champagne.",
       },
       FAILURE: {
         svRange: [-10.0, -10.0],
         narrative:
-          'The defence crumbles - Constellation takes the offer hostile, the stock collapses below the bid price on execution risk, and the board just lost control of the company\'s future.',
+          "The board's position crumbles - Constellation presses its advantage, the stock trades below the bid price on execution risk, and the board has lost control of the company's future.",
       },
       CRITICAL_FAILURE: {
         svRange: [-15.0, -15.0],
         narrative:
-          'Constellation wins at the original 14% premium - the board fought, lost, and now gets to watch someone else run the company they couldn\'t protect.',
+          "Constellation wins at the original 14% premium - and the board gets to watch someone else run the company it couldn't protect.",
       },
     },
     isConditional: true,
@@ -1200,7 +1194,7 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-12.0, -12.0],
         narrative:
-          'The delayed notification attempt is discovered by a whistleblower - FTC enforcement, CCPA penalties, Congressional hearings, and a brand reputation crater that will take years to fill.',
+          "A whistleblower reveals how slowly the breach was handled - FTC enforcement, CCPA penalties, Congressional hearings, and a brand reputation crater that will take years to fill.",
       },
     },
     isConditional: false,
@@ -1255,7 +1249,7 @@ export const vantageEvents: GameEvent[] = [
         id: 'vevent_15_d',
         label: 'Do nothing',
         description:
-          'Apex wins. Forced board reconstitution. SV -22%.',
+          'Apex wins. Forced board reconstitution.',
         multiplier: 0.15,
         isDoNothing: true,
         competencyGates: [],
@@ -1268,17 +1262,17 @@ export const vantageEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [6.0, 6.0],
         narrative:
-          'The institutions rally - every major index fund backs the incumbent slate, Apex\'s nominees are defeated by double-digit margins, and the stock closes up 6% as the Street prices in governance stability.',
+          "The institutions rally - every major index fund backs the incumbent board, Apex comes away with nothing, and the stock closes up 6% as the Street prices in governance stability.",
       },
       SUCCESS: {
         svRange: [2.0, 2.0],
         narrative:
-          'A negotiated settlement at the eleventh hour - Apex gets one seat and a governance roadmap, the board keeps control, and both sides call it a win in their press releases.',
+          "It is settled at the eleventh hour - Apex gets a governance roadmap and a voice, the board keeps control, and both sides call it a win in their press releases.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-3.0, -3.0],
         narrative:
-          'Apex takes two seats - the board technically retains control, but the power dynamics in the boardroom just shifted in ways that can\'t be undone with a committee reshuffle.',
+          "Apex comes away with real influence - the board technically retains control, but the power dynamics in the boardroom just shifted in ways that can't be undone with a committee reshuffle.",
       },
       FAILURE: {
         svRange: [-12.0, -12.0],

@@ -44,6 +44,8 @@ import {
   applySfgAcChairResignation,
   applySfgAcChairAppointment,
 } from '@/engine/forcedChanges';
+import { applyBoardEffects, syncCommitteeChairs } from '@/engine/boardEffects';
+import { resolveEventTurn } from '@/engine/turn';
 import { playBoardSeatDrop, playBoardSeatRemove, playBoardConfirm, playDirectorSelect, playCardDeal, ensureAudioContext } from '@/engine/soundEngine';
 import HintModal from '@/components/HintModal';
 import { isDesktopViewport } from '@/lib/breakpoints';
@@ -194,7 +196,7 @@ function PlayPageInner() {
       phase: target.phase === 'gameplay' ? 'gameplay' : target.phase === 'agm' ? 'agm' : 'year_end',
     };
     // No-ops unless this is sfg-q1 — self-guarded on company/quarter/turn.
-    started = applySfgAcChairResignation(started);
+    started = syncCommitteeChairs(applySfgAcChairResignation(started));
     const breakdown = recalcGovernanceBreakdown(started);
     started.governanceHealthBreakdown = rescaleBreakdown(breakdown, 79);
     started.governanceHealth = 79;
@@ -259,7 +261,7 @@ function PlayPageInner() {
       };
       // SFG only: the sitting AC Chair resigns live at Q1T1, creating the
       // vacancy sfgevent_01 is about. No-op for every other company.
-      started = applySfgAcChairResignation(started);
+      started = syncCommitteeChairs(applySfgAcChairResignation(started));
       const breakdown = recalcGovernanceBreakdown(started);
       started.governanceHealthBreakdown = breakdown;
       started.governanceHealth = breakdown.total;
@@ -276,180 +278,7 @@ function PlayPageInner() {
       const currentEvent = getCurrentEvent(gameState);
       if (!currentEvent) throw new Error('No current event');
 
-      const { newState, output } = applyResolution(
-        gameState,
-        currentEvent.id,
-        strategyChoice,
-        deployedDirectorIds
-      );
-
-      // Rheinfeld: meridianStatus escalation ladder + Heinrich conflict reveal.
-      // No-op for non-Rheinfeld companies and events other than revent_02/08/11/12.
-      Object.assign(newState, applyRheinfeldFlagUpdates(newState, currentEvent.id, output.outcomeTier));
-
-      // Vantage: apexActive/apexStatus escalation ladder + chairCeoSeparationProgress.
-      // No-op for non-Vantage companies and events other than vevent_02/05/09/10/15.
-      Object.assign(newState, applyVantageFlagUpdates(newState, currentEvent.id, strategyChoice, output.outcomeTier));
-
-      // Meridian: founderSyndromeScore contested meter. No-op for non-Meridian
-      // companies and events other than mevent_03/09.
-      Object.assign(newState, applyMeridianFlagUpdates(newState, currentEvent.id, output.outcomeTier));
-
-      const breakdown = recalcGovernanceBreakdown(newState);
-      // Rescale breakdown proportionally to match the event-adjusted GH
-      newState.governanceHealthBreakdown = rescaleBreakdown(breakdown, newState.governanceHealth);
-
-      // Check for FMC-02: misconduct risk flag activation on deployed directors.
-      // Flags only surface on events whose domains relate to the flag —
-      // riskFlagTriggerCategories when authored, else the event's own domains.
-      const eventDomains = currentEvent.riskFlagTriggerCategories ?? [
-        currentEvent.primaryDomain,
-        ...currentEvent.secondaryDomains.map((d) => d.domain),
-      ];
-      const misconduct = checkMisconduct(newState, deployedDirectorIds, eventDomains);
-      if (misconduct) {
-        // Activate the risk flag
-        newState.directors = newState.directors.map((d) => {
-          if (d.id === misconduct.directorId && d.riskFlag) {
-            return { ...d, riskFlag: { ...d.riskFlag, activated: true } };
-          }
-          return d;
-        });
-        newState.forcedChange = misconduct;
-      }
-
-      // Check for boardEffect: if the chosen strategy mandates removing a director on success.
-      // Only fires if no forced change is already queued (single-flight guard).
-      if (!newState.forcedChange) {
-        const chosenStrategy = currentEvent.strategies.find((s) => s.id === strategyChoice);
-        const effect = chosenStrategy?.boardEffect;
-        if (effect) {
-          const TIER_RANK: Record<string, number> = {
-            CRITICAL_SUCCESS: 4, SUCCESS: 3, PARTIAL_SUCCESS: 2, FAILURE: 1, CRITICAL_FAILURE: 0,
-          };
-          const tierMet =
-            (TIER_RANK[output.outcomeTier] ?? 0) >= (TIER_RANK[effect.minOutcomeTier] ?? 99);
-          const directorOnBoard = newState.board.seats.some((s) => s.directorId === effect.removeDirectorId);
-          if (tierMet && directorOnBoard) {
-            const removedDir = newState.directors.find((d) => d.id === effect.removeDirectorId);
-            const afterRemoval = applyForcedRemoval(newState, effect.removeDirectorId);
-            Object.assign(newState, afterRemoval);
-            const roleLabel = effect.vacatedRole === 'auditChair' ? 'Audit Chair' : effect.vacatedRole;
-            newState.forcedChange = {
-              type: 'event_resolution',
-              directorId: effect.removeDirectorId,
-              directorName: removedDir?.name ?? effect.removeDirectorId,
-              turnsRemaining: 2,
-              narrative: `${removedDir?.name ?? 'The director'} has vacated their ${roleLabel} seat as a result of this event. Appoint a replacement from the candidate pool.`,
-              canRetain: false,
-            };
-            // Silent simultaneous removals (e.g. mevent_14 CRITICAL_SUCCESS: Osei-Bonsu departs alongside Mensah)
-            if (effect.simultaneousRemoveIds) {
-              for (const simId of effect.simultaneousRemoveIds) {
-                if (newState.board.seats.some((s) => s.directorId === simId)) {
-                  const afterSim = applyForcedRemoval(newState, simId);
-                  Object.assign(newState, afterSim);
-                  if (newState.forcedChange) {
-                    const simName = newState.directors.find((d) => d.id === simId)?.name ?? simId;
-                    newState.forcedChange = {
-                      ...newState.forcedChange,
-                      narrative: newState.forcedChange.narrative +
-                        ` ${simName} has also departed as part of this board renewal.`,
-                    };
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // ── mevent_09 CRITICAL_SUCCESS: Osei-Bonsu retain-or-replace ──
-      if (!newState.forcedChange && currentEvent.id === 'mevent_09' &&
-          strategyChoice === 'mevent_09_a' && output.outcomeTier === 'CRITICAL_SUCCESS') {
-        const oseiBonsu = newState.directors.find((d) => d.id === 'mdir_osei_bonsu');
-        if (oseiBonsu && newState.board.seats.some((s) => s.directorId === 'mdir_osei_bonsu')) {
-          newState.forcedChange = {
-            type: 'event_resolution',
-            directorId: 'mdir_osei_bonsu',
-            directorName: oseiBonsu.name,
-            turnsRemaining: 2,
-            narrative: 'The board has formally established role boundaries. Dr. Osei-Bonsu must now choose: accept the resolution and continue as trustee, or step down gracefully.',
-            canRetain: true,
-          };
-        }
-      }
-
-      // ── mevent_14 CRITICAL_FAILURE: Osei-Bonsu becomes chair (role swap, no modal) ──
-      if (currentEvent.id === 'mevent_14' && output.outcomeTier === 'CRITICAL_FAILURE') {
-        newState.board.seats = newState.board.seats.map((s) => {
-          if (s.directorId === 'mdir_mensah') return { ...s, role: 'ned' as const };
-          if (s.directorId === 'mdir_osei_bonsu') return { ...s, role: 'chair' as const };
-          return s;
-        });
-      }
-
-      // ── revent_12 FAILURE/CRITICAL_FAILURE: Supervisory Board loses two members ──
-      if (currentEvent.id === 'revent_12' &&
-          (output.outcomeTier === 'FAILURE' || output.outcomeTier === 'CRITICAL_FAILURE')) {
-        // Worker reps (rdir_w_*) and Heinrich (fixed chair) are protected
-        const removableSeats = newState.board.seats.filter(
-          (s) => !s.directorId.startsWith('rdir_w_') && s.directorId !== 'rdir_heinrich'
-        );
-        const toRemove = removableSeats
-          .map((s) => ({
-            id: s.directorId,
-            tenure: newState.directors.find((d) => d.id === s.directorId)?.tenure ?? 999,
-          }))
-          .sort((a, b) => a.tenure - b.tenure)
-          .slice(0, 2);
-        const removedNames: string[] = [];
-        for (const { id } of toRemove) {
-          const dir = newState.directors.find((d) => d.id === id);
-          if (dir) removedNames.push(dir.name);
-          Object.assign(newState, applyForcedRemoval(newState, id));
-        }
-        if (removedNames.length > 0) {
-          newState.pendingBoardNotification =
-            `Following the EGM vote, ${removedNames.join(' and ')} have been removed from the Supervisory Board.`;
-        }
-      }
-
-      // ── sfgevent_01: AC Chair appointment — on SUCCESS/CRITICAL_SUCCESS the chosen
-      // strategy's appointee takes the seat; otherwise it stays vacant (a legitimate
-      // consequence now, not a stale flag — see forcedChanges.ts). Always clears the
-      // resignation forcedChange, since the crisis is settled either way this turn.
-      if (currentEvent.id === 'sfgevent_01') {
-        Object.assign(newState, applySfgAcChairAppointment(newState, strategyChoice, output.outcomeTier));
-      }
-
-      // ── sfgevent_04: CEO whistleblower — set investigation outcome flag ──
-      if (currentEvent.id === 'sfgevent_04') {
-        const isSuccess =
-          output.outcomeTier === 'SUCCESS' || output.outcomeTier === 'CRITICAL_SUCCESS';
-        const chosenStrategyId = strategyChoice;
-        // Strategies A and B = commission independent investigation → substantiated track
-        // Strategies C and D = internal handling / silence → cleared (suppressed)
-        const isInvestigationCommissioned =
-          chosenStrategyId === 'sfgevent_04_a' || chosenStrategyId === 'sfgevent_04_b';
-        if (isSuccess && isInvestigationCommissioned) {
-          newState.ceoWhistleblower = 'substantiated';
-        } else {
-          newState.ceoWhistleblower = 'cleared';
-        }
-      }
-
-      // ── revent_12 CRITICAL_SUCCESS: Meridian Capital wins one supervisory board seat ──
-      if (currentEvent.id === 'revent_12' && output.outcomeTier === 'CRITICAL_SUCCESS') {
-        // Idempotency guard — Reuter should never be added twice
-        if (!newState.directors.some((d) => d.id === 'rdir_12_reuter')) {
-          const reuter = rheinfeldDirectors.find((d) => d.id === 'rdir_12_reuter');
-          if (reuter) newState.directors = [...newState.directors, reuter];
-        }
-        Object.assign(newState, applyReplacement(newState, 'rdir_12_reuter', 'ned'));
-        newState.pendingBoardNotification =
-          "Following the negotiated settlement, Dr. Johanna Reuter joins the Supervisory Board as Meridian Capital's nominee.";
-      }
+      const { newState, output } = resolveEventTurn(gameState, currentEvent, strategyChoice, deployedDirectorIds);
 
       setGameState(newState);
       return output;
@@ -464,7 +293,7 @@ function PlayPageInner() {
       if (!gameState) return;
       // First remove the departing director, then appoint the replacement
       const afterRemoval = applyForcedRemoval(gameState, dismissedDirectorId);
-      const afterReplacement = applyReplacement(afterRemoval, newDirectorId, role);
+      const afterReplacement = syncCommitteeChairs(applyReplacement(afterRemoval, newDirectorId, role));
       const breakdown = recalcGovernanceBreakdown(afterReplacement);
       afterReplacement.governanceHealthBreakdown = rescaleBreakdown(breakdown, afterReplacement.governanceHealth);
       // Mark replacement confirmed so the modal doesn't re-show while state propagates
@@ -546,7 +375,7 @@ function PlayPageInner() {
       const crisis = checkHealthCrisis(next);
       if (crisis) {
         next = {
-          ...applyForcedRemoval(next, crisis.directorId),
+          ...syncCommitteeChairs(applyForcedRemoval(next, crisis.directorId)),
           forcedChange: crisis,
           healthCrisisFired: true,
         };
@@ -647,12 +476,13 @@ function PlayPageInner() {
       newState.governanceHealth = Math.max(0, Math.min(100, newState.governanceHealth + agmGhDelta));
       newState.governanceHealthBreakdown = rescaleBreakdown(breakdown, newState.governanceHealth);
 
-      // ── event_09 Harwick AGM: Crane stands down gracefully ──
-      if (newState.company.id === 'company_harwick' && strategyChoice === 'event_09_b') {
-        if (newState.board.seats.some((s) => s.directorId === 'dir_08_crane')) {
-          Object.assign(newState, applyForcedRemoval(newState, 'dir_08_crane'));
-        }
+      // Board effects of the AGM decision (e.g. a director standing down).
+      if (agmEvent) {
+        const fx = applyBoardEffects(newState, agmEvent, strategyChoice, output.outcomeTier);
+        Object.assign(newState, fx.state);
+        if (fx.notes.length > 0) newState.pendingBoardNotification = fx.notes.join(' ');
       }
+      Object.assign(newState, syncCommitteeChairs(newState));
 
       setGameState(newState);
 

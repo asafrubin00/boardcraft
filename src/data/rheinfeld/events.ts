@@ -60,17 +60,17 @@ export const rheinfeldEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.0, 3.0],
         narrative:
-          'The new Audit Committee Chair is in place before the auditor\'s ink has dried - a response so swift that Meridian Capital\'s governance analyst described it, privately, as "almost German in its efficiency."',
+          "The Audit Committee question is settled before the auditor's ink has dried - a response so swift that Meridian Capital's governance analyst described it, privately, as \"almost German in its efficiency.\"",
       },
       SUCCESS: {
         svRange: [1.0, 2.0],
         narrative:
-          'A credible appointment, properly constituted under HGB §107 - the auditor withdraws the compliance flag with the satisfied brevity of a man whose letter was read by the right people.',
+          "The auditor withdraws the compliance flag with the satisfied brevity of a man whose letter was read by the right people.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'The process is in motion but the appointment is not yet confirmed - the auditor notes the progress and extends the deadline by one quarter, which is more patience than Rheinfeld deserves.',
+          "The gap is not yet closed - the auditor notes the board's intentions and extends the deadline by one quarter, which is more patience than Rheinfeld deserves.",
       },
       FAILURE: {
         svRange: [-3.0, -3.0],
@@ -151,7 +151,7 @@ export const rheinfeldEvents: GameEvent[] = [
       SUCCESS: {
         svRange: [1.5, 1.5],
         narrative:
-          'The strategic review commitment has been accepted; Meridian stands down from its most aggressive posture, though their analysts remain, as they put it, "constructively engaged."',
+          "Meridian stands down from its most aggressive posture, though their analysts remain, as they put it, \"constructively engaged.\"",
       },
       PARTIAL_SUCCESS: {
         svRange: [0.5, 0.5],
@@ -232,7 +232,7 @@ export const rheinfeldEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.0, 2.0],
         narrative:
-          'The CSRD implementation plan has been delivered ahead of schedule - Yuki Nakamura finally has the Supervisory Board backing she needed, and the consultants have upgraded their assessment from "critical" to "on track."',
+          "CSRD finally has the Supervisory Board's weight behind it - Yuki Nakamura has the backing she needed, and the consultants have upgraded their assessment from \"critical\" to \"on track.\"",
       },
       SUCCESS: {
         svRange: [1.0, 1.0],
@@ -242,7 +242,7 @@ export const rheinfeldEvents: GameEvent[] = [
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'The second opinion confirms what the first one said, which is what second opinions tend to do - Rheinfeld has bought time but not progress.',
+          "Rheinfeld has bought time but not progress - the consultants' assessment stands, and the deadline has not moved.",
       },
       FAILURE: {
         svRange: [-3.0, -3.0],
@@ -322,22 +322,22 @@ export const rheinfeldEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.5, 2.5],
         narrative:
-          'The appointment passes over Heinrich\'s objection - the first time in fifteen years that the Nomination Committee has been overruled, and the first time the institutional shareholders have had a reason to believe the board can govern itself.',
+          "The appointment goes through over Heinrich's objection - the first time in fifteen years that he has not had the last word on who joins the board, and the first reason the institutional shareholders have had to believe the board can govern itself.",
       },
       SUCCESS: {
         svRange: [1.0, 1.0],
         narrative:
-          'The worker representatives sided with reform - Koch\'s vote was decisive, and Heinrich\'s expression suggested he understood precisely what had changed.',
+          "The appointment goes through - Heinrich's expression suggested he understood precisely what had changed.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'The compromise candidate is acceptable to Heinrich, which means they are acceptable to no one else - but the seat is filled, and that counts for something.',
+          "The seat is filled, though not by the candidate the board first wanted - and that counts for something.",
       },
       FAILURE: {
         svRange: [-2.0, -2.0],
         narrative:
-          'Heinrich has blocked the appointment and the Supervisory Board has accepted it - the institutional shareholders note, accurately, that the Nomination Committee operates as a personal fiefdom.',
+          "Heinrich's block holds and the Supervisory Board has accepted it - the institutional shareholders note, accurately, that the Nomination Committee operates as a personal fiefdom.",
       },
       CRITICAL_FAILURE: {
         svRange: [-4.0, -4.0],
@@ -409,17 +409,17 @@ export const rheinfeldEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.0, 4.0],
         narrative:
-          'The conditional approval has achieved something remarkable - the worker representatives supported the pivot, the Management Board has its mandate, and the job security guarantees are legally binding under the Betriebsverfassungsgesetz.',
+          "The board's decision on China has achieved something remarkable - the worker representatives, the Management Board and the institutional shareholders can all live with it.",
       },
       SUCCESS: {
         svRange: [2.0, 2.0],
         narrative:
-          'The China pivot proceeds with conditions - not the unconditional mandate the COO wanted, but a structured approach that the institutional shareholders can defend to their own compliance teams.',
+          "The board's position on the China pivot holds - not everything the COO wanted, but an approach that the institutional shareholders can defend to their own compliance teams.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'The due diligence delay has been accepted by the Management Board with the controlled frustration of executives who understand that "further analysis" means "not yet."',
+          "The Management Board has accepted the Supervisory Board's decision with the controlled frustration of executives who did not get a clear answer.",
       },
       FAILURE: {
         svRange: [-4.0, -4.0],
@@ -500,17 +500,17 @@ export const rheinfeldEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [5.0, 5.0],
         narrative:
-          'The US localisation strategy has been announced to the market - a bold move that the analysts called "strategically transformative" and the US customers called "about time."',
+          "The Supervisory Board's response to the tariff has been announced to the market - a move the analysts called \"strategically transformative\" and the US customers called \"about time.\"",
       },
       SUCCESS: {
         svRange: [2.5, 2.5],
         narrative:
-          'The geopolitical risk assessment has informed a measured response - the Supervisory Board has endorsed a phased strategy that protects the most critical revenue streams while avoiding overcommitment.',
+          "The Supervisory Board has settled on a measured response that protects the most critical revenue streams while avoiding overcommitment.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'The cost-pass-through has been endorsed but the market response is tepid - the US customers have accepted the first round of increases, which means the next round will be harder.',
+          "The market response is tepid - the US customers have gone along with it this time, which means the next round will be harder.",
       },
       FAILURE: {
         svRange: [-4.0, -4.0],
@@ -819,7 +819,7 @@ export const rheinfeldEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [3.0, 3.0],
         narrative:
-          'Rheinfeld is now on track for full CSRD compliance - the external specialist has accelerated the timeline, and the Big Four auditor has confirmed that the data architecture meets the required standard.',
+          "Rheinfeld is now on track for full CSRD compliance - the timeline has been pulled forward, and the Big Four auditor has confirmed that the data architecture meets the required standard.",
       },
       SUCCESS: {
         svRange: [1.5, 1.5],
@@ -829,7 +829,7 @@ export const rheinfeldEvents: GameEvent[] = [
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'Partial compliance has been accepted as the realistic target - the transparent disclosure strategy is legally defensible but reputationally costly for a company that claims to take sustainability seriously.',
+          "Full compliance by the deadline now looks out of reach - the position is legally defensible but reputationally costly for a company that claims to take sustainability seriously.",
       },
       FAILURE: {
         svRange: [-4.0, -4.0],
@@ -906,17 +906,17 @@ export const rheinfeldEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.0, 2.0],
         narrative:
-          'The independent legal review has been announced before the journalist could publish - the Supervisory Board has got ahead of the story, and Heinrich\'s side-deal is now a matter of formal investigation rather than tabloid speculation.',
+          "The Supervisory Board has got ahead of the story - Heinrich's side-deal is now a matter of formal process rather than tabloid speculation.",
       },
       SUCCESS: {
         svRange: [0.5, 0.5],
         narrative:
-          'Heinrich has disclosed under pressure - the side-deal is now on the record, the conflict of interest is documented, and the Supervisory Board can claim it acted when the facts emerged.',
+          "The side-deal is now on the record, the conflict of interest is documented, and the Supervisory Board can claim it acted when the facts emerged.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-2.0, -2.0],
         narrative:
-          'The holding statement bought 48 hours - enough time for the journalist to find two additional sources and publish a story that is worse than the original inquiry suggested.',
+          "The board's response bought 48 hours - enough time for the journalist to find two additional sources and publish a story that is worse than the original inquiry suggested.",
       },
       FAILURE: {
         svRange: [-6.0, -6.0],
@@ -999,12 +999,12 @@ export const rheinfeldEvents: GameEvent[] = [
       SUCCESS: {
         svRange: [1.5, 1.5],
         narrative:
-          'The EGM has been averted through direct engagement - Meridian has accepted concessions short of their maximum demands, and the market has responded with cautious approval.',
+          "The EGM has been averted - Meridian has settled for less than its maximum demands, and the market has responded with cautious approval.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-2.0, -2.0],
         narrative:
-          'The EGM will proceed but the Supervisory Board has made its case - the outcome is uncertain, the legal costs are mounting, and the only people who are definitely winning are the lawyers.',
+          "The EGM will proceed - the outcome is uncertain, the legal costs are mounting, and the only people who are definitely winning are the lawyers.",
       },
       FAILURE: {
         svRange: [-8.0, -8.0],
@@ -1080,27 +1080,27 @@ export const rheinfeldEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [6.0, 6.0],
         narrative:
-          'The strategic review has been adopted in full - including the succession plan - and the market has responded with a 6% share price increase, the largest single-day gain in Rheinfeld\'s history as a public company.',
+          "The Supervisory Board's decision on the strategic review has landed - the market has responded with a 6% share price increase, the largest single-day gain in Rheinfeld's history as a public company.",
       },
       SUCCESS: {
         svRange: [3.0, 3.0],
         narrative:
-          'The operational recommendations have been adopted - the strategic pivot is underway, CSRD is resourced, and the succession question has been deferred with enough specificity that the institutional shareholders believe it will actually happen.',
+          "The board's decision on the review is accepted - enough is moving, and with enough specificity, that the institutional shareholders believe the rest will actually happen.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0.5, 0.5],
         narrative:
-          'The CSRD recommendations have been adopted but the strategic pivot has been shelved - a half-measure that the analysts describe as "necessary but insufficient," which is the market\'s way of saying "try harder."',
+          "The board's decision on the review is read as a half-measure - \"necessary but insufficient,\" as the analysts put it, which is the market's way of saying \"try harder.\"",
       },
       FAILURE: {
         svRange: [-4.0, -4.0],
         narrative:
-          'The strategic review has been rejected - Heinrich\'s bloc held, the worker representatives abstained, and the institutional shareholders are now certain that the Supervisory Board is incapable of self-reform.',
+          "The strategic review has gone nowhere - Heinrich's bloc held, the worker representatives abstained, and the institutional shareholders are now certain that the Supervisory Board is incapable of self-reform.",
       },
       CRITICAL_FAILURE: {
         svRange: [-7.0, -7.0],
         narrative:
-          'The rejection of the strategic review has triggered a cascade - Meridian Capital has issued a public statement calling the Supervisory Board "structurally compromised," and two other institutional shareholders have joined the call for an EGM.',
+          "The fate of the strategic review has triggered a cascade - Meridian Capital has issued a public statement calling the Supervisory Board \"structurally compromised,\" and two other institutional shareholders have joined the call for an EGM.",
       },
     },
     isConditional: false,
@@ -1166,22 +1166,22 @@ export const rheinfeldEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [3.0, 3.0],
         narrative:
-          'Reinhart has his mandate - the unanimous vote of confidence has given him the authority to push through the year-end decisions, and his private note to the Supervisory Board Chair was two words: "Thank you."',
+          "Reinhart has what he needs from the Supervisory Board - the authority to push through the year-end decisions - and his private note to the Chair was two words: \"Thank you.\"",
       },
       SUCCESS: {
         svRange: [1.5, 1.5],
         narrative:
-          'The vote of confidence passed with conditions - Reinhart accepted the CSRD milestones with the practiced grace of a CEO who knows that "conditional support" is better than the alternative.',
+          "Reinhart accepts the Supervisory Board's position with the practiced grace of a CEO who knows it could have gone worse.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          'No formal resolution was passed - Reinhart continues to govern, but the Management Board\'s morale has taken a hit that no quarterly bonus can repair.',
+          "Reinhart continues to govern, but the Management Board's morale has taken a hit that no quarterly bonus can repair.",
       },
       FAILURE: {
         svRange: [-4.0, -4.0],
         narrative:
-          'The succession planning signal has leaked - Reinhart\'s chief of staff is already fielding calls from headhunters, and the CFO has been seen meeting with Meridian Capital representatives.',
+          "The Supervisory Board's doubts about Reinhart have leaked - his chief of staff is already fielding calls from headhunters, and the CFO has been seen meeting with Meridian Capital representatives.",
       },
       CRITICAL_FAILURE: {
         svRange: [-7.0, -7.0],
@@ -1244,7 +1244,7 @@ export const rheinfeldEvents: GameEvent[] = [
         id: 'revent_15_d',
         label: 'Do nothing',
         description:
-          'Let Heinrich manage his own crisis. SV -25% — the worst single-event score of the year, with the Supervisory Board carrying it into whatever comes next.',
+          'Let Heinrich manage his own crisis.',
         multiplier: 0.50,
         isDoNothing: true,
         competencyGates: [],
@@ -1257,17 +1257,17 @@ export const rheinfeldEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [5.0, 5.0],
         narrative:
-          'The crisis has been managed - Heinrich has been suspended, the BaFin inquiry is proceeding cooperatively, and the institutional shareholders have issued a joint statement supporting the Supervisory Board\'s response, which is the closest thing to absolution that German corporate governance provides.',
+          "The crisis has been managed - the BaFin inquiry is proceeding cooperatively, and the institutional shareholders have issued a joint statement supporting the Supervisory Board's response, which is the closest thing to absolution that German corporate governance provides.",
       },
       SUCCESS: {
         svRange: [1.0, 1.0],
         narrative:
-          'The legal containment has worked - the BaFin inquiry is proceeding without publicity, Heinrich\'s lawyers are cooperating, and the share price has stabilised at a level that reflects damage but not catastrophe.',
+          "The board's response has held - the BaFin inquiry is proceeding without publicity, Heinrich's lawyers are cooperating, and the share price has stabilised at a level that reflects damage but not catastrophe.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-5.0, -5.0],
         narrative:
-          'The institutional roadshow bought time but not forgiveness - the shareholders understand the situation but have not yet decided whether the Supervisory Board is part of the solution or part of the problem.',
+          "The board's response bought time but not forgiveness - the shareholders understand the situation but have not yet decided whether the Supervisory Board is part of the solution or part of the problem.",
       },
       FAILURE: {
         svRange: [-12.0, -12.0],

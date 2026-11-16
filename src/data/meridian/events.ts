@@ -35,12 +35,6 @@ export const meridianEvents: GameEvent[] = [
         multiplier: 1.10,
         competencyGates: [{ domain: 'regulatoryLegal', minimumRating: 75 }],
         fallback: 'mevent_01_b',
-        boardEffect: {
-          removeDirectorId: 'mdir_cavendish',
-          minOutcomeTier: 'CRITICAL_SUCCESS',
-          requiresReplacement: true,
-          vacatedRole: 'auditChair',
-        },
       },
       {
         id: 'mevent_01_b',
@@ -62,7 +56,7 @@ export const meridianEvents: GameEvent[] = [
         id: 'mevent_01_d',
         label: 'Do nothing — conflict not addressed',
         description:
-          'The whistleblower path opens. Event 08 becomes very likely to fire on the next turn.',
+          'The whistleblower path opens.',
         multiplier: 0.30,
         isDoNothing: true,
         competencyGates: [],
@@ -81,27 +75,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4, 6],
         narrative:
-          "The board's swift, transparent response is noted by the Charity Commission in writing — an acknowledgment that is both rare and valuable. Cavendish resigns from Finance & Risk; the tender restarts. Governance Health +6, MIS +4.",
+          "The board's handling of the Cavendish conflict is noted by the Charity Commission in writing - an acknowledgment that is both rare and valuable. The tender restarts on a clean footing.",
       },
       SUCCESS: {
         svRange: [2, 3],
         narrative:
-          "A proper recusal, a clean minute, a sensible outcome. The Commission is not notified but the internal record is unimpeachable. Cavendish Logistics is excluded. Governance Health +3, MIS +2.",
+          "A sensible outcome. Cavendish Logistics is out of the tender and the board's record of how it dealt with the conflict will stand up to scrutiny.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-2, -2],
         narrative:
-          "The conflict is handled informally — no minute, no disclosure. The immediate problem is contained; the underlying record is not clean. MIS -2. Charity Commission inquiry risk elevated.",
+          "The immediate problem is contained, but the record of how the conflict was handled is thinner than it should be. If anyone asks later, the answers will be awkward.",
       },
       FAILURE: {
         svRange: [-6, -5],
         narrative:
-          "No action taken. The tender proceeds with the conflict undeclared. A whistleblower has already drafted their email to the Charity Commission. Governance Health -5, MIS -6.",
+          "The conflict is not properly dealt with. A member of staff has already drafted an email to the Charity Commission.",
       },
       CRITICAL_FAILURE: {
         svRange: [-10, -8],
         narrative:
-          "The conflict surfaces publicly before the board acts. The Charity Commission has received a formal complaint. All trustees are named. Governance Health -10, MIS -8. Event 08 fires immediately.",
+          "The conflict surfaces publicly before the board has a credible answer. The Charity Commission has received a formal complaint, and every trustee is named in it.",
       },
     },
     isConditional: false,
@@ -174,27 +168,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [5, 4],
         narrative:
-          "Independent review confirms the objects stretch is manageable with a formal amendment; Charity Commission notified of change in activities. The Scandinavian donor cites Meridian's governance rigour as exceptional. MIS +5, Governance Health +4.",
+          "The board's decision on the grant is clear, well-reasoned and properly recorded. The Scandinavian donor describes Meridian's governance rigour as exceptional.",
       },
       SUCCESS: {
         svRange: [6, 2],
         narrative:
-          "The board declines with a clear, principled statement. Short-term income pain; long-term mission clarity restored. MIS +6, Governance Health +2.",
+          "A principled decision, clearly explained. Whatever the short-term cost, nobody is in doubt about what Meridian is for.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-3, -3],
         narrative:
-          "Grant accepted without independent legal review. The objects tension is unresolved, deferred to the executive. MIS -3. Charity Commission compliance review risk flagged.",
+          "A decision is reached, but the tension between the grant and Meridian's charitable objects has not really been resolved - only handed on.",
       },
       FAILURE: {
         svRange: [-7, -4],
         narrative:
-          "Grant accepted; executive proceeds without board oversight; objects concern raised externally by a staff member. MIS -7, Governance Health -4. Compliance review opens.",
+          "The board's handling leaves the objects question open, and a staff member raises it externally. A compliance review now looks likely.",
       },
       CRITICAL_FAILURE: {
         svRange: [-10, -8],
         narrative:
-          "The objects breach is material and public. A former trustee has written to the Charity Commission. The grant money is committed; the mission is not. MIS -10, Governance Health -8.",
+          "The objects question becomes public and material. A former trustee has written to the Charity Commission, and the board has no good answer ready.",
       },
     },
     isConditional: false,
@@ -248,7 +242,7 @@ export const meridianEvents: GameEvent[] = [
         id: 'mevent_03_d',
         label: 'Accept the memo as informal input; take no action',
         description:
-          "Osei-Bonsu reads silence as endorsement. Founder Syndrome Score increases significantly. Event 09 probability rises.",
+          "Osei-Bonsu reads silence as endorsement. Founder Syndrome Score increases significantly.",
         multiplier: 0.40,
         isDoNothing: true,
         competencyGates: [],
@@ -261,27 +255,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4, 7],
         narrative:
-          "The board acts decisively and on the record. Osei-Bonsu receives formal written guidance on trustee role boundaries; the minutes are unambiguous. Marcus Finch describes it privately as the best board meeting he has attended. Founder Syndrome -10, Governance Health +4.",
+          "The board's response leaves no doubt about where a trustee's role ends. Marcus Finch describes it privately as the best board meeting he has attended.",
       },
       SUCCESS: {
         svRange: [1, 1],
         narrative:
-          "A private conversation occurs; Osei-Bonsu acknowledges the issue without formal consequences. No record. CEO is partly reassured but knows the next incident will be harder to manage. Founder Syndrome -4, Governance Health +1.",
+          "Osei-Bonsu acknowledges the issue. The CEO is partly reassured, though he knows the next incident will be harder to manage.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-3, -3],
         narrative:
-          "The memo is absorbed into normal business. Osei-Bonsu interprets the silence as board support. Her next memo will be bolder. Founder Syndrome +6, Governance Health -3.",
+          "The memo is absorbed into normal business. Osei-Bonsu reads the muted response as support. Her next memo will be bolder.",
       },
       FAILURE: {
         svRange: [-7, -4],
         narrative:
-          "No board action. Marcus Finch raises his concerns at a sector conference, naming no names but leaving no ambiguity. Internal morale collapses. MIS -4, Governance Health -7.",
+          "The board's response changes nothing. Marcus Finch raises his concerns at a sector conference, naming no names but leaving no ambiguity. Internal morale sinks.",
       },
       CRITICAL_FAILURE: {
         svRange: [-10, -8],
         narrative:
-          "The CEO's concerns go public. Donors and partners ask pointed questions. The founder's influence is now a reputational liability, not just a governance one. MIS -8, Governance Health -10.",
+          "The CEO's concerns go public. Donors and partners ask pointed questions. The founder's influence is now a reputational liability, not just a governance one.",
       },
     },
     isConditional: false,
@@ -348,27 +342,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [3, 5],
         narrative:
-          "Meridian reports within 24 hours. The Commission's response letter cites the board's handling as exemplary — a rare distinction. MIS +3, Governance Health +5.",
+          "The Commission's response letter cites the board's handling of the safeguarding alert as exemplary - a rare distinction.",
       },
       SUCCESS: {
         svRange: [1, 2],
         narrative:
-          "Independent investigator appointed and Commission notified within 72 hours. The Commission accepts this as prompt. Governance Health +2, MIS +1.",
+          "The Commission accepts the board's handling as prompt and proportionate. The affected families are kept informed throughout.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          "Reporting occurs within 72 hours. The Commission notes the slight delay but takes no further action. Governance Health unchanged.",
+          "The Commission notes that the board could have moved faster, but takes no further action.",
       },
       FAILURE: {
         svRange: [-12, -8],
         narrative:
-          "Meridian attempts to avoid accountability via the partner relationship. The Commission views this as evasion; formal regulatory action commences. Two major donors request assurances; one pauses grant disbursements. Governance Health -12, MIS -8.",
+          "The Commission reads the board's response as slow and defensive. Formal regulatory action begins; two major donors ask for assurances and one pauses its grant.",
       },
       CRITICAL_FAILURE: {
         svRange: [-15, -12],
         narrative:
-          "The safeguarding failure becomes public before the Commission has even been notified. The story is in the press. Senior donors terminate grants. Governance Health -15, MIS -12.",
+          "The safeguarding failure reaches the press before the board has got ahead of it. Senior donors terminate grants.",
       },
     },
     isConditional: false,
@@ -440,27 +434,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [5, 3],
         narrative:
-          "The collaborative re-evaluation produces an impact framework that the donor cites as a sector model. The relationship deepens; grant renewal is assured. MIS +5, Governance Health +3.",
+          "The donor comes away more committed than before, and describes Meridian's approach to impact reporting as a model for the sector. Renewal is assured.",
       },
       SUCCESS: {
         svRange: [3, 2],
         narrative:
-          "Meridian's honest correction is respected. Independent evaluation commissioned; addendum published. The donor is satisfied. MIS +3, Governance Health +2.",
+          "The donor is satisfied with how the board dealt with the '2.3 million lives' figure. The relationship holds.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-2, -2],
         narrative:
-          "The donor is temporarily mollified but the data quality problem is unresolved. Their next report will contain a footnote. MIS -2.",
+          "The donor is mollified for now, but the data quality problem underneath is unresolved. Their next report will carry a footnote.",
       },
       FAILURE: {
         svRange: [-10, -8],
         narrative:
-          "The donor interprets the auditor reference as institutional evasion. They terminate the grant relationship. Income loss of £3.8m — 28% of total income. MIS -10, Governance Health -8.",
+          "The donor reads the board's response as evasion and ends the grant relationship - £3.8m, or 28% of total income.",
       },
       CRITICAL_FAILURE: {
         svRange: [-15, -12],
         narrative:
-          "The donor goes public. The '2.3 million lives' figure is now a media story. Other donors begin asking questions. Existential income risk. MIS -15, Governance Health -12.",
+          "The donor goes public. The '2.3 million lives' figure is now a media story, and other donors begin asking questions. The income risk is existential.",
       },
     },
     isConditional: false,
@@ -528,27 +522,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4, 6],
         narrative:
-          "The Commission closes the compliance review with a positive note on the board's responsiveness. MIS +4, Governance Health +6.",
+          "The Commission closes the compliance review with a positive note on the board's responsiveness.",
       },
       SUCCESS: {
         svRange: [2, 2],
         narrative:
-          "The Commission closes the review without further action. The board's cooperation is noted. Governance Health +2.",
+          "The Commission closes the review without further action and notes the board's cooperation.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-3, -3],
         narrative:
-          "Legal-only response. The Commission extends the review timeline and adds a note to the public register. Governance Health -3.",
+          "The Commission is not persuaded. It extends the review and adds a note to the public register.",
       },
       FAILURE: {
         svRange: [-15, -10],
         narrative:
-          "The Commission escalates to a formal statutory inquiry. The chair is named personally in the public register entry. Governance Health -15, MIS -10.",
+          "The Commission escalates to a formal statutory inquiry. The chair is named personally in the public register entry.",
       },
       CRITICAL_FAILURE: {
         svRange: [-20, -15],
         narrative:
-          "Statutory inquiry with media coverage. Multiple senior trustees receive personal letters from the Commission. Governance Health -20, MIS -15.",
+          "A statutory inquiry, with media coverage. Several senior trustees receive personal letters from the Commission.",
       },
     },
     isConditional: true,
@@ -608,7 +602,7 @@ export const meridianEvents: GameEvent[] = [
         id: 'mevent_07_d',
         label: 'Draw down from restricted reserves; correct later',
         description:
-          'A reportable breach of grant conditions. Governance Health -10, MIS -7. Donor relations severely damaged.',
+          'A reportable breach of grant conditions. Donor relations severely damaged.',
         multiplier: 0.20,
         isDoNothing: false,
         competencyGates: [],
@@ -621,27 +615,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [3, 3],
         narrative:
-          "Both delayed donors agree to accelerated disbursement; reserves are restored within 60 days. The CFO's delayed escalation is formally noted by People & Culture Committee. Governance Health +3.",
+          "Reserves are back above the policy minimum within 60 days. The late escalation by the finance team is formally noted and dealt with.",
       },
       SUCCESS: {
         svRange: [2, 2],
         narrative:
-          "Transparent response; reserve breach resolved within 90 days. Governance Health +2.",
+          "The reserves breach is resolved within 90 days, and the board can show how.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          "Reserves stabilised through the fundraising drive but the structural risk remains. Auditors flag the reserves policy as fragile. Governance Health unchanged.",
+          "Reserves are stabilised for now, but the structural risk remains. The auditors flag the reserves policy as fragile.",
       },
       FAILURE: {
         svRange: [-10, -7],
         narrative:
-          "Drawing on restricted reserves without donor consent is a reportable breach of grant conditions. Two donors are notified; both are furious. Governance Health -10, MIS -7.",
+          "The board's fix creates a new problem with grant conditions. Two donors are notified; both are furious.",
       },
       CRITICAL_FAILURE: {
         svRange: [-15, -12],
         narrative:
-          "The restricted reserve breach is discovered during a routine audit. The Commission is notified by the auditors. Solvency risk is now active. Governance Health -15, MIS -12.",
+          "The auditors find a breach of restricted funds and notify the Commission themselves. Solvency is now a live concern.",
       },
     },
     isConditional: false,
@@ -696,7 +690,7 @@ export const meridianEvents: GameEvent[] = [
         id: 'mevent_08_d',
         label: 'Do nothing pending legal advice',
         description:
-          'Delay. The inquiry continues; an interim manager is appointed by the Commission to supervise transactions. Governance Health -8.',
+          'Delay. The inquiry continues; an interim manager is appointed by the Commission to supervise transactions.',
         multiplier: 0.30,
         isDoNothing: true,
         competencyGates: [],
@@ -709,27 +703,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4, 4],
         narrative:
-          "Cavendish resigns; the board cooperates fully. The Commission closes the inquiry with remedial action only — no public register entry. Governance Health +4.",
+          "The Commission closes the inquiry with remedial action only - no entry on the public register.",
       },
       SUCCESS: {
         svRange: [1, 1],
         narrative:
-          "External review commissioned; Cavendish suspended. Commission closes with formal directions and a public register entry noting the directions. Governance Health +1.",
+          "The Commission closes the inquiry with formal directions, which are noted on the public register.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-8, -8],
         narrative:
-          "Delay strategy fails. The inquiry continues; an interim manager is appointed. Governance Health -8.",
+          "The inquiry continues, and the Commission appoints an interim manager to supervise transactions.",
       },
       FAILURE: {
         svRange: [-20, -12],
         narrative:
-          "The legal challenge fails. The Commission makes an Order removing trustees. Governance Health -20, MIS -12 — the board enters the AGM with a public regulatory record it cannot talk its way out of.",
+          "The Commission makes an Order removing Robert Cavendish as a trustee. The board goes into its Annual Public Meeting with a regulatory record it cannot talk its way out of.",
       },
       CRITICAL_FAILURE: {
         svRange: [-25, -15],
         narrative:
-          "Legal challenge, public spectacle, removal Order. The Commission's press release is widely covered. Governance Health -25, MIS -15 — the worst single-event score of the year, with most of it still to play out from there.",
+          "The Commission makes a removal Order and issues a press release that is widely covered. It is the worst single moment of the year.",
       },
     },
     isConditional: true,
@@ -789,7 +783,7 @@ export const meridianEvents: GameEvent[] = [
         id: 'mevent_09_d',
         label: 'Ask Marcus to reconsider; make no structural change',
         description:
-          'Marcus resigns and goes public; reputational and regulatory crisis. MIS -10, Governance Health -12.',
+          'Marcus resigns and goes public; reputational and regulatory crisis.',
         multiplier: 0.20,
         isDoNothing: true,
         competencyGates: [],
@@ -802,27 +796,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4, 7],
         narrative:
-          "The board acts decisively. Osei-Bonsu accepts the code of conduct resolution or resigns with grace. Marcus withdraws his threat. MIS +4, Governance Health +7. Founder Syndrome significantly reduced.",
+          "Marcus Finch withdraws his ultimatum. The line between trustee and executive is finally clear, and the founder's hold on the organisation is visibly weaker.",
       },
       SUCCESS: {
         svRange: [2, 2],
         narrative:
-          "Mediation produces a workable agreement. Short-term stability secured. Governance Health +2. The underlying tension is not resolved.",
+          "Marcus stays, for now. Short-term stability is secured, though the underlying tension has not gone away.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-4, -5],
         narrative:
-          "Marcus departs. Succession disruption begins. Two donors request assurance letters. MIS -4, Governance Health -5.",
+          "Marcus leaves. The disruption of finding a successor begins, and two donors ask for letters of assurance.",
       },
       FAILURE: {
         svRange: [-10, -12],
         narrative:
-          "Marcus resigns and issues a public statement citing trustee interference in operational matters. The Commission is notified. Institutional donors begin due diligence reviews. MIS -10, Governance Health -12.",
+          "Marcus resigns and issues a public statement citing trustee interference in operational matters. The Commission is notified, and institutional donors begin due diligence reviews.",
       },
       CRITICAL_FAILURE: {
         svRange: [-15, -15],
         narrative:
-          "Marcus's resignation statement is reported in Third Sector and the FT's NGO coverage. The Commission opens a preliminary review. Two donors pause disbursements. MIS -15, Governance Health -15.",
+          "Marcus's resignation statement is reported in Third Sector and the FT's NGO coverage. The Commission opens a preliminary review. Two donors pause disbursements.",
       },
     },
     isConditional: true,
@@ -895,27 +889,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [3, 5],
         narrative:
-          "Ashford cites Meridian's transparency as a positive governance signal — unusual in the sector. Grant proceeds with a governance improvement covenant. MIS +3, Governance Health +5.",
+          "Ashford cites the way Meridian handled its due diligence as a positive governance signal - unusual in the sector.",
       },
       SUCCESS: {
         svRange: [2, 2],
         narrative:
-          "Extension granted; records properly updated; grant proceeds. Governance Health +2.",
+          "Ashford's team is satisfied with what it has seen, and the relationship is intact.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-1, -1],
         narrative:
-          "Ashford's team notices the amended records. Questions are asked. Grant delayed by 6 months. MIS -1.",
+          "Ashford's team has questions about the governance records. Nothing is lost yet, but everything is delayed by six months.",
       },
       FAILURE: {
         svRange: [-15, -15],
         narrative:
-          "Retrospective minutes are fabricated. Ashford discovers this via a former staff contact. Grant withdrawn; regulatory referral to Charity Commission. MIS -15, Governance Health -15.",
+          "Ashford concludes that the governance record does not stand up. The grant is off the table and the Charity Commission hears about it.",
       },
       CRITICAL_FAILURE: {
         svRange: [-20, -18],
         narrative:
-          "The fabrication is publicised by Ashford, who has a policy of disclosing due diligence fraud. Sector reputation destroyed. MIS -20, Governance Health -18.",
+          "Ashford, which has a policy of publishing due diligence failures, makes its findings public. Meridian's reputation in the sector takes years of damage in a week.",
       },
     },
     isConditional: false,
@@ -982,27 +976,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2, 4],
         narrative:
-          "Independent review finds the CEO salary modestly above the median but within a defensible range. The review is published; the whistleblower concern is formally closed. Staff trust in the board increases. MIS +2, Governance Health +4.",
+          "The whistleblower's concern is formally closed, and staff trust in the board goes up rather than down.",
       },
       SUCCESS: {
         svRange: [1, 2],
         narrative:
-          "Internal review conducted; whistleblower process followed correctly. CEO pay is adjusted modestly. Governance Health +2.",
+          "The whistleblowing process is followed correctly and the pay question is answered to most people's satisfaction.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-2, -1],
         narrative:
-          "The defensive response does not satisfy the whistleblower; they escalate. MIS -1, Governance Health -2.",
+          "The whistleblower is not satisfied with the board's response and escalates.",
       },
       FAILURE: {
         svRange: [-6, -5],
         narrative:
-          "The private handling is itself a governance failure. The Charity Commission receives a complaint about failure to follow the whistleblowing policy. Governance Health -5, MIS -6.",
+          "The way the board handled the concern becomes a governance failure in its own right. The Charity Commission receives a complaint about the whistleblowing policy not being followed.",
       },
       CRITICAL_FAILURE: {
         svRange: [-10, -8],
         narrative:
-          "The whistleblower goes to the press. The CEO's salary is published alongside a staff survey showing low confidence in the board. Major donors request a meeting. Governance Health -8, MIS -10.",
+          "The whistleblower goes to the press. The CEO's salary is published alongside a staff survey showing low confidence in the board. Major donors ask for a meeting.",
       },
     },
     isConditional: false,
@@ -1061,7 +1055,7 @@ export const meridianEvents: GameEvent[] = [
         id: 'mevent_12_d',
         label: 'Reallocate restricted funds to cover operational costs temporarily',
         description:
-          'Restricted fund breach — a reportable incident. Governance Health -10, MIS -7.',
+          'Restricted fund breach — a reportable incident.',
         multiplier: 0.20,
         isDoNothing: false,
         competencyGates: [],
@@ -1074,27 +1068,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [3, 4],
         narrative:
-          "A replacement partner is identified within 10 days. Programme continuity is maintained; donors receive proactive reports; restricted funds are accounted for. MIS +3, Governance Health +4.",
+          "The programme's beneficiaries are protected, donors are kept informed, and every restricted pound is accounted for.",
       },
       SUCCESS: {
         svRange: [2, 2],
         narrative:
-          "Donors are notified and consent to a short suspension. The restricted funds are protected; the Commission acknowledges the notification. Governance Health +2.",
+          "Donors accept the board's plan. The restricted funds are protected and the Commission acknowledges the notification.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-2, -1],
         narrative:
-          "The programme is suspended for longer than planned. Two donors mark their relationship with Meridian as 'under review.' MIS -1, Governance Health -2.",
+          "The disruption lasts longer than planned. Two donors mark their relationship with Meridian as 'under review.'",
       },
       FAILURE: {
         svRange: [-10, -7],
         narrative:
-          "The restricted fund reallocation is discovered during an audit. The Commission is notified as a serious incident; three donors review their relationships. Governance Health -10, MIS -7.",
+          "An audit finds that restricted funds were not properly protected. The Commission is notified as a serious incident; three donors review their relationships.",
       },
       CRITICAL_FAILURE: {
         svRange: [-15, -12],
         narrative:
-          "Restricted fund breach and programme failure. The Commission opens a review; one donor terminates immediately. Governance Health -15, MIS -12.",
+          "The programme fails and the restricted funds are in question. The Commission opens a review; one donor terminates immediately.",
       },
     },
     isConditional: false,
@@ -1165,27 +1159,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [3, 4],
         narrative:
-          "The factual correction lands cleanly — the original thread's author acknowledges the error and posts a retraction. Several journalists run follow-up pieces on the complexity of charity overhead measurement. MIS +3, Governance Health +4.",
+          "The thread's author acknowledges the error and posts a retraction. Several journalists run follow-up pieces on how charity overheads are really measured.",
       },
       SUCCESS: {
         svRange: [2, 2],
         narrative:
-          "The measured statement is accepted by most commentators. The story fades within 48 hours. Governance Health +2.",
+          "Most commentators accept Meridian's position. The story fades within 48 hours.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-1, 0],
         narrative:
-          "The statement is issued but not widely picked up. The story fades slowly; some reputational residue remains.",
+          "The board's response is not widely picked up. The story fades slowly; some reputational residue remains.",
       },
       FAILURE: {
         svRange: [-6, -5],
         narrative:
-          "Silence is interpreted as confirmation. Two national newspapers run the overhead figure as a fact. Major donors receive enquiries from their own boards. Governance Health -5, MIS -6.",
+          "The overhead figure hardens into accepted fact. Two national newspapers run it, and major donors field questions from their own boards.",
       },
       CRITICAL_FAILURE: {
         svRange: [-10, -8],
         narrative:
-          "The story becomes a news cycle case study in 'charity waste'. Retail fundraising income drops 12% in the following quarter. Governance Health -8, MIS -10.",
+          "The story becomes a case study in 'charity waste'. Retail fundraising income drops 12% in the following quarter.",
       },
     },
     isConditional: false,
@@ -1221,13 +1215,6 @@ export const meridianEvents: GameEvent[] = [
           { domain: 'strategyMarkets', minimumRating: 65 },
         ],
         fallback: 'mevent_14_b',
-        boardEffect: {
-          removeDirectorId: 'mdir_mensah',
-          minOutcomeTier: 'CRITICAL_SUCCESS',
-          requiresReplacement: true,
-          vacatedRole: 'chair',
-          simultaneousRemoveIds: ['mdir_osei_bonsu'],
-        },
       },
       {
         id: 'mevent_14_b',
@@ -1263,27 +1250,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [7, 8],
         narrative:
-          "Comprehensive board renewal — a new independent chair is appointed; Osei-Bonsu departs with grace (if FSS < 20, she delivers a heartfelt valedictory speech at the Annual Public Meeting). MIS +7, Governance Health +8. The board is structurally renewed.",
+          "Comprehensive board renewal. The succession is handled properly and the founder question is settled with dignity on all sides.",
       },
       SUCCESS: {
         svRange: [3, 4],
         narrative:
-          "A strong new chair is appointed through a proper process. Osei-Bonsu's tenure question is deferred. Governance Health +4, MIS +3.",
+          "The succession is run through a proper process and commands confidence. The harder question of the founder's role waits for another day.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-3, -2],
         narrative:
-          "Chair succession managed but without structural board renewal. The new chair inherits the founder syndrome problem intact. Governance Health -2, MIS -3.",
+          "The succession is managed, but without real board renewal. Whoever takes the chair inherits the founder problem intact.",
       },
       FAILURE: {
         svRange: [-10, -8],
         narrative:
-          "The founder influences the succession; the new chair's independence is compromised from day one. MIS -8, Governance Health -10.",
+          "The founder's influence over the succession is plain to see. The chair's independence is compromised from day one.",
       },
       CRITICAL_FAILURE: {
         svRange: [-15, -12],
         narrative:
-          "Osei-Bonsu becomes chair. Founder syndrome is now the governance architecture. Marcus Finch resigns immediately. MIS -15, Governance Health -12 — with only the Annual Public Meeting left to face, and no cushion left to prepare for it.",
+          "Osei-Bonsu becomes chair. Founder syndrome is now the governance architecture. Marcus Finch resigns immediately.",
       },
     },
     isConditional: false,
@@ -1354,27 +1341,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [8, 10],
         narrative:
-          "The board accepts the motion wholeheartedly. The Charity Governance Code Assessor's report cites Meridian as having made 'significant and genuine governance progress' during the year. Donors renew; the Mission Integrity Score closes at its highest point. Mission Restored — if MIS ≥ 85.",
+          "The Charity Governance Code Assessor's report cites Meridian as having made 'significant and genuine governance progress' during the year. Donors renew.",
       },
       SUCCESS: {
         svRange: [4, 6],
         narrative:
-          "The modified accountability audit is accepted. Donors are satisfied with the board's responsiveness. The Code Assessor's report is broadly positive. MIS +4, Governance Health +6.",
+          "Donors are satisfied with the board's responsiveness. The Code Assessor's report is broadly positive.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-2, 0],
         narrative:
-          "The deferral is noted without consequence in the short term. Two donors reduce their commitments at renewal. Code Assessor report is neutral.",
+          "The board's answer is noted without consequence in the short term. Two donors reduce their commitments at renewal. The Code Assessor's report is neutral.",
       },
       FAILURE: {
         svRange: [-10, -8],
         narrative:
-          "The board's resistance to donor accountability triggers a formal withdrawal of two major grants. MIS -8, Governance Health -10. Code Assessor report is critical.",
+          "Donors read the board's answer as resistance to accountability. Two major grants are formally withdrawn, and the Code Assessor's report is critical.",
       },
       CRITICAL_FAILURE: {
         svRange: [-15, -12],
         narrative:
-          "Donors controlling 55% of income publicly distance themselves from Meridian. The Charity Commission opens a preliminary review. Code Assessor report recommends an independent governance inquiry. Regulatory Failure — if MIS < 30.",
+          "Donors controlling 55% of income publicly distance themselves from Meridian. The Charity Commission opens a preliminary review, and the Code Assessor recommends an independent governance inquiry.",
       },
     },
     isConditional: false,

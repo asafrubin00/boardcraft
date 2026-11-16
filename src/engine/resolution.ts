@@ -143,7 +143,10 @@ export function resolveEvent(input: ResolveEventInput): ResolutionOutput {
   const isDoNothing =
     deployedDirectors.length === 0 ||
     strategyChoice === 'do_nothing' ||
-    event.strategies.find((s) => s.id === strategyChoice)?.label.toLowerCase() === 'do nothing';
+    // The data flag is the source of truth; the label check catches options
+    // worded "Do nothing — ..." that were never flagged.
+    event.strategies.find((s) => s.id === strategyChoice)?.isDoNothing === true ||
+    (event.strategies.find((s) => s.id === strategyChoice)?.label.toLowerCase().startsWith('do nothing') ?? false);
 
   let matchScore = 0;
   let strategyMultiplier = 0.5;

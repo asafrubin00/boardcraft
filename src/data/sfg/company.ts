@@ -152,8 +152,8 @@ export const straitsFinancialGroup: Company = {
     { eventId: 'sfgevent_11', quarter: 'Q4', turn: 2 },
     { eventId: 'sfgevent_12', quarter: 'Q4', turn: 3 },
     { eventId: 'sfgevent_13', quarter: 'AGM', turn: 1 },
-    { eventId: 'sfgevent_14', quarter: 'Q4', turn: 3 },
-    { eventId: 'sfgevent_15', quarter: 'Q4', turn: 1 },
+    { eventId: 'sfgevent_14', quarter: 'Q1', turn: 4 },
+    { eventId: 'sfgevent_15', quarter: 'Q2', turn: 4 },
   ],
   directorIds: [
     // Inherited board

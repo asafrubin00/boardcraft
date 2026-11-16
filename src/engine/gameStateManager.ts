@@ -34,15 +34,24 @@ export function getNextQuarterAndTurn(
 ): { quarter: Quarter; turn: number } | null {
   const currentQIdx = getQuarterIndex(currentQuarter);
 
+  // Take the NEAREST later slot, not the first one listed — a schedule written
+  // out of calendar order (SFG lists its AGM after Q4) used to skip slots.
+  let best: { quarter: Quarter; turn: number } | null = null;
   for (const sched of eventSchedule) {
     const schedQIdx = getQuarterIndex(sched.quarter);
-    if (
+    const later =
       schedQIdx > currentQIdx ||
-      (schedQIdx === currentQIdx && sched.turn > currentTurn)
+      (schedQIdx === currentQIdx && sched.turn > currentTurn);
+    if (!later) continue;
+    if (
+      !best ||
+      schedQIdx < getQuarterIndex(best.quarter) ||
+      (schedQIdx === getQuarterIndex(best.quarter) && sched.turn < best.turn)
     ) {
-      return { quarter: sched.quarter, turn: sched.turn };
+      best = { quarter: sched.quarter, turn: sched.turn };
     }
   }
+  if (best) return best;
   return null; // End of game
 }
 

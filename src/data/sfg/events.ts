@@ -56,7 +56,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_01_d',
         label: 'Request a 30-day extension from MAS',
         description:
-          'Buy time while conducting a search. Signals governance weakness. Market rumours intensify. If not resolved by Q2, SGXNet disclosure is required and SFG-05 fires at elevated severity.',
+          'Buy time while conducting a search. Signals governance weakness. Market rumours intensify.',
         multiplier: 0.45,
         isDoNothing: true,
         competencyGates: [],
@@ -69,7 +69,7 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.5, 3.5],
         narrative:
-          "Lee Siew Geok's appointment was on the wires before market open. MAS closed the supervisory notice the same day. Two institutional analysts upgraded their governance score for SFG within 24 hours — the fastest regulatory-to-market translation any analyst could remember.",
+          "The appointment was on the wires before market open. MAS closed the supervisory notice the same day. Two institutional analysts upgraded their governance score for SFG within 24 hours.",
       },
       SUCCESS: {
         svRange: [1.0, 2.0],
@@ -79,17 +79,17 @@ export const sfgEvents: GameEvent[] = [
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          "MAS accepts the timeline extension but the market reads the slow response as a symptom of a board that still doesn't move with urgency. The clock is running.",
+          "MAS gives the board more time, but the market reads the slow response as a symptom of a board that still doesn't move with urgency. The seat is still empty and the clock is running.",
       },
       FAILURE: {
         svRange: [-2.5, -2.0],
         narrative:
-          "SFG is required to make an SGXNet disclosure of the AC Chair vacancy. The governance compliance breach is now public. Glass Lewis Asia flags it in their pre-AGM report.",
+          "The seat stays empty. SFG is required to make an SGXNet disclosure of the AC Chair vacancy, and Glass Lewis Asia flags it in their pre-AGM report.",
       },
       CRITICAL_FAILURE: {
         svRange: [-5.0, -4.0],
         narrative:
-          "MAS escalates to a formal supervisory letter. The SGXNet disclosure runs on the front page of The Business Times under the headline 'SFG Board Fails Basic Governance Test.' Three institutional shareholders request emergency calls with the SID.",
+          "The seat stays empty and MAS escalates to a formal supervisory letter. The Business Times runs the SGXNet disclosure under the headline 'SFG Board Fails Basic Governance Test.'",
       },
     },
     isConditional: false,
@@ -163,27 +163,27 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.0, 3.0],
         narrative:
-          "Both tiers pass. Glass Lewis withdraws their against recommendation before the vote closes. Aberdeen Standard Investments Asia publicly praises the board renewal roadmap as 'rare and refreshing transparency from a Singapore financial institution.'",
+          "The independence question is settled cleanly. Glass Lewis withdraws its against recommendation, and Aberdeen Standard Investments Asia publicly praises the board's 'rare and refreshing transparency'.",
       },
       SUCCESS: {
         svRange: [1.0, 2.0],
         narrative:
-          "The two-tier vote passes. Helena is retained for one year with clear succession expectations. Proxy advisors acknowledge the board renewal commitment.",
+          "The board's handling of the independence question is accepted. Proxy advisors acknowledge the commitment to board renewal.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-1.0, -0.5],
         narrative:
-          "Tier 1 passes but the minority tier is closer than expected — a warning shot. Helena is retained but the institutional message is clear: the board has until the AGM to demonstrate meaningful renewal.",
+          "The board gets through, but only just - a warning shot. The institutional message is clear: the board has until the AGM to demonstrate meaningful renewal.",
       },
       FAILURE: {
         svRange: [-3.0, -2.5],
         narrative:
-          "The minority tier fails. Helena cannot be classified independent. SFG's NC composition is now non-compliant. Institutional shareholders send a joint letter requesting emergency meetings with the SID.",
+          "Minority shareholders reject the board's position on independence. Institutional shareholders send a joint letter requesting emergency meetings.",
       },
       CRITICAL_FAILURE: {
         svRange: [-5.5, -4.5],
         narrative:
-          "Both tiers fail. Helena is reclassified non-independent, breaching multiple SGX composition rules simultaneously. MAS notes the outcome in its supervisory file. The 'Institutional Shareholder Letter: Independence Demands' event is now guaranteed to fire.",
+          "The board's position on independence collapses. MAS notes the outcome in its supervisory file, and minority shareholders begin to organise.",
       },
     },
     isConditional: true,
@@ -249,27 +249,27 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.0, 3.0],
         narrative:
-          "SFG becomes the first Singapore regional bank to publish a formal clawback policy in the same reporting cycle as the Vietnam loss. The Business Times rewrites the story as a governance turnaround rather than a pay scandal.",
+          "The Business Times rewrites the story as a governance turnaround rather than a pay scandal.",
       },
       SUCCESS: {
         svRange: [1.0, 2.0],
         narrative:
-          "Institutional shareholders acknowledge the RemCo's response. The clawback mechanism is introduced in the next LTIP cycle with clear board-approved triggers.",
+          "Institutional shareholders acknowledge the Remuneration Committee's response as credible.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-0.5, 0],
         narrative:
-          "The independent review buys time but the market reads it as delay. Glass Lewis Asia notes the absence of clawback provisions in their pre-AGM report regardless.",
+          "The board's response buys time but the market reads it as delay. Glass Lewis Asia notes the absence of clawback provisions in their pre-AGM report regardless.",
       },
       FAILURE: {
         svRange: [-2.5, -2.0],
         narrative:
-          "Shareholders make the letter chain public. The CEO's pay structure becomes the dominant governance story for the quarter, drowning out SFG's recovery messaging on the Vietnam portfolio.",
+          "The CEO's pay structure becomes the dominant governance story for the quarter, drowning out SFG's recovery messaging on the Vietnam portfolio.",
       },
       CRITICAL_FAILURE: {
         svRange: [-4.5, -3.5],
         narrative:
-          "Non-disclosure of the private LTIP renegotiation surfaces — a whistleblower from within the RemCo support team provides documents to The Business Times. MAS opens a review under MAS Notice on Corporate Governance.",
+          "Documents on the CEO's pay arrangements reach The Business Times. MAS opens a review under its Notice on Corporate Governance.",
       },
     },
     isConditional: false,
@@ -301,7 +301,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_04_a',
         label: 'Commission independent external investigation (Big 4)',
         description:
-          'AC Chair commissions a Big 4 investigation — clean, auditable, MAS-friendly. Requires AC Chair with Regulatory ≥ 75 AND Financial Oversight ≥ 70. Investigation is credible. Outcome depends on findings: if substantiated, SFG-10 fires in Q4.',
+          'AC Chair commissions a Big 4 investigation — clean, auditable, MAS-friendly. Requires AC Chair with Regulatory ≥ 75 AND Financial Oversight ≥ 70. Investigation is credible.',
         multiplier: 1.00,
         competencyGates: [
           { domain: 'regulatoryLegal', minimumRating: 75 },
@@ -320,7 +320,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_04_c',
         label: 'Seek legal opinion on disclosure thresholds; delay',
         description:
-          "Seek external legal advice on whether the transaction meets SGXNet disclosure thresholds before deciding. If delay is seen as covering up, MAS takes a very dim view. -2.5% SV floor regardless of ultimate outcome.",
+          "Seek external legal advice on whether the transaction meets SGXNet disclosure thresholds before deciding. If delay is seen as covering up, MAS takes a very dim view.",
         multiplier: 0.45,
         competencyGates: [{ domain: 'regulatoryLegal', minimumRating: 65 }],
       },
@@ -328,7 +328,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_04_d',
         label: 'Brief Temasek nominee privately before deciding',
         description:
-          "Non-standard process. Briefing Temasek's nominee before the board has formed a view is a governance protocol breach — it positions Temasek above the board in the decision chain. -1.5% SV minimum even if outcome is positive.",
+          "Non-standard process. Briefing Temasek's nominee before the board has formed a view is a governance protocol breach — it positions Temasek above the board in the decision chain.",
         multiplier: 0.40,
         isDoNothing: true,
         competencyGates: [],
@@ -347,17 +347,17 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [1.5, 2.5],
         narrative:
-          "The AC Chair's decision to commission an independent investigation is publicly praised as the correct governance response. MAS is briefed proactively. The market reads it as a board that takes its oversight function seriously.",
+          "The board's handling of the allegation is publicly praised as the correct governance response. The market reads it as a board that takes its oversight function seriously.",
       },
       SUCCESS: {
         svRange: [0.5, 1.5],
         narrative:
-          "Investigation commissioned. MAS informed. The process is credible and the board's role is unambiguous. The outcome of the investigation will determine whether SFG-10 fires.",
+          "The process is credible and the board's role in it is unambiguous. What it finds will decide what happens to the CEO.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-1.0, -0.5],
         narrative:
-          "The investigation proceeds but its independence is already being questioned. Analysts note that the board moved slowly and the internal process creates optics problems.",
+          "The matter is in hand, but the independence of the process is already being questioned. Analysts note that the board moved slowly.",
       },
       FAILURE: {
         svRange: [-3.5, -2.5],
@@ -441,7 +441,7 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [3.5, 4.5],
         narrative:
-          "Anwar bin Hamzah is named BRC Chair before the MAS supervisory panel meets. The dual-role issue is dead. MAS issues a private acknowledgement that the board's response was 'substantive and appropriate.' Institutional shareholders withdraw their requisitioned resolution.",
+          "MAS issues a private acknowledgement that the board's response was 'substantive and appropriate.' Institutional shareholders withdraw their requisitioned resolution.",
       },
       SUCCESS: {
         svRange: [1.5, 3.0],
@@ -451,17 +451,17 @@ export const sfgEvents: GameEvent[] = [
       PARTIAL_SUCCESS: {
         svRange: [-0.5, 0],
         narrative:
-          "A second review is commissioned. MAS accepts the timeline but signals that outcomes matter — not process. Institutional shareholders hold their resolution in reserve.",
+          "MAS accepts the board's timeline but signals that outcomes matter - not process. Institutional shareholders hold their resolution in reserve.",
       },
       FAILURE: {
         svRange: [-4.0, -3.0],
         narrative:
-          "MAS supervisory panel finds the board's defence unconvincing. The panel chair states publicly that SFG's BRC governance 'does not meet the expectations of MAS for financial institutions of this scale.' Enforcement action is now a live risk.",
+          "The MAS supervisory panel is unconvinced. Its chair states publicly that SFG's BRC governance 'does not meet the expectations of MAS for financial institutions of this scale.' Enforcement action is now a live risk.",
       },
       CRITICAL_FAILURE: {
         svRange: [-8.0, -6.0],
         narrative:
-          "MAS announces a formal review under the Banking Act. SFG shares fall 6% on open. Dato' Lim's dual role is named explicitly in the MAS statement. The SFG-12 MAS Enforcement Action event is now queued.",
+          "MAS announces a formal review under the Banking Act. SFG shares fall 6% on open. Dato' Lim's dual role is named explicitly in the MAS statement.",
       },
     },
     isConditional: false,
@@ -490,7 +490,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_06_a',
         label: 'Full board approval; immediate licence application',
         description:
-          'Board approves the full SGD 250m capital injection and files immediately. Requires Strategy & Markets ≥ 75 AND Regulatory ≥ 70. If OJK approves: SV +5.0% over 2 turns. High risk if governance health < 60 — MAS may not approve the cross-border exposure.',
+          'Board approves the full SGD 250m capital injection and files immediately. Requires Strategy & Markets ≥ 75 AND Regulatory ≥ 70. High risk if governance health < 60 — MAS may not approve the cross-border exposure.',
         multiplier: 1.10,
         competencyGates: [
           { domain: 'strategyMarkets', minimumRating: 75 },
@@ -533,27 +533,27 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.5, 6.0],
         narrative:
-          "OJK approves SFG's application ahead of schedule. Tan Sri Faridah Aziz and Dr. Priscilla Ho's ASEAN expertise is credited in the analyst notes as 'decisive for the board's credible application.' SFG Indonesia is launched. Growth premium starts to rebuild.",
+          "The board's call on Indonesia is vindicated ahead of schedule. Analysts credit the ASEAN expertise around the board table, and the growth premium starts to rebuild.",
       },
       SUCCESS: {
         svRange: [2.5, 4.0],
         narrative:
-          "Application filed. OJK acknowledges receipt. Institutional shareholders respond positively to a growth story that isn't dependent on the legacy banking margins. Two quarters of implementation risk remain.",
+          "Institutional shareholders respond positively to the board's decision on Indonesia. Two quarters of execution risk remain.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0.5],
         narrative:
-          "The feasibility review recommendation is cautious. Board approves a restricted application. OJK process moves slowly. The market acknowledges the intent but questions execution confidence.",
+          "The market acknowledges the board's intent on Indonesia but questions its confidence in execution.",
       },
       FAILURE: {
         svRange: [-2.5, -1.5],
         narrative:
-          "OJK rejects the under-capitalised application. SGD 150m is provisionally committed but the licence is refused. Raymond Tan's growth strategy is publicly questioned at the next investor briefing.",
+          "The board's decision on Indonesia backfires. Raymond Tan's growth strategy is publicly questioned at the next investor briefing.",
       },
       CRITICAL_FAILURE: {
         svRange: [-5.0, -3.5],
         narrative:
-          "Full capital committed; OJK denies the application citing SFG's ongoing regulatory scrutiny from MAS as a disqualifying factor. SGD 250m is locked in escrow pending appeal. SFG's MAS relationship further strained.",
+          "The Indonesia decision goes badly wrong, and SFG's ongoing scrutiny from MAS is cited as part of the reason. The MAS relationship is further strained.",
       },
     },
     isConditional: false,
@@ -610,7 +610,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_07_c',
         label: 'Merge sustainability oversight into AC or BRC',
         description:
-          "Technically compliant but substantively inadequate. Proxy advisors will call it a tick-box response. MAS notes the structural deficiency. SV neutral short-term but AGM ammunition for minority shareholders.",
+          "Technically compliant but substantively inadequate. Proxy advisors will call it a tick-box response. MAS notes the structural deficiency.",
         multiplier: 0.60,
         competencyGates: [{ domain: 'esgSustainability', minimumRating: 60 }],
       },
@@ -631,17 +631,17 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.0, 3.0],
         narrative:
-          "Dr. Aiyana Krishnamurthy's appointment is the headline at the Singapore Governance Summit. MAS officials are seen taking notes. Two ESG-focused institutional investors increase their positions within the month.",
+          "The board's move on sustainability governance is the talk of the Singapore Governance Summit. Two ESG-focused institutional investors increase their positions within the month.",
       },
       SUCCESS: {
         svRange: [1.0, 2.0],
         narrative:
-          "Sustainability Committee formed and announced. Proxy advisors remove the governance gap flag from their pre-AGM reports. Temasek signals approval via Eric Png.",
+          "Proxy advisors remove the sustainability governance flag from their pre-AGM reports. Temasek signals approval via Eric Png.",
       },
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          "The merged oversight structure passes technical scrutiny but no one in the governance community is impressed. Proxy advisors note 'form over substance' in their reports.",
+          "The arrangement passes technical scrutiny but no one in the governance community is impressed. Proxy advisors note 'form over substance' in their reports.",
       },
       FAILURE: {
         svRange: [-2.0, -1.5],
@@ -651,7 +651,7 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-3.5, -2.5],
         narrative:
-          "The deferral is read as institutional bad faith. Temasek sends a private signal through Eric Png that Catherine Phua will be nominated as a second Temasek representative if ESG governance is not visibly addressed. The SFG-08 event fires immediately.",
+          "The board's response is read as institutional bad faith. Temasek signals through Eric Png that it is prepared to nominate a second representative if ESG governance is not visibly addressed.",
       },
     },
     isConditional: true,
@@ -727,17 +727,17 @@ export const sfgEvents: GameEvent[] = [
       PARTIAL_SUCCESS: {
         svRange: [0, 0],
         narrative:
-          "Catherine Phua joins the board. Temasek's ESG and risk expectations are now internalised at the board table. The player still controls Catherine's committee assignments.",
+          "Temasek holds off for now, but its ESG and risk expectations are on the record and the question of a second nominee has not gone away.",
       },
       FAILURE: {
         svRange: [-2.0, -1.5],
         narrative:
-          "Temasek exercises the second nominee right unilaterally. Catherine Phua is announced via SGXNet without player sign-off. The governance community reads it as a loss of board autonomy.",
+          "Temasek exercises the second nominee right unilaterally. Catherine Phua is announced via SGXNet without the board's sign-off. The governance community reads it as a loss of board autonomy.",
       },
       CRITICAL_FAILURE: {
         svRange: [-4.0, -3.0],
         narrative:
-          "The board's refusal to engage with Temasek becomes the story. Catherine Phua joins the board and Temasek releases a public statement about 'exercising its shareholder rights to protect portfolio governance standards.' The AGM proxy war intensifies.",
+          "The board's handling of Temasek becomes the story. Catherine Phua joins the board, and Temasek releases a public statement about 'exercising its shareholder rights to protect portfolio governance standards.'",
       },
     },
     isConditional: true,
@@ -791,7 +791,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_09_d',
         label: 'Call the EGM; rely on Temasek 34% to defeat resolution',
         description:
-          "Temasek votes against the minority resolution in the first tier. But this is not a two-tier vote — Temasek's bloc can determine the outcome. However, the optics are catastrophic: state shareholder vs. independent shareholders at a public EGM. SV hit regardless of vote outcome.",
+          "Temasek votes against the minority resolution in the first tier. But this is not a two-tier vote — Temasek's bloc can determine the outcome. However, the optics are catastrophic: state shareholder vs. independent shareholders at a public EGM.",
         multiplier: 0.25,
         isDoNothing: true,
         competencyGates: [],
@@ -819,12 +819,12 @@ export const sfgEvents: GameEvent[] = [
       FAILURE: {
         svRange: [-3.5, -2.5],
         narrative:
-          "Counter-statement filed. Proxy advisors recommend FOR the minority resolution immediately. SFG is characterised in the financial press as a company fighting its own shareholders to protect an entrenched board.",
+          "Proxy advisors recommend FOR the minority resolution. SFG is characterised in the financial press as a company fighting its own shareholders to protect an entrenched board.",
       },
       CRITICAL_FAILURE: {
         svRange: [-6.0, -4.5],
         narrative:
-          "The EGM is called and Temasek's 34% overrides the minority position. Aberdeen Standard issues a public statement about 'state capital undermining minority shareholder rights in Singapore's financial sector.' The MAS notes the public controversy in its supervisory file.",
+          "The minority coalition is defeated but not answered. Aberdeen Standard issues a public statement about 'state capital undermining minority shareholder rights', and MAS notes the controversy in its supervisory file.",
       },
     },
     isConditional: true,
@@ -857,7 +857,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_10_a',
         label: 'Terminate CEO immediately; disclose on SGXNet',
         description:
-          "Board votes to terminate Raymond Tan with immediate effect and discloses the related-party transaction on SGXNet. Requires Board Chair with People & Culture ≥ 70 AND Regulatory ≥ 75 and at least 3 truly independent directors supporting the motion. Short-term SV hit; recovery pathway available.",
+          "Board votes to terminate Raymond Tan with immediate effect and discloses the related-party transaction on SGXNet. Requires Board Chair with People & Culture ≥ 70 AND Regulatory ≥ 75 and at least 3 truly independent directors supporting the motion.",
         multiplier: 1.10,
         competencyGates: [
           { domain: 'peopleCulture', minimumRating: 70 },
@@ -903,27 +903,27 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [3.0, 5.0],
         narrative:
-          "Termination with immediate disclosure. The Business Times calls it 'the most decisive board action by a Singapore financial institution in a decade.' MAS issues a private commendation. Institutional shareholders add to their positions. The SV recovery is faster than anyone expected.",
+          "The Business Times calls it 'the most decisive board action by a Singapore financial institution in a decade.' MAS issues a private commendation and institutional shareholders add to their positions.",
       },
       SUCCESS: {
         svRange: [-2.0, -0.5],
         narrative:
-          "CEO terminated. SGXNet disclosure made. Initial -2.0% SV hit as the related-party transaction is publicised, but recovery pathway is open. Board credibility: significantly enhanced.",
+          "The board's response is accepted as proportionate. There is an initial hit as the related-party transaction is publicised, but the recovery pathway is open.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-3.0, -1.5],
         narrative:
-          "The negotiated exit avoids the worst optics but the governance community notes the board's hesitation. MAS acknowledges the disclosure but privately questions whether the board's response was proportionate.",
+          "The worst optics are avoided, but the governance community notes the board's hesitation. MAS privately questions whether the response was proportionate.",
       },
       FAILURE: {
         svRange: [-5.0, -3.0],
         narrative:
-          "CEO retained with censure. Market reads it as the board protecting its own. MAS issues a formal supervisory letter about the board's 'inadequate response to a substantiated related-party transaction.' SFG-12 queues.",
+          "The market reads the board's response as protecting its own. MAS issues a formal supervisory letter about the board's 'inadequate response to a substantiated related-party transaction.'",
       },
       CRITICAL_FAILURE: {
         svRange: [-12.0, -8.0],
         narrative:
-          "Internal closure of a substantiated related-party transaction allegation disclosed to MAS is a regulatory breach. MAS enforcement action is announced within 48 hours. Three institutional shareholders file a class action notice. SFG shares enter a circuit breaker. SFG-12 fires immediately.",
+          "MAS treats the board's handling of a substantiated breach as a regulatory failure in its own right. Enforcement action is announced within 48 hours, and three institutional shareholders file a class action notice.",
       },
     },
     isConditional: true,
@@ -970,7 +970,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_11_c',
         label: 'Issue public statement rejecting unsolicited approaches',
         description:
-          "Sends a message but has no legal force. Salim can continue purchasing up to 12% without restriction. Moderate SV signal but no substantive defence.",
+          "Sends a message but has no legal force. Salim can continue purchasing up to 12% without restriction.",
         multiplier: 0.65,
         competencyGates: [{ domain: 'stakeholderComms', minimumRating: 60 }],
       },
@@ -993,17 +993,17 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.0, 5.5],
         narrative:
-          "Salim Pacific and SFG announce a strategic partnership for the Indonesia digital banking expansion. The combined stake is restructured as a strategic co-investment with MAS approval. Regional banking premium re-rates SFG's valuation upward.",
+          "The Salim stake is turned from a threat into an asset, with MAS on side. The market re-rates SFG's valuation upward.",
       },
       SUCCESS: {
         svRange: [1.5, 3.0],
         narrative:
-          "MAS engagement deters Salim from crossing 12%. The threat subsides. Board credibility: strengthened by decisive regulatory engagement.",
+          "Salim stops short of 12%. The threat subsides, and the board's credibility is strengthened by how it handled it.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-1.0, 0],
         narrative:
-          "Public statement noted but Salim continues purchasing. Market waits for the 12% threshold to clarify the situation. Board is reactive rather than proactive.",
+          "Salim keeps buying. The market waits for the 12% threshold to clarify the situation, and the board looks reactive rather than proactive.",
       },
       FAILURE: {
         svRange: [-5.0, -3.0],
@@ -1043,7 +1043,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_12_a',
         label: 'Comprehensive remediation plan within 48 hours',
         description:
-          "Board Chair and AC Chair co-publish a comprehensive remediation plan within 48 hours. Requires Board Chair with Regulatory ≥ 85 AND Stakeholder ≥ 80. Plan accepted by MAS as credible. SV recovers over 2 turns from the initial drop.",
+          "Board Chair and AC Chair co-publish a comprehensive remediation plan within 48 hours. Requires Board Chair with Regulatory ≥ 85 AND Stakeholder ≥ 80. Plan accepted by MAS as credible.",
         multiplier: 1.10,
         competencyGates: [
           { domain: 'regulatoryLegal', minimumRating: 85 },
@@ -1054,7 +1054,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_12_b',
         label: 'Emergency board meeting; appoint external governance advisor',
         description:
-          "Slower — emergency board meeting called, external governance advisor appointed, plan published by day 5. SV damage mounts daily but the plan is more thorough. Moderate recovery.",
+          "Slower — emergency board meeting called, external governance advisor appointed, plan published by day 5. Moderate recovery.",
         multiplier: 0.75,
         competencyGates: [
           { domain: 'regulatoryLegal', minimumRating: 75 },
@@ -1086,27 +1086,27 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [-2.0, -1.0],
         narrative:
-          "The remediation plan is published at 7am Monday before market open. MAS acknowledges it publicly as 'comprehensive.' The initial SV drop stabilises. Recovery pathway is clear — implementation will determine the final trajectory.",
+          "MAS publicly acknowledges the board's response as 'comprehensive.' The share price stabilises. Implementation will decide the rest.",
       },
       SUCCESS: {
         svRange: [-4.0, -2.5],
         narrative:
-          "Plan published. MAS accepts it as credible. SV decline moderates. The governance story shifts from crisis to remediation — which, in Singapore, counts for something.",
+          "MAS accepts the board's response as credible. The governance story shifts from crisis to remediation - which, in Singapore, counts for something.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-5.5, -4.0],
         narrative:
-          "External governance advisor engaged. MAS awaits the plan. Market damage accumulates daily. The eventual plan is credible but the slow start costs SFG additional SV points.",
+          "MAS is still waiting for something it can accept, and market damage accumulates daily. The slow start costs SFG more than it needed to.",
       },
       FAILURE: {
         svRange: [-9.0, -7.0],
         narrative:
-          "Disputed MAS censure statement. MAS escalates to formal enforcement proceedings. SFG is now subject to MAS Act s.49 director removal review. Three board members receive personal notices.",
+          "MAS escalates to formal enforcement proceedings. SFG is now subject to a director removal review, and three board members receive personal notices.",
       },
       CRITICAL_FAILURE: {
         svRange: [-12.0, -10.0],
         narrative:
-          "Board fragmentation in public. Disarray is the headline. MAS convenes an emergency supervisory panel. SFG shares enter a trading halt pending disclosure of the MAS enforcement scope. Directors are individually contacted by MAS about their personal regulatory obligations.",
+          "Disarray is the headline. MAS convenes an emergency supervisory panel, SFG shares are halted, and directors are contacted individually about their personal regulatory obligations.",
       },
     },
     isConditional: true,
@@ -1152,7 +1152,8 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_13_c',
         label: 'Withdraw Resolution 1; retire Helena Soong before AGM',
         description:
-          "Avoid the proxy war entirely — Helena exits with dignity before the AGM. Board renewal narrative takes hold. No two-tier vote required. Clean AGM. Lower SV upside but no downside risk from vote.",
+          "Avoid the proxy war entirely — Helena exits with dignity before the AGM. Board renewal narrative takes hold. No two-tier vote required. Clean AGM.",
+        requires: { directorSeated: 'sfgdir_02_soong' },
         multiplier: 0.90,
         competencyGates: [{ domain: 'peopleCulture', minimumRating: 65 }],
       },
@@ -1173,7 +1174,7 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [3.5, 5.0],
         narrative:
-          "Both tiers of Resolution 1 pass. The remuneration report receives 92% approval. The minority resolution (if requisitioned) is withdrawn before the vote. Glass Lewis Asia revises their pre-AGM recommendation to FOR. The AGM closes with SFG's governance narrative decisively rewritten.",
+          "Every contested resolution goes the board's way, with the remuneration report at 92%. Glass Lewis Asia revises its recommendation, and the AGM closes with SFG's governance narrative decisively rewritten.",
       },
       SUCCESS: {
         svRange: [1.5, 3.0],
@@ -1183,17 +1184,17 @@ export const sfgEvents: GameEvent[] = [
       PARTIAL_SUCCESS: {
         svRange: [-1.0, 0],
         narrative:
-          "Helena retires before the AGM vote, avoiding the contested resolution. Clean optics but the market notes the board still hasn't replaced two chairs and the renewal roadmap is aspirational rather than executed.",
+          "The AGM passes without a public defeat, but the market notes that the renewal roadmap is still aspirational rather than executed.",
       },
       FAILURE: {
         svRange: [-4.0, -2.5],
         narrative:
-          "Tier 2 of Resolution 1 fails. Helena cannot be re-elected as independent. The remuneration vote passes but only barely. The AGM is called a 'partial defeat' by governance media. Three analysts downgrade governance scores.",
+          "The independence vote goes against the board among minority shareholders, and the remuneration vote passes only barely. Governance media call the AGM a 'partial defeat'.",
       },
       CRITICAL_FAILURE: {
         svRange: [-7.0, -5.0],
         narrative:
-          "Tier 1 and Tier 2 both fail. The minority resolution passes on the back of Glass Lewis and ISS voting with the coalition. Helena's attempted re-election becomes one of the most-cited governance failures in Singapore institutional history. The MAS notes the AGM outcome in its annual corporate governance review.",
+          "The board loses on independence and on the minority resolution. The AGM becomes one of the most-cited governance failures in Singapore institutional history.",
       },
     },
     isConditional: false,
@@ -1205,8 +1206,8 @@ export const sfgEvents: GameEvent[] = [
     id: 'sfgevent_14',
     name: 'Digital Banking Threat: GXS Bank Targets SFG SME Clients',
     tier: 2,
-    quarter: 'Q4',
-    turn: 3,
+    quarter: 'Q1',
+    turn: 4,
     imageFile: 'sfgevent-14.png',
     narrativeCard:
       "GXS Bank (Grab Financial's Singapore digital bank) has launched its first business banking product targeting SMEs — a segment that generates 18% of SFG's net interest income. GXS's digital onboarding takes 7 minutes vs. SFG's current 4-day process. Three analyst reports have cut SFG's revenue growth forecast by 1.5–2.0%, citing digital disruption risk. The board must respond with a credible strategic investment in technology modernisation or an acquisition play — or accept the narrative that SFG is a legacy institution ceding ground to fintech.",
@@ -1221,7 +1222,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_14_a',
         label: 'Approve SGD 180m core banking modernisation programme',
         description:
-          'Board approves a full core banking modernisation investment. Requires Technology & Digital ≥ 75. Long-term structural fix. SV -0.5% short term on capital commitment; +2.5% over 2 turns as analyst upgrades follow the technology story.',
+          'Board approves a full core banking modernisation investment. Requires Technology & Digital ≥ 75. Long-term structural fix.',
         multiplier: 1.00,
         competencyGates: [{ domain: 'technologyDigital', minimumRating: 75 }],
       },
@@ -1229,7 +1230,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_14_b',
         label: 'Acquire a Singapore fintech with digital onboarding capability',
         description:
-          'Approve a fintech acquisition play. Requires Strategy & Markets ≥ 75. Faster than organic but carries integration risk. SV +1.5% on announcement if the acquisition target is credible.',
+          'Approve a fintech acquisition play. Requires Strategy & Markets ≥ 75. Faster than organic but carries integration risk.',
         multiplier: 0.95,
         competencyGates: [{ domain: 'strategyMarkets', minimumRating: 75 }],
       },
@@ -1258,27 +1259,27 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [2.5, 3.5],
         narrative:
-          "The core banking modernisation programme is approved and announced with Dr. Priscilla Ho and Samuel Ong prominently named as board technology oversight leads. Analysts upgrade SFG to a 'digital transformation' thesis. GXS's competitive advantage narrows in forecasts.",
+          "Analysts upgrade SFG to a 'digital transformation' thesis, and GXS's competitive advantage narrows in their forecasts.",
       },
       SUCCESS: {
         svRange: [1.0, 2.0],
         narrative:
-          "Board approves the technology investment. Market reads it as a credible response to digital competition. SFG's technology governance score improves.",
+          "The market reads the board's decision as a credible response to digital competition. SFG's technology governance score improves.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-0.5, 0],
         narrative:
-          "Vendor partnership announced. Analysts note it as 'necessary but insufficient.' SFG continues to cede NII ground to GXS while the structural fix is deferred.",
+          "Analysts call the board's response 'necessary but insufficient.' SFG continues to cede ground to GXS while the structural fix waits.",
       },
       FAILURE: {
         svRange: [-2.5, -1.5],
         narrative:
-          "SFG announces it is 'monitoring the situation.' Two analysts immediately downgrade the stock. GXS captures 3% of SFG's SME book in the quarter. The board technology gap is cited as a governance risk in every research note.",
+          "Two analysts downgrade the stock. GXS captures 3% of SFG's SME book in the quarter, and the board's technology gap is cited as a governance risk in every research note.",
       },
       CRITICAL_FAILURE: {
         svRange: [-4.5, -3.0],
         narrative:
-          "Passive response interpreted as strategic paralysis. A third analyst initiates coverage with a sell rating citing 'board failure to respond to structural digital disruption.' SFG's SME NII decline accelerates beyond analyst consensus forecasts.",
+          "The board's response is read as strategic paralysis. A third analyst initiates coverage with a sell rating, and the decline in SME income accelerates beyond consensus forecasts.",
       },
     },
     isConditional: false,
@@ -1290,8 +1291,8 @@ export const sfgEvents: GameEvent[] = [
     id: 'sfgevent_15',
     name: "Chair Succession: Dato' Lim Steps Down",
     tier: 2,
-    quarter: 'Q4',
-    turn: 1,
+    quarter: 'Q2',
+    turn: 4,
     imageFile: 'sfgevent-15.png',
     narrativeCard:
       "Dato' Lim Boon Kiat has privately informed the Nominating Committee that he intends to step down at the AGM, citing personal reasons. This is not yet public. The board has a six-week window to identify and appoint a successor before the AGM announcement. The market has been expecting this change — Dato' Lim's dual Chair/BRC role has been a persistent governance concern that the MAS supervisory letter made explicit. The choice of successor will be read as a definitive signal of the board's reform intentions. Temasek has not indicated a preference but will be watching very carefully.",
@@ -1311,7 +1312,7 @@ export const sfgEvents: GameEvent[] = [
         id: 'sfgevent_15_a',
         label: 'Appoint Rajan Sethupathi as new Board Chair',
         description:
-          "Appoint Rajan Sethupathi — former CEO of Standard Chartered Singapore — as new Board Chair. Requires Rajan in pool (Availability C — search firm required). The highest credibility signal available. MAS and Temasek both respond positively. +1.5% SV on announcement — the credibility premium is immediate.",
+          "Appoint Rajan Sethupathi — former CEO of Standard Chartered Singapore — as new Board Chair. Requires Rajan in pool (Availability C — search firm required). The highest credibility signal available. MAS and Temasek both respond positively.",
         multiplier: 1.20,
         competencyGates: [
           { domain: 'stakeholderComms', minimumRating: 85 },
@@ -1359,7 +1360,7 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [4.0, 5.5],
         narrative:
-          "Rajan Sethupathi is named Board Chair. 'Dream team' analyst coverage follows within 24 hours — Rajan as Chair, Lee Siew Geok on Audit Committee. MAS privately signals approval. SFG's governance transformation story is complete.",
+          "The new Chair is named, and 'dream team' analyst coverage follows within 24 hours. MAS privately signals approval. SFG's governance transformation story has its figurehead.",
       },
       SUCCESS: {
         svRange: [1.5, 3.0],
@@ -1369,7 +1370,7 @@ export const sfgEvents: GameEvent[] = [
       PARTIAL_SUCCESS: {
         svRange: [-1.0, -0.5],
         narrative:
-          "Helena elevated — the market reads it as a continuity choice rather than a reform signal. Proxy advisors immediately flag the tenure concern. The AGM proxy war intensifies.",
+          "The market reads the board's answer on the chair as continuity rather than reform. Proxy advisors flag it immediately.",
       },
       FAILURE: {
         svRange: [-3.0, -2.0],
@@ -1379,7 +1380,7 @@ export const sfgEvents: GameEvent[] = [
       CRITICAL_FAILURE: {
         svRange: [-5.5, -4.0],
         narrative:
-          "Chair vacancy and AGM coincide. SFG enters its most important shareholder meeting without a named Board Chair successor. Minority shareholders demand an emergency board review. The AGM proxy war fires at maximum intensity.",
+          "Chair vacancy and AGM coincide. SFG enters its most important shareholder meeting without a named Board Chair successor. Minority shareholders demand an emergency board review.",
       },
     },
     isConditional: true,
