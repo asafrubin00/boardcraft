@@ -154,10 +154,15 @@ function PlayPageInner() {
   const replacementConfirmed = useRef(false);
 
   // ── Dev shortcut: ?dev=q1|q2|q3|q4|agm|yearend skips to that phase ──
+  // ?demo= takes the same keys and works on the live site too, for presenting:
+  // it always plays the year up to that point (so the record is real), and a
+  // demo never saves over a real game or adds to the player's record.
+  const isDemo = !!searchParams.get('demo');
   useEffect(() => {
     if (devBooted) return;
-    if (process.env.NODE_ENV !== 'development') return;
-    const devParam = searchParams.get('dev');
+    const demoParam = searchParams.get('demo');
+    if (process.env.NODE_ENV !== 'development' && !demoParam) return;
+    const devParam = searchParams.get('dev') ?? demoParam;
     if (!devParam) return;
 
     // Also support legacy ?dev=true (same as q1)
@@ -205,7 +210,7 @@ function PlayPageInner() {
 
     // Dev year-end: play the whole year automatically so the review, the
     // debrief and the dashboards have a real record to show.
-    const autoPlay = phaseKey === 'yearend' || searchParams.get('played') === '1';
+    const autoPlay = phaseKey === 'yearend' || searchParams.get('played') === '1' || (!!demoParam && phaseKey !== 'q1');
     if (autoPlay) {
       let st: GameState = { ...started, currentQuarter: 'Q1', currentTurn: 1, phase: 'gameplay', randomSeed: 4242 };
       let guard = 0;
@@ -257,7 +262,7 @@ function PlayPageInner() {
   useEffect(() => {
     if (restoredRef.current) return;
     restoredRef.current = true;
-    if (searchParams.get('dev')) return; // dev shortcuts take priority
+    if (searchParams.get('dev') || searchParams.get('demo')) return; // shortcuts take priority
     try {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return;
@@ -274,6 +279,7 @@ function PlayPageInner() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (isDemo) return; // a demo never saves over a real game
     try {
       if ((phase === 'gameplay' || phase === 'agm') && gameState) {
         localStorage.setItem(
@@ -285,7 +291,7 @@ function PlayPageInner() {
         localStorage.removeItem(SAVE_KEY);
       }
     } catch {} // storage full/unavailable — play continues unsaved
-  }, [phase, gameState, agmResults]);
+  }, [phase, gameState, agmResults, isDemo]);
 
   // ── Company Select → Board Construction ──
   const handleSelectCompany = useCallback((company: Company) => {
@@ -587,7 +593,7 @@ function PlayPageInner() {
   }
 
   if (phase === 'year_end' && gameState) {
-    return <YearEndScreen gameState={gameState} onRestart={handleRestart} onChangeCompany={handleChangeCompany} agmResults={agmResults ?? undefined} />;
+    return <YearEndScreen gameState={gameState} onRestart={handleRestart} onChangeCompany={handleChangeCompany} agmResults={agmResults ?? undefined} recordResult={!isDemo} />;
   }
 
   if (phase === 'gameplay' && gameState) {

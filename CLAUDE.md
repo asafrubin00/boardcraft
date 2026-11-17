@@ -64,6 +64,7 @@ Other things added in the makeover:
 - **`components/controlroom`** replaces the old SV dashboard modal: a terminal on the player's laptop over `public/office/desk.jpg` (a still of the office scene — no 3D at runtime).
 - **Outcome text must not describe the player's action.** Tier narratives are shown whatever option was chosen, so they describe how it landed (the regulator's, market's or members' reaction), never what the board did. No score numbers in prose either; the engine decides those.
 - **`integrity.test.ts`** plays a full year for every company and checks the schedule (one event per slot, calendar reaches the AGM). Run it after touching any `company.ts` schedule.
+- **Demo links (live site):** `?demo=<same keys as ?dev>` works in production for presenting (e.g. `/play?demo=sfg-agm`). It auto-plays up to that point, never saves over a real game and never records to the career stats or leaderboard.
 - **Dev:** `?dev=yearend` (and `&played=1` on any other `?dev=` key) auto-plays up to that point so screens have a real record.
 - Five companies now: `company_sfg` (Straits Financial Group, Singapore) has its own folder `data/sfg/`. Known content issue: FIXED Nov 2026: SFG now follows SGX's hard nine-year cap (Listing Rule 210(5)(d)(iv)); the old two-tier vote is gone from content, engine and screens.
 

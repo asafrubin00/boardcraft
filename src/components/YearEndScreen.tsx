@@ -37,6 +37,9 @@ interface YearEndScreenProps {
   onRestart: () => void;
   onChangeCompany?: () => void;
   agmResults?: AgmResults;
+  /** False for a presenter's demo: show the result, but keep it off the
+   *  player's career record and leaderboard. */
+  recordResult?: boolean;
 }
 
 const OUTCOME_COLORS: Record<string, { bg: string; text: string }> = {
@@ -679,7 +682,7 @@ function LeaderboardModal({ isOpen, onClose, currentEntryId }: { isOpen: boolean
 
 // ── Main Component ──
 
-export default function YearEndScreen({ gameState, onRestart, onChangeCompany, agmResults }: YearEndScreenProps) {
+export default function YearEndScreen({ gameState, onRestart, onChangeCompany, agmResults, recordResult = true }: YearEndScreenProps) {
   // Play year-end sound on mount
   useEffect(() => {
     playPaperSlide();
@@ -716,6 +719,8 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany, a
     const gc = calculateGameGc(gameState);
     setGcResult(gc);
 
+    if (!recordResult) return; // presenter demo: nothing is recorded
+
     // Record to career stats
     const stats = recordGameResult(gameState, gc.totalGc);
     setCareerStats(stats);
@@ -734,7 +739,7 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany, a
       gcEarned: gc.totalGc,
       datePlayed: new Date().toISOString(),
     });
-  }, [gameState]);
+  }, [gameState, recordResult]);
 
   return (
     <div className="min-h-screen bg-navy px-4 py-8 md:py-12">
