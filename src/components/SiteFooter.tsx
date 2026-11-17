@@ -19,6 +19,10 @@ export default function SiteFooter({
         <span className="whitespace-nowrap">© 2026 <a href="https://asafrubin00.github.io/asaf-rubin-website/" target="_blank" rel="noopener noreferrer" className="pointer-events-auto hover:text-foreground/50 transition-colors underline underline-offset-2">Asaf Rubin</a>. All rights reserved.</span>
         <div className="flex items-center gap-1.5 whitespace-nowrap">
           <span className="text-foreground/15">·</span>
+          <Link href="/account" className="pointer-events-auto hover:text-foreground/50 transition-colors underline underline-offset-2">Account</Link>
+          <span className="text-foreground/15">·</span>
+          <Link href="/privacy" className="pointer-events-auto hover:text-foreground/50 transition-colors underline underline-offset-2">Privacy</Link>
+          <span className="text-foreground/15">·</span>
           <Link
             href="/terms"
             className="pointer-events-auto hover:text-foreground/50 transition-colors underline underline-offset-2"
@@ -33,6 +37,10 @@ export default function SiteFooter({
   return (
     <div className={`flex items-center justify-center gap-3 text-foreground/25 text-xs whitespace-nowrap pointer-events-none ${className}`}>
       <span>© 2026 <a href="https://asafrubin00.github.io/asaf-rubin-website/" target="_blank" rel="noopener noreferrer" className="pointer-events-auto hover:text-foreground/50 transition-colors underline underline-offset-2">Asaf Rubin</a>. All rights reserved.</span>
+      <span className="text-foreground/15">·</span>
+      <Link href="/account" className="pointer-events-auto hover:text-foreground/50 transition-colors underline underline-offset-2">Account</Link>
+      <span className="text-foreground/15">·</span>
+      <Link href="/privacy" className="pointer-events-auto hover:text-foreground/50 transition-colors underline underline-offset-2">Privacy</Link>
       <span className="text-foreground/15">·</span>
       <Link
         href="/terms"

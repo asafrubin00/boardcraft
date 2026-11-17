@@ -697,6 +697,7 @@ export default function OfficeScene({ folders, skipIntro, renderPaper, onLaunch,
         <span className="flex items-center gap-5">
           {onOpenMap && phase === 'seated' && <button className="of-link" onClick={onOpenMap}>World map</button>}
           <button className="of-link" onClick={onListView}>List view</button>
+          <a className="of-link" href="/account">Account</a>
         </span>
       </header>
 

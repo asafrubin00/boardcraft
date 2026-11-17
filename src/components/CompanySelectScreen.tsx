@@ -547,6 +547,13 @@ export default function CompanySelectScreen({ onSelectCompany }: CompanySelectSc
         </button>
       )}
 
+      <a
+        href="/account"
+        className="fixed top-5 left-6 z-20 text-xs font-semibold tracking-wide text-foreground/70 hover:text-gold border border-white/20 hover:border-gold rounded-full px-3.5 py-1.5 bg-black/30 backdrop-blur-sm transition-colors"
+      >
+        Account
+      </a>
+
       {/* Play Mode Selector */}
       <div className="flex items-center gap-1 mb-8 p-1 rounded-xl border border-white/10 bg-black/30">
         <button

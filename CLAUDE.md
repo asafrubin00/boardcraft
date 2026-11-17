@@ -8,7 +8,7 @@ BoardCraft is a corporate governance strategy game — "fantasy football for cor
 
 ## Stack & running
 
-- **Next.js 16 (App Router, Turbopack) · React · TypeScript · Tailwind · Framer Motion.** localStorage only — no backend.
+- **Next.js 16 (App Router, Turbopack) · React · TypeScript · Tailwind · Framer Motion.** localStorage for play; optional Supabase accounts (see below).
 - Git repo root **is** this `boardcraft/` folder. Path has spaces/brackets; quote it in shell.
 - `npm run dev` (port 3000) · `npm run build` · `npm test` (vitest). CI runs test+build on every push to main (`.github/workflows/ci.yml`).
 - Heads-up: a stray `/Users/asafrubin/package-lock.json` triggers a harmless Next "multiple lockfiles" warning. A stale `.next/dev/lock` can block `npm run dev` after a killed server — `rm -rf .next/dev/lock`.
@@ -75,6 +75,14 @@ Other things added in the makeover:
 - **Meridian follows the Charity Governance Code 2025** (eight principles; cite by number). The 2025 Code sets NO trustee independence test, so the charity independence rules are tagged `source: 'game'`.
 - **Singapore** has its own Board Guide section; SG compliance messages cite the 2018 Code provisions, SGX Listing Rules and MAS bank rules. Rules with no real basis (minimum board size, Chair also chairing the risk committee) are tagged BoardCraft rules.
 - **Volume** level lasts for the visit only (sessionStorage); every new visit starts on the middle bar. A mute still persists.
+
+## Nov 2026: accounts and classroom mode (Supabase)
+
+- **Optional accounts.** The game never requires sign-in. `lib/supabase.ts` (client; project URL + publishable key are public by design) and `lib/account.ts` (sign-up/in, classes, saving results). Email + password, with Supabase's "Confirm email" switched OFF: the free built-in mailer only reaches the project's own team, so no auth emails are sent. Password reset needs custom SMTP (a domain) later.
+- **Database:** `supabase/schema.sql` (run once in the Supabase SQL editor; re-runnable). Tables `profiles`, `classes`, `class_members`, `game_results` (whole finished `GameState` as jsonb so the debrief rebuilds exactly). Row-level security does the access control: own rows, plus a lecturer sees members and results of classes they created. Students join only via `join_class(code)`.
+- **Pages:** `/account`, `/join/[code]`, `/class/[id]` (lecturer), `/result/[id]` (renders `DebriefReport` from the saved state), `/privacy` (UK GDPR notice).
+- **Saving:** `components/account/SaveToAccount` on the year-end screen saves once when signed in (to the active class from `localStorage['boardcraft_active_class']`); signed out it keeps the year in `boardcraft_pending_result` and `/account` saves it after sign-in. Demo links never save.
+- Free Supabase projects pause after a week with no activity; unpause from the dashboard.
 
 ## Current state (June 2026)
 

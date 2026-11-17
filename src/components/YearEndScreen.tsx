@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { AgmResolutionVote } from '@/engine/agm';
 import DebriefReport from '@/components/debrief/DebriefReport';
+import SaveToAccount from '@/components/account/SaveToAccount';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { GameState, ResolvedEvent, GovernanceHealthBreakdown, CompetencyDomain } from '@/types/game';
 import { getSvHistory, getProxyAdviserRating, getAllEvents } from '@/engine/gameStateManager';
@@ -749,6 +750,10 @@ export default function YearEndScreen({ gameState, onRestart, onChangeCompany, a
           <button onClick={onChangeCompany} className="text-xs text-foreground/40 hover:text-foreground/70 transition-colors mb-4 cursor-pointer">
             &larr; Change Company
           </button>
+        )}
+
+        {recordResult && gcResult && (
+          <SaveToAccount gameState={gameState} agmVotes={agmResults?.votes} gcEarned={gcResult.totalGc} />
         )}
 
         {/* The year-end summary is a document: the board's annual governance review */}
