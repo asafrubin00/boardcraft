@@ -760,7 +760,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 1,
     illustrationType: 'vevent-apex-escalation',
     narrativeCard:
-      'Marcus Adler just went public. Apex Capital\'s open letter to Vantage shareholders dropped simultaneously on the WSJ, Bloomberg, and CNBC - coordinated like a military operation, because that\'s exactly what it is. Two board seats. Immediate commitment to Chair/CEO separation. An independent strategic review led by advisers of Apex\'s choosing. The letter is twelve pages, footnoted like a law review article, and every sentence is a weapon. Sandra Okafor called it "a declaration of war." She\'s not wrong.',
+      'Marcus Adler just went public. Apex Capital\'s open letter to Vantage shareholders dropped simultaneously on the WSJ, Bloomberg, and CNBC - coordinated like a military operation, because that\'s exactly what it is. Two board seats, for David Reinholt and Janet Whitfield. Immediate commitment to Chair/CEO separation. An independent strategic review led by advisers of Apex\'s choosing. The letter is twelve pages, footnoted like a law review article, and every sentence is a weapon. Sandra Okafor called it "a declaration of war." She\'s not wrong.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -772,7 +772,7 @@ export const vantageEvents: GameEvent[] = [
         id: 'vevent_10_a',
         label: 'Negotiate directly; offer one board seat and commitments',
         description:
-          'Defuses the situation publicly. Best long-term outcome. Requires Stakeholder ≥ 75.',
+          'Offer Apex one seat, for David Reinholt, plus governance commitments. Defuses the situation publicly. Requires Stakeholder ≥ 75.',
         multiplier: 1.00,
         competencyGates: [{ domain: 'stakeholderComms', minimumRating: 75 }],
       },
@@ -1210,7 +1210,7 @@ export const vantageEvents: GameEvent[] = [
     turn: 3,
     illustrationType: 'vevent-proxy-battle',
     narrativeCard:
-      'This is it. Apex Capital has requisitioned an Extraordinary General Meeting - the nuclear option. They want your Lead Independent Director and two NEDs removed and replaced with their own nominees: a former ConAgra CFO, a governance activist from CalPERS, and a restructuring specialist who\'s never lost a proxy fight. Sterling Proxy has issued a preliminary note supporting Apex on all three demands. Marcus Adler called your LID this morning - not to negotiate, but to inform. Sandra Okafor is in the war room with Skadden on one line and Goldman on the other. This is a full proxy contest, and the next three weeks will determine who controls this company.',
+      'This is it. Apex Capital has requisitioned an Extraordinary General Meeting - the nuclear option. They want your Lead Independent Director and two NEDs removed and replaced with their own nominees: David Reinholt, a former packaged-foods CFO; Janet Whitfield, who ran governance at a big California pension fund; and Carl Brennan, a restructuring specialist who\'s never lost a proxy fight. Sterling Proxy has issued a preliminary note supporting Apex on all three demands. Marcus Adler called your LID this morning - not to negotiate, but to inform. Sandra Okafor is in the war room with Skadden on one line and Goldman on the other. This is a full proxy contest, and the next three weeks will determine who controls this company.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.50,
     secondaryDomains: [

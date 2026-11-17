@@ -40,7 +40,15 @@ export type BoardEffect =
   | { kind: 'committee'; committeeId: CommitteeId; when: When }
   /** A director stays on the board but is redesignated non-independent (e.g. past
    *  SGX's nine-year limit). Any role that needs independence is given up. */
-  | { kind: 'redesignate'; directorId: string; when: When };
+  | { kind: 'redesignate'; directorId: string; when: When }
+  /** Shareholders vote someone off and an activist's nominee takes the seat.
+   *  `out` is a role; for 'ned' the weakest unprotected non-executive goes
+   *  (never another nominee). The nominee sits in `as`. */
+  | { kind: 'oust'; out: BoardRole; nomineeId: string; as: BoardRole; when: When };
+
+// Activist nominees (data/activists.ts) take seats where the story says so.
+const PARTIAL_UP: OutcomeTier[] = ['PARTIAL_SUCCESS', 'SUCCESS', 'CRITICAL_SUCCESS'];
+const LOST_THE_VOTE: OutcomeTier[] = ['FAILURE', 'CRITICAL_FAILURE'];
 
 // ── The table ──────────────────────────────────────────────────────────────
 
@@ -58,6 +66,10 @@ export const STRATEGY_EFFECTS: Record<string, BoardEffect[]> = {
 
   // Vantage — Nguyen leaves the Audit Chair
   vevent_01_a: [{ kind: 'remove', directorId: 'vdir_02_nguyen', when: SUCCESS_UP, replace: true }],
+  // Vantage — the settlement offers Apex one board seat: David Reinholt joins
+  vevent_10_a: [{ kind: 'seat', directorId: 'act_ax_reinholt', role: 'ned', when: PARTIAL_UP }],
+  // Rheinfeld — the settlement gives Meridian Capital one seat: Dr. Katharina Vogt joins
+  revent_12_a: [{ kind: 'seat', directorId: 'act_mc_vogt', role: 'ned', when: SUCCESS_UP }],
 
   // Meridian — Cavendish
   mevent_01_a: [{ kind: 'remove', directorId: 'mdir_cavendish', when: CRITICAL, replace: true }],
@@ -120,6 +132,23 @@ export const EVENT_EFFECTS: Record<string, BoardEffect[]> = {
   mevent_08: [{ kind: 'remove', directorId: 'mdir_cavendish', when: FAILED, replace: true }],
   // Temasek exercises its second-nominee right over the board's head
   sfgevent_08: [{ kind: 'seat', directorId: 'sfgdir_27_phua', role: 'ned', when: FAILED }],
+  // Harwick — Greenvale wins the EGM: the Chair and two NEDs are replaced
+  event_15: [
+    { kind: 'oust', out: 'chair', nomineeId: 'act_gv_ashby', as: 'chair', when: LOST_THE_VOTE },
+    { kind: 'oust', out: 'ned', nomineeId: 'act_gv_rennick', as: 'ned', when: LOST_THE_VOTE },
+    { kind: 'oust', out: 'ned', nomineeId: 'act_gv_mehra', as: 'ned', when: LOST_THE_VOTE },
+  ],
+  // Vantage — Apex wins the EGM: the Lead Independent Director and two NEDs go
+  vevent_15: [
+    { kind: 'oust', out: 'sid', nomineeId: 'act_ax_whitfield', as: 'ned', when: LOST_THE_VOTE },
+    { kind: 'oust', out: 'ned', nomineeId: 'act_ax_reinholt', as: 'ned', when: LOST_THE_VOTE },
+    { kind: 'oust', out: 'ned', nomineeId: 'act_ax_brennan', as: 'ned', when: LOST_THE_VOTE },
+  ],
+  // Rheinfeld — Meridian Capital wins the EGM: two shareholder-side members go
+  revent_12: [
+    { kind: 'oust', out: 'ned', nomineeId: 'act_mc_vogt', as: 'ned', when: LOST_THE_VOTE },
+    { kind: 'oust', out: 'ned', nomineeId: 'act_mc_brenner', as: 'ned', when: LOST_THE_VOTE },
+  ],
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -364,6 +393,38 @@ export function applyBoardEffects(
         notes.push(`${director.name} is now a non-independent director. The ${vacated} seat is vacant.`);
       } else {
         notes.push(`${director.name} is now a non-independent director.`);
+      }
+    } else if (effect.kind === 'oust') {
+      if (next.board.seats.some((s) => s.directorId === effect.nomineeId)) continue;
+      const avg = (id: string) => {
+        const d = next.directors.find((x) => x.id === id);
+        return d ? Object.values(d.domainRatings).reduce((a, b) => a + b, 0) / 8 : 0;
+      };
+      const candidates = next.board.seats.filter(
+        (s) => s.role === effect.out && !isProtected(s.directorId) && !s.directorId.startsWith('act_')
+      );
+      const outSeat = effect.out === 'ned'
+        ? [...candidates].sort((a, b) => avg(a.directorId) - avg(b.directorId))[0]
+        : candidates[0];
+      const outName = outSeat ? nameOf(next, outSeat.directorId) : null;
+      if (outSeat) {
+        next = withSeats(next, next.board.seats.filter((s) => s.directorId !== outSeat.directorId));
+      }
+      next = ensureDirector(next, effect.nomineeId);
+      next = seatDirector(next, effect.nomineeId, effect.as);
+      // The nominee sits where the departed director sat.
+      if (outSeat?.slotIndex !== undefined) {
+        next = withSeats(next, next.board.seats.map((s) => (s.directorId === effect.nomineeId ? { ...s, slotIndex: outSeat.slotIndex } : s)));
+      }
+      const inName = nameOf(next, effect.nomineeId);
+      const as = effect.as === 'ned' ? '' : ` as ${roleLabel(effect.as, companyId)}`;
+      notes.push(
+        outName
+          ? `${outName} has been voted off the board. ${inName}, the activist's nominee, takes the seat${as}.`
+          : `${inName}, the activist's nominee, has joined the board${as}.`
+      );
+      if (outSeat && outSeat.role !== 'ned' && outSeat.role !== effect.as && !vacancy) {
+        vacancy = { directorId: outSeat.directorId, directorName: outName!, role: outSeat.role };
       }
     } else if (effect.kind === 'committee') {
       const current = next.committees[effect.committeeId];

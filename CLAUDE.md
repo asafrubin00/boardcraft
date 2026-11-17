@@ -67,6 +67,14 @@ Other things added in the makeover:
 - **Dev:** `?dev=yearend` (and `&played=1` on any other `?dev=` key) auto-plays up to that point so screens have a real record.
 - Five companies now: `company_sfg` (Straits Financial Group, Singapore) has its own folder `data/sfg/`. Known content issue: FIXED Nov 2026: SFG now follows SGX's hard nine-year cap (Listing Rule 210(5)(d)(iv)); the old two-tier vote is gone from content, engine and screens.
 
+## Nov 2026, round three (content gaps)
+
+- **Outcome minute = Resolved + How it landed + Who you sent.** `data/optionMinutes.ts` has one line per option (what the board resolved and what it cost). Lines must hold at ANY result tier: say what the board set out to do, never whether it worked. The tier narrative ("How it landed") was previously hidden after ordinary events; it is now shown. `debrief.test.ts` fails if any playable option lacks a line.
+- **Activists have named nominees** (`data/activists.ts`): Greenvale (Harwick), Apex (Vantage), Meridian Capital (Rheinfeld). They are Director records outside every candidate pool. `boardEffects` has an `oust` effect: losing the EGM (event_15, vevent_15, revent_12 at FAILURE/CRITICAL_FAILURE) replaces seats with nominees; settlements (vevent_10_a, revent_12_a) seat one. Nominees are 'questionable' on independence.
+- **Meridian follows the Charity Governance Code 2025** (eight principles; cite by number). The 2025 Code sets NO trustee independence test, so the charity independence rules are tagged `source: 'game'`.
+- **Singapore** has its own Board Guide section; SG compliance messages cite the 2018 Code provisions, SGX Listing Rules and MAS bank rules. Rules with no real basis (minimum board size, Chair also chairing the risk committee) are tagged BoardCraft rules.
+- **Volume** level lasts for the visit only (sessionStorage); every new visit starts on the middle bar. A mute still persists.
+
 ## Current state (June 2026)
 
 P0 hardening from the assessment is **done**: risk-flag probability bug, phantom follow-on events removed, working test suite + CI, code-vs-game compliance labels, mid-game persistence, bespoke Vantage/Rheinfeld AGMs.

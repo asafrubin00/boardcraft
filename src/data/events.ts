@@ -743,7 +743,7 @@ export const events: GameEvent[] = [
     turn: 1,
     illustrationType: 'event-greenvale-escalation',
     narrativeCard:
-      'Greenvale Capital\'s open letter went live at 7am, timed perfectly to catch the morning research notes. Two board seats. A full strategic review. The CEO removed from capital allocation. The language is measured, forensic, and devastating - the work of people who have done this before and expect to win. The FT is leading with it. By 9am, three of your largest institutional holders have asked for calls with the Chair.',
+      'Greenvale Capital\'s open letter, signed by its founder Nathaniel Hart, went live at 7am, timed perfectly to catch the morning research notes. Two board seats, for Dame Caroline Ashby and Tom Rennick. A full strategic review. The CEO removed from capital allocation. The language is measured, forensic, and devastating - the work of people who have done this before and expect to win. The FT is leading with it. By 9am, three of your largest institutional holders have asked for calls with the Chair.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -1174,7 +1174,7 @@ export const events: GameEvent[] = [
     turn: 3,
     illustrationType: 'event-proxy-battle',
     narrativeCard:
-      'It\'s finally here. Greenvale Capital has filed EGM requisitions to remove the Chair and two NEDs - names printed in black and white on Companies House filings that half the City has already downloaded. Their replacement nominees are serious people: a former FTSE 100 chair, a well-known energy analyst, a governance specialist who has done this twice before. Sterling Proxy\'s preliminary note supports Greenvale on two of three demands. The patient, smart activists have stopped being patient.',
+      'It\'s finally here. Greenvale Capital has filed EGM requisitions to remove the Chair and two NEDs - names printed in black and white on Companies House filings that half the City has already downloaded. Their replacement nominees are serious people: Dame Caroline Ashby, a former FTSE 100 chair, proposed as Chair; Tom Rennick, the analyst who has covered the North Sea for twenty years; and Priyanka Mehra, a governance specialist who has done this twice before. Sterling Proxy\'s preliminary note supports Greenvale on two of three demands. The patient, smart activists have stopped being patient.',
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.50,
     secondaryDomains: [

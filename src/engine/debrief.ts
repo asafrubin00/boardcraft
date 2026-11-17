@@ -27,7 +27,7 @@ export const FRAMEWORK_NAME: Record<Framework, string> = {
   us: 'NYSE listing standards, SEC rules and Delaware practice',
   de: 'German Stock Corporation Act (AktG) and the German Corporate Governance Code (DCGK 2022)',
   sg: 'Singapore Code of Corporate Governance 2018, SGX Listing Rules and MAS requirements',
-  charity: 'Charity Governance Code and Charity Commission guidance (England and Wales)',
+  charity: 'Charity Governance Code 2025 and Charity Commission guidance (England and Wales)',
 };
 
 export function frameworkFor(companyId: string): Framework {
@@ -56,7 +56,7 @@ export const TOPICS: Record<Topic, TopicDef> = {
       us: 'NYSE Listed Company Manual 303A.04 to 303A.07 (nominating, compensation and audit committees)',
       de: 'AktG §107(4) with §100(5) (audit committee and financial expertise); DCGK D.3',
       sg: 'Code of Corporate Governance Provision 10.2 (audit committee composition); MAS Banking (Corporate Governance) Regulations 2005',
-      charity: 'Charity Governance Code: Decision-making; Charity Commission CC8 (internal financial controls)',
+      charity: 'Charity Governance Code 2025, Principle 5 (Decision making); Charity Commission CC8 (internal financial controls)',
     },
   },
   remuneration: {
@@ -67,7 +67,7 @@ export const TOPICS: Record<Topic, TopicDef> = {
       us: 'Exchange Act §14A (say-on-pay); Regulation S-K Item 402; SEC Rule 10D-1 and NYSE 303A.14 (clawback)',
       de: 'AktG §87 and §87a (remuneration system), §120a (shareholder vote), §162 (remuneration report)',
       sg: 'Code of Corporate Governance Principles 6 to 8; SGX Listing Rule 1207(10D) (disclosure of exact remuneration)',
-      charity: 'Charity Governance Code: Managing resources and risks; Charities SORP disclosure of senior staff pay',
+      charity: 'Charity Governance Code 2025, Principle 6 (Managing resources and risks); Charities SORP disclosure of senior staff pay',
     },
   },
   shareholders: {
@@ -78,7 +78,7 @@ export const TOPICS: Record<Topic, TopicDef> = {
       us: 'Exchange Act §13(d) (Schedule 13D); SEC Rules 14a-8 and 14a-19 (shareholder proposals; universal proxy)',
       de: 'AktG §122 (minority right to requisition a general meeting) and §131 (right to information)',
       sg: 'Code of Corporate Governance Principles 11 to 13; Companies Act 1967 s.176 (requisitioned meetings)',
-      charity: 'Charity Governance Code: Leadership; Ethics and culture (accountability to members, donors and beneficiaries)',
+      charity: 'Charity Governance Code 2025, Principles 3 (Leadership) and 4 (Ethics and culture: openness to members, donors and beneficiaries)',
     },
   },
   takeover: {
@@ -122,7 +122,7 @@ export const TOPICS: Record<Topic, TopicDef> = {
       us: 'NYSE 303A.04 and 303A.09 (nominating committee; governance guidelines including succession)',
       de: 'DCGK B.2 (succession planning), C.1 (competence profile) and C.7 (independence, including long tenure)',
       sg: 'Code of Corporate Governance Provisions 2.1 and 4.1; SGX Listing Rule 210(5)(d)(iv) (nine-year limit on independence)',
-      charity: 'Charity Governance Code: Leadership, and its long-standing nine-year guidance on trustee terms',
+      charity: 'Charity Governance Code 2025, Principle 8 (Board effectiveness): fixed terms, and a rigorous review before reappointment past nine years',
     },
   },
   risk: {
@@ -133,7 +133,7 @@ export const TOPICS: Record<Topic, TopicDef> = {
       us: 'Caremark oversight duty (Delaware); Regulation S-K Item 407(h) (board risk oversight)',
       de: 'AktG §91(2) and (3), §107(3) (risk management system and its monitoring)',
       sg: 'Code of Corporate Governance Principle 9; SGX Listing Rule 1207(10)',
-      charity: 'Charity Governance Code: Managing resources and risks; Charity Commission CC19 (reserves) and CC8',
+      charity: 'Charity Governance Code 2025, Principle 6 (risk tolerances and reserves); Charity Commission CC19 (reserves) and CC8',
     },
   },
   sustainability: {
@@ -144,7 +144,7 @@ export const TOPICS: Record<Topic, TopicDef> = {
       us: 'Regulation S-K Items 101 and 105 (material business and risk disclosure)',
       de: 'Corporate Sustainability Reporting Directive (EU) 2022/2464; DCGK A.1',
       sg: 'SGX Listing Rules 711A and 711B (sustainability reporting); MAS Guidelines on Environmental Risk Management',
-      charity: 'Charity Governance Code: Organisational purpose',
+      charity: 'Charity Governance Code 2025, Principle 2 (Organisational purpose)',
     },
   },
   strategy: {
@@ -155,7 +155,7 @@ export const TOPICS: Record<Topic, TopicDef> = {
       us: 'Business judgment rule (Delaware); NYSE 303A.09',
       de: 'AktG §111 (supervision of management, including reserved matters under §111(4))',
       sg: 'Code of Corporate Governance Principle 1 (the board\'s conduct of affairs)',
-      charity: 'Charity Governance Code: Organisational purpose; Charity Commission CC3 (acting within the charity\'s objects)',
+      charity: 'Charity Governance Code 2025, Principle 2 (Organisational purpose); Charity Commission CC3 (acting within the charity\'s objects)',
     },
   },
   regulator: {
@@ -177,7 +177,7 @@ export const TOPICS: Record<Topic, TopicDef> = {
       us: 'NYSE 303A.10 (code of business conduct and ethics)',
       de: 'Mitbestimmungsgesetz 1976 (co-determination); Betriebsverfassungsgesetz',
       sg: 'Code of Corporate Governance Principle 13 (engagement with stakeholders)',
-      charity: 'Charity Governance Code: Ethics and culture',
+      charity: 'Charity Governance Code 2025, Principle 4 (Ethics and culture)',
     },
   },
   reporting: {
@@ -199,7 +199,7 @@ export const TOPICS: Record<Topic, TopicDef> = {
       us: 'Regulation S-K Item 407(h) (leadership structure); NYSE 303A.03 (executive sessions)',
       de: 'DCGK C.10 (independence of the supervisory board chair); AktG §107(1)',
       sg: 'Code of Corporate Governance Provisions 2.2, 3.1 and 3.3 (independent majority; separate chair and CEO; lead independent director)',
-      charity: 'Charity Governance Code: Leadership; Charity Commission CC3 (collective responsibility of trustees)',
+      charity: 'Charity Governance Code 2025, Principles 1 (Foundation) and 3 (Leadership); Charity Commission CC3 (collective responsibility of trustees)',
     },
   },
   agm: {
@@ -210,7 +210,7 @@ export const TOPICS: Record<Topic, TopicDef> = {
       us: 'Exchange Act §14A; SEC Rule 14a-8',
       de: 'AktG §120 (Entlastung) and §120a',
       sg: 'Code of Corporate Governance Principle 11; SGX Listing Rule 210(5)(d)(iv)',
-      charity: 'Charity Governance Code: Leadership; Ethics and culture',
+      charity: 'Charity Governance Code 2025, Principles 3 (Leadership) and 4 (Ethics and culture)',
     },
   },
 };

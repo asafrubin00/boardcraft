@@ -289,7 +289,7 @@ export const BRIEFINGS: Record<string, CompanyBriefing> = {
     ],
     facts: [
       { label: 'Registered with', value: 'Charity Commission for England and Wales' },
-      { label: 'Governed by', value: 'Charity Governance Code · Charities Act 2011' },
+      { label: 'Governed by', value: 'Charity Governance Code 2025 · Charities Act 2011' },
       { label: 'Chair of Trustees', value: 'The Hon. Patricia Mensah' },
       { label: 'Trustees', value: 'Unpaid, and personally liable' },
     ],

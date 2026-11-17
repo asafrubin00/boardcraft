@@ -89,6 +89,7 @@ export default function GameBoardScreen({
   const [lastEventName, setLastEventName] = useState('');
   const [lastDeployedDirectors, setLastDeployedDirectors] = useState<Director[]>([]);
   const [lastResolvedEvent, setLastResolvedEvent] = useState<GameEvent | null>(null);
+  const [lastStrategyId, setLastStrategyId] = useState<string | null>(null);
   const [waitingForNext, setWaitingForNext] = useState(false);
   const [flashingIds, setFlashingIds] = useState<Set<string>>(new Set());
   const [selectedDirectorId, setSelectedDirectorId] = useState<string | null>(null);
@@ -271,6 +272,7 @@ export default function GameBoardScreen({
       setLastEventName(currentEvent.name);
       setLastDeployedDirectors([]);
       setLastResolvedEvent(currentEvent);
+      setLastStrategyId(strategyId);
       return;
     }
     setSelectedStrategy(strategyId);
@@ -293,9 +295,9 @@ export default function GameBoardScreen({
     }
 
     // Find the do-nothing strategy
-    const doNothingStrategy = currentEvent.strategies.find(
-      (s) => s.label.toLowerCase() === 'do nothing'
-    );
+    const doNothingStrategy =
+      currentEvent.strategies.find((s) => s.isDoNothing) ??
+      currentEvent.strategies.find((s) => s.label.toLowerCase() === 'do nothing');
     const strategyId = doNothingStrategy?.id ?? 'do_nothing';
 
     // Resolve with no directors
@@ -304,6 +306,7 @@ export default function GameBoardScreen({
     setLastEventName(currentEvent.name);
     setLastDeployedDirectors([]);
     setLastResolvedEvent(currentEvent);
+    setLastStrategyId(strategyId);
   }, [currentEvent, onResolveEvent, onSkipEvent]);
 
   // Handle deployment confirmation
@@ -321,6 +324,7 @@ export default function GameBoardScreen({
           .filter((d): d is Director => d !== undefined)
       );
       setLastResolvedEvent(currentEvent);
+      setLastStrategyId(selectedStrategy);
       setSelectedStrategy(null);
     },
     [selectedStrategy, currentEvent, onResolveEvent, gameState.directors]
@@ -831,6 +835,7 @@ export default function GameBoardScreen({
         directorNames={directorNames}
         deployedDirectors={lastDeployedDirectors}
         event={lastResolvedEvent}
+        strategyId={lastStrategyId}
         directorDynamics={gameState.directorDynamics}
       />
 

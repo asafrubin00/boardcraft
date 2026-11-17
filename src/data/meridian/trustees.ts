@@ -17,7 +17,7 @@ export const meridianTrustees: Director[] = [
     name: 'Hon. Patricia Mensah',
     displayName: 'Mensah',
     background:
-      "Former FCDO senior civil servant; board chair for 7 years. Competent administrator with strong institutional networks. Has allowed governance drift through avoidance of confrontation with Dr. Osei-Bonsu. Approaching the Charity Governance Code's recommended 9-year maximum tenure.",
+      "Former FCDO senior civil servant; board chair for 7 years. Competent administrator with strong institutional networks. Has allowed governance drift through avoidance of confrontation with Dr. Osei-Bonsu. Approaching nine years, the point at which the Charity Governance Code expects a rigorous review before any reappointment.",
     domainRatings: {
       financialOversight:  62,
       regulatoryLegal:     75,
@@ -37,7 +37,7 @@ export const meridianTrustees: Director[] = [
     currentEnergy: 100,
     riskFlag: {
       description:
-        "Approaching 9-year tenure limit (Charity Governance Code recommendation). Her reluctance to confront Osei-Bonsu means Events 03 and 09 cannot achieve Critical Success while she remains chair, unless another trustee formally seconds the challenge motion.",
+        "Approaching nine years on the board, where the Charity Governance Code (Principle 8) expects a rigorous review before reappointment. Her reluctance to confront Osei-Bonsu means Events 03 and 09 cannot achieve Critical Success while she remains chair, unless another trustee formally seconds the challenge motion.",
       activationProbability: 0.8,
       triggerCategories: ['regulatoryLegal', 'stakeholderComms'],
       activated: true,
@@ -73,7 +73,7 @@ export const meridianTrustees: Director[] = [
     currentEnergy: 100,
     riskFlag: {
       description:
-        'Founder syndrome: treats the CEO role as subordinate to her own authority. At 9 years she is at the Charity Governance Code tenure limit. Directly drives the Founder Syndrome Score (FSS). If FSS exceeds 60, Event 09 fires automatically. FSS below 20 unlocks a graceful transition outcome for Event 14.',
+        'Founder syndrome: treats the CEO role as subordinate to her own authority. At nine years she has reached the point where the Charity Governance Code expects a rigorous review and exceptional reasons to stay. Directly drives the Founder Syndrome Score (FSS). If FSS exceeds 60, Event 09 fires automatically. FSS below 20 unlocks a graceful transition outcome for Event 14.',
       activationProbability: 1.0,
       triggerCategories: ['strategyMarkets', 'esgSustainability'],
       activated: true,

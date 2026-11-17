@@ -68,7 +68,7 @@ const FRAMEWORK: Record<string, { place: string; code: string }> = {
   company_harwick: { place: 'UK', code: 'UK Corporate Governance Code' },
   company_vantage: { place: 'US', code: 'NYSE listing standards · SEC' },
   company_rheinfeld: { place: 'Germany', code: 'GCGC · AktG two-tier board' },
-  company_meridian: { place: 'UK', code: 'Charity Governance Code' },
+  company_meridian: { place: 'UK', code: 'Charity Governance Code 2025' },
   company_sfg: { place: 'Singapore', code: 'MAS guidelines · SGX Code' },
 };
 

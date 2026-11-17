@@ -942,7 +942,7 @@ export const rheinfeldEvents: GameEvent[] = [
     turn: 3,
     illustrationType: 'revent-meridian-egm',
     narrativeCard:
-      "Meridian Capital has exercised its right under AktG §122 to requisition an Extraordinary General Meeting. They are seeking a shareholder vote to remove two Supervisory Board members and replace them with Meridian's nominees. Their public letter is measured, specific, and devastating.",
+      "Meridian Capital has exercised its right under AktG §122 to requisition an Extraordinary General Meeting. They are seeking a shareholder vote to remove two Supervisory Board members and replace them with Meridian's nominees: Dr. Katharina Vogt, a former automotive-supplier CFO, and Matthias Brenner, a former audit partner who has written publicly about Heinrich's chairmanship. Their public letter is measured, specific, and devastating.",
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.50,
     secondaryDomains: [
@@ -954,7 +954,7 @@ export const rheinfeldEvents: GameEvent[] = [
         id: 'revent_12_a',
         label: 'Engage Meridian directly; offer negotiated settlement',
         description:
-          'One seat and a commitment to governance reforms. Stakeholder & Comms ≥ 75 required.',
+          'One seat, for Dr. Katharina Vogt, and a commitment to governance reforms. Stakeholder & Comms ≥ 75 required.',
         multiplier: 1.10,
         competencyGates: [{ domain: 'stakeholderComms', minimumRating: 75 }],
         fallback: 'revent_12_c',
@@ -1090,7 +1090,7 @@ export const rheinfeldEvents: GameEvent[] = [
       PARTIAL_SUCCESS: {
         svRange: [0.5, 0.5],
         narrative:
-          "The board's decision on the review is read as a half-measure - \"necessary but insufficient,\" as the analysts put it, which is the market's way of saying \"try harder.\"",
+          "The board's decision on the review lands as \"necessary but insufficient,\" as the analysts put it, which is the market's way of saying \"try harder.\"",
       },
       FAILURE: {
         svRange: [-4.0, -4.0],

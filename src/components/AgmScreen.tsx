@@ -957,7 +957,7 @@ export default function AgmScreen({
           transition={{ delay: 0.2, duration: 0.5 }}
         >
           {isMeridian
-            ? `The Annual Members Meeting has arrived. Meridian Foundation operates a supporter membership structure — registered members hold voting rights on constitutional matters. Three resolutions are contested. The Charity Governance Code assessor's view and your governance health score will influence how members vote.`
+            ? `The Annual Members Meeting has arrived. Meridian Foundation operates a supporter membership structure — registered members hold voting rights on constitutional matters. Three resolutions are contested. The independent governance assessor's view and your governance health score will influence how members vote.`
             : isVantage
               ? `The AGM has arrived. Three resolutions are contested. Institutional voting will be shaped by the proxy advisers' recommendations, ISS's red flag on executive pay, and your governance health score — with Apex Capital's representatives watching from the third row.`
               : isRheinfeld
@@ -972,7 +972,7 @@ export default function AgmScreen({
         {/* Rating badge */}
         <div className="mb-7">
           <span className="text-xs uppercase tracking-wide text-foreground/50">
-            {isMeridian ? 'Charity Governance Code Assessor:' : 'Proxy Adviser Rating:'}
+            {isMeridian ? 'Governance Assessor:' : 'Proxy Adviser Rating:'}
           </span>{' '}
           <span
             className={`font-bold ${

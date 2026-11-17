@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { ResolutionOutput, OutcomeTier, Director, GameEvent, DirectorDynamic } from '@/types/game';
 import { playOutcomeSound, playWildcard, playPaperSlide, playStamp } from '@/engine/soundEngine';
 import { generateDebrief } from '@/engine/narrativeExplanation';
+import { OPTION_MINUTES } from '@/data/optionMinutes';
 import DirectorPortrait from './DirectorPortrait';
 import './boardbuild/boardbuild.css';
 import './scenario/scenario.css';
@@ -17,6 +18,8 @@ interface OutcomeDisplayProps {
   deployedDirectors?: Director[];
   event?: GameEvent | null;
   directorDynamics?: DirectorDynamic[];
+  /** The option the board chose, for its own minute line. */
+  strategyId?: string | null;
 }
 
 const TIER_CONFIG: Record<
@@ -82,6 +85,7 @@ export default function OutcomeDisplay({
   deployedDirectors,
   event,
   directorDynamics,
+  strategyId,
 }: OutcomeDisplayProps) {
   // Play sound on outcome + wildcard
   useEffect(() => {
@@ -98,6 +102,10 @@ export default function OutcomeDisplay({
 
   const config = outcome ? TIER_CONFIG[outcome.outcomeTier] : null;
   const isCritFail = outcome?.outcomeTier === 'CRITICAL_FAILURE';
+
+  const strategy = event && strategyId ? event.strategies.find((s) => s.id === strategyId) : undefined;
+  const resolved = strategyId ? OPTION_MINUTES[strategyId] : undefined;
+  const landed = outcome?.narrativeText;
 
   const debrief = outcome && event && outcome.breakdown
     ? generateDebrief(outcome, deployedDirectors ?? [], event, directorDynamics ?? [])
@@ -185,16 +193,42 @@ export default function OutcomeDisplay({
                 </motion.p>
               )}
 
+              {/* What the board resolved (differs by option), then how it landed (by result) */}
+              {(resolved || landed) && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8, duration: 0.4 }}
+                  className="pt-4 mt-4 grid gap-3.5"
+                  style={{ borderTop: '1px solid var(--rule)' }}
+                >
+                  {resolved && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.22em] mb-1.5" style={{ color: 'var(--ink-soft)' }}>
+                        Resolved{strategy ? <span className="normal-case tracking-normal font-semibold"> · {strategy.label}</span> : null}
+                      </p>
+                      <p className="bc-serif text-[15px] leading-[1.6]">{resolved}</p>
+                    </div>
+                  )}
+                  {landed && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.22em] mb-1.5" style={{ color: 'var(--ink-soft)' }}>How it landed</p>
+                      <p className="bc-serif text-[15px] leading-[1.6] italic">{landed}</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
               {/* Debrief narrative — inline, always shown */}
               {debrief && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.85, duration: 0.4 }}
+                  transition={{ delay: 0.95, duration: 0.4 }}
                   className="pt-4 mt-4"
                   style={{ borderTop: '1px solid var(--rule)' }}
                 >
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] mb-2" style={{ color: 'var(--ink-soft)' }}>The debrief</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] mb-2" style={{ color: 'var(--ink-soft)' }}>Who you sent</p>
                   <p className="bc-serif text-[14.5px] leading-[1.65]">
                     {debrief}
                   </p>

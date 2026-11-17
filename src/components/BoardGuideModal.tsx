@@ -136,45 +136,89 @@ const EU_GUIDE = {
   ],
 };
 
-// ── UK Charity (CIO) — Charity Governance Code guidance ──
+// ── UK Charity (CIO) — Charity Governance Code 2025 ──
 const CHARITY_GUIDE = {
-  title: 'Charity Governance Code (UK)',
+  title: 'Charity Governance Code 2025 (England and Wales)',
   sections: [
+    {
+      heading: 'The 2025 Code',
+      items: [
+        'Published November 2025, replacing the 2020 edition. Voluntary: the Charity Commission endorses it, but following it is not a legal requirement.',
+        'Eight principles: 1 Foundation, 2 Organisational purpose, 3 Leadership, 4 Ethics and culture, 5 Decision making, 6 Managing resources and risks, 7 Equity, diversity and inclusion, 8 Board effectiveness.',
+        'New Foundation principle: trustees put in the time and care to understand the charity, its governing document and their legal duties.',
+        'One Code for all sizes. The old separate tracks for large and small charities are gone.',
+      ],
+    },
     {
       heading: 'Board Composition',
       items: [
-        'Minimum 3 trustees required by law; 5–12 recommended by the Charity Governance Code.',
-        'The Chair leads the board and is elected by fellow trustees — not appointed externally.',
-        'A Deputy Chair may support the Chair and provide continuity during transitions.',
-        'All trustees serve voluntarily; remuneration of trustees is not permitted except in exceptional circumstances with Charity Commission approval.',
+        'A CIO needs at least 3 trustees by law. The Code expects a board of typically five to 12 (Principle 8).',
+        'The board appoints its chair through a fair, open process (Principle 3).',
+        'The board keeps under review the mix of skills, knowledge and experience it needs, including lived experience (Principles 7 and 8).',
+        'Trustees serve unpaid. Paying a trustee needs authority in the governing document or from the Charity Commission.',
       ],
     },
     {
       heading: 'Key Roles',
       items: [
-        'Chair of Trustees: leads the board, manages trustee relationships, and acts as ambassador.',
-        'Deputy Chair: supports the Chair and acts when the Chair is unavailable.',
-        'Finance & Risk Committee Chair: oversees financial controls, reserves policy, and solvency obligations — must have strong financial expertise.',
-        'People & Culture Committee Chair: oversees staff wellbeing, safeguarding, and trustee diversity — requires strong People & Culture credentials.',
-        'Programmes & Impact Committee Chair: scrutinises programme delivery and mission alignment — must have relevant sector knowledge.',
+        'Chair of Trustees: keeps the board working as a team, with sound decisions and good relationships (Principle 3).',
+        'Chair, board and chief executive: clear, respected, different roles (Principle 3). A trustee doing hands-on work must keep it separate from being a trustee.',
+        'Finance & Risk Committee Chair: reserves, controls and the risk register — needs real financial expertise.',
+        'People & Culture Committee Chair: chief executive oversight, safeguarding, staff pay.',
+        'Programmes & Impact Committee Chair: whether the work does what the charity says it does.',
       ],
     },
     {
-      heading: 'Committees',
+      heading: 'Conflicts, Risk and Tenure',
       items: [
-        'Finance & Risk Committee: reviews management accounts, reserves, investment policy, and risk register.',
-        'People & Culture Committee: oversees HR policy, safeguarding, and trustee recruitment.',
-        'Programmes & Impact Committee: evaluates programme effectiveness and mission alignment.',
-        'All committee chairs should be independent trustees free from executive conflicts.',
+        'Conflicts (Principle 1): a conflicts policy, declarations recorded in the minutes, and an up-to-date register of interests.',
+        'Risk (Principle 6): agreed risk tolerances, including how far reserves can be used, a reserves policy and a board-approved risk register.',
+        'Tenure (Principle 8): fixed terms, no more than nine years unless there are exceptional reasons. Reappointment after nine years needs a rigorous review.',
+        'The Code sets no independence test for trustees. BoardCraft asks for a majority free of founder, staff or donor ties, and labels that as a BoardCraft rule.',
+        'The Charity Commission can open an inquiry and act against trustees where governance fails.',
+      ],
+    },
+  ],
+};
+
+// ── Singapore: SGX listing rules, the 2018 Code, and MAS rules for banks ──
+const SG_GUIDE = {
+  title: 'Singapore Board Governance (SGX · MAS)',
+  sections: [
+    {
+      heading: 'Three Layers of Rules',
+      items: [
+        'SGX Listing Rules: binding on listed companies, enforced by the exchange.',
+        'Code of Corporate Governance 2018: principles are mandatory; provisions are comply-or-explain.',
+        'MAS: a Singapore bank also answers to the Banking (Corporate Governance) Regulations and MAS\'s Guidelines on Corporate Governance — stricter, and the regulator can act directly.',
       ],
     },
     {
-      heading: 'Independence & Tenure',
+      heading: 'Board Composition',
       items: [
-        'Independence: trustees must act in the charity\'s best interests, not as representatives of funders or donors.',
-        'Tenure: the Charity Governance Code recommends no trustee serves more than 9 years without review.',
-        'Founder Syndrome: boards dominated by the founding chair risk poor scrutiny and mission drift.',
-        'The Charity Commission can investigate and intervene where governance is seriously weak.',
+        'At least one-third of the board independent (SGX Listing Rule 210(5)(c)).',
+        'If the Chair is not independent, independent directors should be a majority (Code Provision 2.2, applied to banks by MAS). BoardCraft asks a bank for a majority either way.',
+        'Non-executive directors should be a majority (Code Provision 2.3).',
+        'Chair and CEO are separate people (Code Provision 3.1; a legal requirement for banks).',
+        'A board diversity policy, disclosed in the annual report (SGX Listing Rule 710A).',
+      ],
+    },
+    {
+      heading: 'The Nine-Year Rule',
+      items: [
+        'A director who has served more than nine years cannot be independent (SGX Listing Rule 210(5)(d)(iv)).',
+        'The old two-tier shareholder vote that could keep a long-serving director independent was abolished in January 2023.',
+        'Past nine years a director may stay, but only as non-independent — which can break the board\'s or a committee\'s independence count.',
+      ],
+    },
+    {
+      heading: 'Key Roles and Committees',
+      items: [
+        'Lead Independent Director: appointed when the Chair is not independent (Code Provision 3.3); the route for shareholders when the Chair is conflicted.',
+        'Audit Committee: non-executive, majority independent including the chair, at least two members with recent accounting or financial expertise (Code Provision 10.2). For a bank, the chair must be independent.',
+        'Nominating Committee: majority independent including the chair; the Lead Independent Director sits on it (Code Provision 4.2).',
+        'Remuneration Committee: all non-executive, majority independent including the chair (Code Provision 6.2).',
+        'Board Risk Committee: required for Singapore-incorporated banks (Banking (Corporate Governance) Regulations, reg. 17A).',
       ],
     },
   ],
@@ -184,6 +228,7 @@ function getGuide(jurisdiction: string, companyId?: string) {
   if (companyId === 'company_meridian') return CHARITY_GUIDE;
   if (jurisdiction === 'US') return US_GUIDE;
   if (jurisdiction === 'EU') return EU_GUIDE;
+  if (jurisdiction === 'SG') return SG_GUIDE;
   return UK_GUIDE;
 }
 

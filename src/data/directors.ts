@@ -7,6 +7,7 @@ import { vantageDirectors } from './vantage/directors';
 import { rheinfeldDirectors } from './rheinfeld/directors';
 import { meridianTrustees } from './meridian/trustees';
 import { sfgDirectors } from './sfg/directors';
+import { activistNominees } from './activists';
 
 export const directors: Director[] = [
   // ── Dame Helen Forsyth - departing inherited Chair ──
@@ -699,4 +700,6 @@ export const directors: Director[] = [
 
   // ── Straits Financial Group directors ──
   ...sfgDirectors,
+  // Activist nominees: only ever seated through an event, never in a pool
+  ...activistNominees,
 ];

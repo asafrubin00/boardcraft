@@ -1196,7 +1196,7 @@ export const meridianEvents: GameEvent[] = [
     imageFile: 'mevent-chair-succession.jpg',
     illustrationType: 'mevent-chair-succession',
     narrativeCard:
-      "Patricia Mensah has announced she will step down as chair at the Annual Public Meeting in six months' time — citing the Charity Governance Code's 9-year tenure guidance. The announcement triggers a formal succession process. The board must decide: who chairs the succession search? Should Osei-Bonsu's continued tenure on the board be addressed as part of the same succession review? And does the board have the composition, independence, and collective will to manage both transitions simultaneously?",
+      "Patricia Mensah has announced she will step down as chair at the Annual Public Meeting in six months' time — citing the Charity Governance Code's nine-year guidance on trustee terms. The announcement triggers a formal succession process. The board must decide: who chairs the succession search? Should Osei-Bonsu's continued tenure on the board be addressed as part of the same succession review? And does the board have the composition, independence, and collective will to manage both transitions simultaneously?",
     primaryDomain: 'peopleCulture',
     primaryWeight: 0.45,
     secondaryDomains: [
@@ -1287,7 +1287,7 @@ export const meridianEvents: GameEvent[] = [
     imageFile: 'mevent-agm-accountability.jpg',
     illustrationType: 'mevent-agm-accountability',
     narrativeCard:
-      "At the Annual Public Meeting — required under Meridian's CIO constitution — a coalition of major institutional donors presents a formal motion requesting that the board commission an independent beneficiary accountability audit covering the past three years. The motion is not legally binding on the board, but the donors control 55% of Meridian's income. The Charity Governance Code Assessor's preliminary report on the board's performance over the year is tabled at the same meeting. Everything the player has done — or failed to do — is now visible in one room.",
+      "At the Annual Public Meeting — required under Meridian's CIO constitution — a coalition of major institutional donors presents a formal motion requesting that the board commission an independent beneficiary accountability audit covering the past three years. The motion is not legally binding on the board, but the donors control 55% of Meridian's income. The independent governance assessor's preliminary report on the board's performance over the year is tabled at the same meeting. Everything the player has done — or failed to do — is now visible in one room.",
     primaryDomain: 'stakeholderComms',
     primaryWeight: 0.45,
     secondaryDomains: [
@@ -1341,27 +1341,27 @@ export const meridianEvents: GameEvent[] = [
       CRITICAL_SUCCESS: {
         svRange: [8, 10],
         narrative:
-          "The Charity Governance Code Assessor's report cites Meridian as having made 'significant and genuine governance progress' during the year. Donors renew.",
+          "The independent governance assessor's report cites Meridian as having made 'significant and genuine governance progress' during the year. Donors renew.",
       },
       SUCCESS: {
         svRange: [4, 6],
         narrative:
-          "Donors are satisfied with the board's responsiveness. The Code Assessor's report is broadly positive.",
+          "Donors are satisfied with the board's responsiveness. The governance assessor's report is broadly positive.",
       },
       PARTIAL_SUCCESS: {
         svRange: [-2, 0],
         narrative:
-          "The board's answer is noted without consequence in the short term. Two donors reduce their commitments at renewal. The Code Assessor's report is neutral.",
+          "The board's answer is noted without consequence in the short term. Two donors reduce their commitments at renewal. The governance assessor's report is neutral.",
       },
       FAILURE: {
         svRange: [-10, -8],
         narrative:
-          "Donors read the board's answer as resistance to accountability. Two major grants are formally withdrawn, and the Code Assessor's report is critical.",
+          "Donors read the board's answer as resistance to accountability. Two major grants are formally withdrawn, and the governance assessor's report is critical.",
       },
       CRITICAL_FAILURE: {
         svRange: [-15, -12],
         narrative:
-          "Donors controlling 55% of income publicly distance themselves from Meridian. The Charity Commission opens a preliminary review, and the Code Assessor recommends an independent governance inquiry.",
+          "Donors controlling 55% of income publicly distance themselves from Meridian. The Charity Commission opens a preliminary review, and the governance assessor recommends an independent governance inquiry.",
       },
     },
     isConditional: false,

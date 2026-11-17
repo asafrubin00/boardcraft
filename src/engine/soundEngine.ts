@@ -10,7 +10,7 @@
 let audioCtx: AudioContext | null = null;
 let soundEnabled = true;
 let contextInitialised = false;
-let masterVolume = 0.5;
+let masterVolume = 0.65; // 'normal', the middle of the three bars
 
 const STORAGE_KEY = 'boardcraft_sound';
 const VOLUME_KEY = 'boardcraft_volume_state';
@@ -141,7 +141,11 @@ export function isSoundEnabled(): boolean {
   if (typeof window === 'undefined') return true;
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored !== null) soundEnabled = stored === 'on';
-  const vol = localStorage.getItem(VOLUME_KEY);
+  // The volume level lasts for the visit only, so every new visit starts at
+  // the middle bar rather than wherever it was last left. (It used to live in
+  // localStorage; clear that so an old 'loud' does not stick.)
+  localStorage.removeItem(VOLUME_KEY);
+  const vol = sessionStorage.getItem(VOLUME_KEY);
   if (vol !== null && VOLUME_VALUES[vol as VolumeLevel] !== undefined) {
     masterVolume = VOLUME_VALUES[vol as VolumeLevel];
     if (vol === 'muted') soundEnabled = false;
@@ -172,7 +176,7 @@ export function cycleVolume(): VolumeLevel {
   soundEnabled = next !== 'muted';
   if (bus) bus.out.gain.setTargetAtTime(masterVolume, bus.ctx.currentTime, 0.05);
   if (typeof window !== 'undefined') {
-    localStorage.setItem(VOLUME_KEY, next);
+    sessionStorage.setItem(VOLUME_KEY, next);
     localStorage.setItem(STORAGE_KEY, soundEnabled ? 'on' : 'off');
   }
   return next;

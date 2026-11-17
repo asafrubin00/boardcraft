@@ -48,7 +48,7 @@ export default function CompliancePanel({ errors, title = 'FRC Code Compliance' 
           >
             {errors.map((err, i) => (
               <motion.div
-                key={err.code}
+                key={`${err.code}-${err.message}`}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}

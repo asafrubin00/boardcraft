@@ -600,24 +600,32 @@ function checkComplianceSG(
   const chairDir = chair ? dirById.get(chair.directorId) : undefined;
   const hasSid = seats.some((s) => s.role === 'sid');
 
-  // Board size: MAS expects minimum 5 directors for financial institutions
+  // Board size. No fixed MAS minimum is in force (MAS has consulted on one),
+  // so this is a BoardCraft rule.
   if (seats.length < 5) {
     errors.push({
       code: 'SG-MAS-001',
-      message: 'MAS expects a minimum of 5 directors on the board of a financial institution.',
+      message: 'BoardCraft rule: a regional bank needs at least five directors to staff its Audit, Risk, Nominating and Remuneration Committees.',
       severity: 'error',
-      source: 'code',
+      source: 'game',
     });
   }
 
-  // Independent director majority: SGX Code
+  // Independent majority. Code of Corporate Governance 2018 Provision 2.2
+  // (adopted in MAS's Guidelines on Corporate Governance for banks): a
+  // majority of independent directors where the Chair is not independent.
+  // Otherwise SGX Listing Rule 210(5)(c) asks only for one-third; BoardCraft
+  // keeps the majority for a bank either way, and says so.
   const independentCount = seatedDirectors.filter((d) => d.independence === 'independent').length;
-  if (independentCount < Math.ceil(seats.length / 2)) {
+  if (independentCount < Math.floor(seats.length / 2) + 1) {
+    const chairIndependent = chairDir?.independence === 'independent';
     errors.push({
       code: 'SG-SGX-001',
-      message: 'SGX Code requires a majority of board members to be independent directors.',
+      message: chairIndependent
+        ? `BoardCraft rule: a bank board should be majority independent. Currently ${independentCount}/${seats.length}. (SGX Listing Rule 210(5)(c) itself asks for at least one-third when the Chair is independent.)`
+        : `With a non-independent Chair, a majority of directors must be independent (Code of Corporate Governance Provision 2.2, applied to banks by MAS). Currently ${independentCount}/${seats.length}.`,
       severity: 'error',
-      source: 'code',
+      source: chairIndependent ? 'game' : 'code',
     });
   }
 
@@ -645,11 +653,11 @@ function checkComplianceSG(
     }
   }
 
-  // Chair independence: SGX recommends Chair be independent; if non-independent, SID required
+  // Chair not independent: Code Provision 3.3, appoint a Lead Independent Director
   if (chairDir && chairDir.independence !== 'independent' && !hasSid) {
     errors.push({
       code: 'SG-SGX-003',
-      message: "The Board Chair is non-independent. SGX Code requires a Senior Independent Director (SID) to be appointed when the Chair is not independent.",
+      message: "The Chair is not independent, so the board should appoint a Lead Independent Director (Code of Corporate Governance Provision 3.3).",
       severity: 'error',
       source: 'code',
     });
@@ -660,7 +668,7 @@ function checkComplianceSG(
   if (!auditChairId) {
     errors.push({
       code: 'SG-MAS-002',
-      message: 'Audit Committee Chair is vacant — a compliance breach under MAS Guidelines for Financial Institutions. MAS expects immediate resolution.',
+      message: 'The Audit Committee has no chair. A Singapore bank must have an Audit Committee chaired by an independent director (Banking (Corporate Governance) Regulations).',
       severity: 'error',
       source: 'code',
     });
@@ -669,7 +677,7 @@ function checkComplianceSG(
     if (acChairDir && (acChairDir.domainRatings.financialOversight ?? 0) < 70) {
       errors.push({
         code: 'SG-MAS-LOW_AC_EXPERTISE',
-        message: 'AC Chair should have strong financial expertise (Financial Oversight ≥ 70) per MAS guidelines for financial institutions.',
+        message: 'The Audit Committee chair should have recent, relevant accounting or financial expertise (Code Provision 10.2). BoardCraft sets that at Financial Oversight 70.',
         severity: 'warning',
         source: 'game',
       });
@@ -677,28 +685,30 @@ function checkComplianceSG(
     if (acChairDir && acChairDir.independence !== 'independent') {
       errors.push({
         code: 'SG-SGX-004',
-        message: 'Audit Committee Chair must be independent under SGX Listing Rules.',
+        message: 'The Audit Committee chair must be independent (Banking (Corporate Governance) Regulations; Code Provision 10.2).',
         severity: 'error',
         source: 'code',
       });
     }
   }
 
-  // Board Risk Committee: mandatory for banks (MAS). Chair must not also be Board Chair.
+  // Board Risk Committee: required for Singapore-incorporated banks (Banking
+  // (Corporate Governance) Regulations, reg. 17A). No rule bars the Board Chair
+  // from chairing it; BoardCraft flags it because the lore's MAS letter does.
   const brcChairId = committees.risk?.chairDirectorId;
   if (!committees.risk?.active) {
     errors.push({
       code: 'SG-MAS-003',
-      message: 'A Board Risk Committee is mandatory for financial institutions under MAS guidelines.',
+      message: 'A Singapore bank must have a Board Risk Committee (Banking (Corporate Governance) Regulations, reg. 17A).',
       severity: 'error',
       source: 'code',
     });
   } else if (brcChairId && chair && brcChairId === chair.directorId) {
     errors.push({
       code: 'SG-MAS-004',
-      message: 'The Board Chair also chairs the Board Risk Committee — a dual role explicitly flagged by MAS as non-compliant for financial institutions.',
+      message: "BoardCraft rule: the Chair also chairs the Board Risk Committee. No rule forbids it, but MAS's letter on risk oversight points straight at it: the committee meant to challenge is led by the person who runs the board.",
       severity: 'error',
-      source: 'code',
+      source: 'game',
     });
   }
 
@@ -706,7 +716,7 @@ function checkComplianceSG(
   if (!seats.some((s) => s.role === 'nomChair')) {
     errors.push({
       code: 'SG-SGX-005',
-      message: 'A Nominating Committee Chair must be designated (SGX Code — mandatory committee).',
+      message: 'Designate a Nominating Committee chair. A bank must have a Nominating Committee, with a majority of independent directors including its chair (Code Provision 4.2).',
       severity: 'error',
       source: 'code',
     });
@@ -716,7 +726,7 @@ function checkComplianceSG(
   if (!committees.remuneration?.chairDirectorId) {
     errors.push({
       code: 'SG-SGX-006',
-      message: 'A Remuneration Committee Chair must be designated (SGX Code — mandatory committee).',
+      message: 'Designate a Remuneration Committee chair. It must be non-executive, with a majority of independent directors including its chair (Code Provision 6.2).',
       severity: 'error',
       source: 'code',
     });
@@ -738,7 +748,13 @@ function checkComplianceSG(
   return errors;
 }
 
-// UK Charity Commission / Charity Governance Code rules (Meridian Foundation)
+// UK Charity Commission / Charity Governance Code 2025 rules (Meridian Foundation)
+//
+// The 2025 Code has eight principles: 1 Foundation, 2 Organisational purpose,
+// 3 Leadership, 4 Ethics and culture, 5 Decision making, 6 Managing resources
+// and risks, 7 Equity, diversity and inclusion, 8 Board effectiveness.
+// It sets NO independence test for trustees, so BoardCraft's independence
+// rules here are tagged 'game', with the Code duty they stand in for.
 // ══════════════════════════════════════════════════════════════
 
 function checkComplianceCharityUK(
@@ -749,7 +765,7 @@ function checkComplianceCharityUK(
   const errors: ComplianceError[] = [];
   const getDirector = (id: string) => directors.find((d) => d.id === id);
 
-  // Rule 1: Minimum 3 trustees (CIO minimum). CGC recommends 5+.
+  // Rule 1: Minimum 3 trustees (CIO minimum). Code Principle 8: typically 5 to 12.
   if (seats.length < 3) {
     errors.push({
       code: 'BOARD_TOO_SMALL',
@@ -759,7 +775,7 @@ function checkComplianceCharityUK(
   } else if (seats.length <= 4) {
     errors.push({
       code: 'BOARD_BELOW_CGC_MIN',
-      message: `The Charity Governance Code recommends at least 5 trustees for effective challenge and succession resilience. Currently ${seats.length}.`,
+      message: `The Charity Governance Code (Principle 8, Board effectiveness) expects a board of typically five to 12 trustees. Currently ${seats.length}.`,
       severity: 'warning',
     });
   }
@@ -778,20 +794,21 @@ function checkComplianceCharityUK(
       if (chairDir.independence === 'non-independent') {
         errors.push({
           code: 'CHAIR_NOT_INDEPENDENT',
-          message: `${chairDir.name} is non-independent. The Charity Governance Code strongly recommends the Chair be independent of executive and founder influence.`,
+          message: `${chairDir.name} is tied to the founder or staff and cannot chair. BoardCraft rule: the Code (Principle 3) expects clear, respected roles for chair, board and chief executive, and a tied chair cannot hold that line.`,
           severity: 'error',
+          source: 'game',
         });
       } else if (chairDir.independence === 'questionable') {
         errors.push({
           code: 'CHAIR_INDEPENDENCE_CONCERN',
-          message: `${chairDir.name}'s independence is questionable. Charity Commission scrutiny may follow — review and minute any conflicts.`,
+          message: `${chairDir.name} has a possible conflict. The Code (Principle 1) expects a conflicts policy, declarations minuted and an up-to-date register of interests.`,
           severity: 'warning',
         });
       }
       if ((chairDir.tenureYears ?? chairDir.tenure) >= 9) {
         errors.push({
           code: 'CHAIR_LONG_TENURE',
-          message: `${chairDir.name} has served ${chairDir.tenureYears ?? chairDir.tenure} years as Chair. The Charity Governance Code recommends a maximum 9-year total tenure — succession planning is overdue.`,
+          message: `${chairDir.name} has served ${chairDir.tenureYears ?? chairDir.tenure} years. Under the Code (Principle 8), reappointment after nine years needs a rigorous review, and terms past nine years need exceptional reasons. Succession is overdue.`,
           severity: 'warning',
         });
       }
@@ -888,8 +905,9 @@ function checkComplianceCharityUK(
     }
   }
 
-  // Rule 6: Trustee independence — CGC recommends a majority independent.
-  // Flag if fewer than 50% are independent.
+  // Rule 6: Trustee independence. The 2025 Code sets no independence test,
+  // so this is a BoardCraft rule standing in for Principle 1 (conflicts).
+  // Flag if fewer than 50% are free of founder, staff or donor ties.
   const independentCount = seats.filter((s) => {
     const d = getDirector(s.directorId);
     return d?.independence === 'independent';
@@ -897,13 +915,24 @@ function checkComplianceCharityUK(
   if (seats.length > 0 && independentCount / seats.length < 0.5) {
     errors.push({
       code: 'LOW_INDEPENDENCE',
-      message: `The Charity Governance Code recommends a majority of trustees be independent. Currently ${independentCount}/${seats.length} are independent.`,
+      message: `BoardCraft rule: at least half the trustees should be free of founder, staff or donor ties. Currently ${independentCount}/${seats.length}. The Code sets no independence test, but every tie is a conflict to manage (Principle 1).`,
       severity: 'error',
+      source: 'game',
     });
   }
 
-  // Rule 7: Tenure warnings — CGC 9-year maximum
-  checkTenureWarnings(seats, directors, errors, 'Charity Governance Code (9-year recommended maximum)');
+  // Rule 7: Tenure. Code Principle 8: fixed terms, no more than nine years
+  // unless there are exceptional reasons; past nine, a rigorous review.
+  for (const seat of seats) {
+    const dir = getDirector(seat.directorId);
+    if (dir && seat.role !== 'chair' && dir.tenureYears !== undefined && dir.tenureYears >= 9) {
+      errors.push({
+        code: 'LONG_TENURE',
+        message: `${dir.name} has served ${dir.tenureYears} years. Under the Code (Principle 8), staying past nine years needs a rigorous review and exceptional reasons.`,
+        severity: 'warning',
+      });
+    }
+  }
 
   // Rule 8: No duplicates
   checkDuplicateDirectors(seats, errors);
