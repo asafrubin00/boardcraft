@@ -35,7 +35,7 @@ export default function SiteFooter({
   }
 
   return (
-    <div className={`flex items-center justify-center gap-3 text-foreground/25 text-xs whitespace-nowrap pointer-events-none ${className}`}>
+    <div className={`flex flex-wrap items-center justify-center gap-x-3 gap-y-1 w-max max-w-[calc(100vw-2rem)] mx-auto text-foreground/25 text-xs pointer-events-none ${className}`}>
       <span>© 2026 <a href="https://asafrubin00.github.io/asaf-rubin-website/" target="_blank" rel="noopener noreferrer" className="pointer-events-auto hover:text-foreground/50 transition-colors underline underline-offset-2">Asaf Rubin</a>. All rights reserved.</span>
       <span className="text-foreground/15">·</span>
       <Link href="/account" className="pointer-events-auto hover:text-foreground/50 transition-colors underline underline-offset-2">Account</Link>
